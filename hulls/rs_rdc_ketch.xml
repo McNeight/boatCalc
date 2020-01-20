@@ -1,0 +1,132 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<hull stations='10' lines='0'>
+   <water>0</water>
+   <units>1</units>
+   <lstem>true</lstem>
+   <rstem>true</rstem>
+   <designer>NA</designer>
+   <designname>new boat</designname>
+   <baseline> .0000 </baseline>
+   <weights>
+     <wgtItem>
+      <wgtLbl>Hull</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Ballast</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Engine</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Accomodation</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Crew</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Stores/Gear</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+   </weights>
+   <stations>
+      <stnX> .0000 </stnX>
+      <stnX> 1.0000 </stnX>
+      <stnX> 2.0000 </stnX>
+      <stnX> 3.0000 </stnX>
+      <stnX> 4.0000 </stnX>
+      <stnX> 5.0000 </stnX>
+      <stnX> 6.0000 </stnX>
+      <stnX> 7.0000 </stnX>
+      <stnX> 8.0000 </stnX>
+      <stnX> 9.0000 </stnX>
+   </stations>
+   <rig dir='-1' valid='true' >
+   <sail type='main' use='true' head='true' roach='false'>
+         <rigX>16.6000</rigX>
+         <rigZ>2.5000</rigZ>
+         <rigX>12.0000</rigX>
+         <rigZ>4.0000</rigZ>
+         <rigX>9.5000</rigX>
+         <rigZ>11.5000</rigZ>
+         <rigX>6.0000</rigX>
+         <rigZ>45.0000</rigZ>
+         <rigX>10.0000</rigX>
+         <rigZ>70.0000</rigZ>
+   </sail>
+   <sail type='jib' use='true' head='false' roach='false'>
+         <rigX>22.5000</rigX>
+         <rigZ>3.0000</rigZ>
+         <rigX>11.0000</rigX>
+         <rigZ>30.0000</rigZ>
+         <rigX>5.7500</rigX>
+         <rigZ>39.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>10.0000</rigX>
+         <rigZ>70.0000</rigZ>
+   </sail>
+   <sail type='mizzen' use='true' head='false' roach='false'>
+         <rigX>6.0000</rigX>
+         <rigZ>2.5000</rigZ>
+         <rigX>11.0000</rigX>
+         <rigZ>6.0000</rigZ>
+         <rigX>8.5000</rigX>
+         <rigZ>21.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>10.0000</rigX>
+         <rigZ>70.0000</rigZ>
+   </sail>
+   </rig>
+</hull>

@@ -1,0 +1,94 @@
+ Directory of boatCalc
+
+01/19/2020  08:38 PM    <DIR>          .
+01/19/2020  08:38 PM    <DIR>          ..
+01/19/2020  08:07 PM               301 .gitignore
+01/19/2020  09:06 PM                 0 directory_listing.txt
+01/19/2020  08:37 PM    <DIR>          doc
+01/19/2020  08:08 PM    <DIR>          hulls
+01/19/2020  08:19 PM             1,137 LICENSE
+01/19/2020  08:07 PM                83 README.md
+01/19/2020  09:06 PM    <DIR>          src
+               4 File(s)          1,521 bytes
+
+ Directory of boatCalc\doc
+
+01/19/2020  08:37 PM    <DIR>          .
+01/19/2020  08:37 PM    <DIR>          ..
+01/22/2004  08:37 AM            42,327 boatCalc_Documentation1.html
+03/12/2004  03:42 PM            46,013 boatCalc_Documentation2.html
+03/13/2004  07:55 AM            46,013 boatCalc_Documentation3.html
+               3 File(s)        134,353 bytes
+
+ Directory of boatCalc\hulls
+
+01/19/2020  08:08 PM    <DIR>          .
+01/19/2020  08:08 PM    <DIR>          ..
+04/05/2004  11:42 AM             7,104 cbmm_sharptown.xml
+03/07/2004  11:49 AM             7,126 cbmm_sharptown_sch.xml
+12/05/2003  06:40 AM             2,078 ChucnoBC.hul
+12/21/2003  04:02 PM             7,537 Ed2.hul
+12/11/2003  08:38 AM            34,139 Ed2.xml
+12/28/2003  02:29 PM            34,139 Edmunds.xml
+01/27/2004  11:00 AM             5,848 frtest.xml
+01/24/2004  02:50 PM             1,218 oss_kay1.hul
+01/24/2004  02:50 PM               975 oss_punt.hul
+12/31/2003  12:00 PM            57,390 pipedream.xml
+02/07/2004  09:34 AM             6,794 rs_pb_catyawl_b.xml
+02/07/2004  10:32 AM             6,779 rs_pb_catyawl_g.xml
+02/11/2004  06:28 PM             6,788 rs_pb_cat_g.xml
+02/07/2004  09:19 AM             6,789 rs_pb_sch.xml
+02/07/2004  08:46 AM             6,770 rs_pb_spritsail.xml
+02/06/2004  10:05 AM             3,578 rs_rdc_ketch.xml
+02/07/2004  03:02 PM             6,778 rs_sloop_g.xml
+02/07/2004  02:41 PM             6,788 rs_sloop_mf.xml
+02/08/2004  01:36 PM             6,787 rs_sloop_mm.xml
+02/07/2004  02:31 PM             6,793 rs_wa_pirogue.xml
+02/10/2004  04:57 PM             6,778 rs_yawl_g.xml
+02/10/2004  05:25 PM             6,779 rs_yawl_m.xml
+02/26/2004  04:21 PM             6,501 sharptown.xml
+02/14/2004  09:28 AM             2,047 simboii.hul
+01/24/2004  02:49 PM             1,231 wedge.hul
+01/24/2004  02:52 PM             7,813 wedge.xml
+              26 File(s)        253,347 bytes
+
+ Directory of boatCalc\src
+
+01/19/2020  09:06 PM    <DIR>          .
+01/19/2020  09:06 PM    <DIR>          ..
+01/19/2020  09:05 PM    <DIR>          archive
+11/14/2003  09:18 AM             8,520 bcFileFilter.java
+04/30/2004  03:38 PM           205,082 boatCalc.java
+03/03/2004  05:27 PM            11,696 Geometry.java
+04/17/2004  09:46 AM            56,880 Hull.java
+               4 File(s)        282,178 bytes
+
+ Directory of boatCalc\src\archive
+
+01/19/2020  09:05 PM    <DIR>          .
+01/19/2020  09:05 PM    <DIR>          ..
+11/14/2003  09:18 AM             8,520 bcFileFilter.java
+01/05/2004  04:49 PM            98,094 boatCalc01.java
+01/08/2004  04:22 PM           105,444 boatCalc02.java
+01/09/2004  02:58 PM           105,439 boatCalc03.java
+01/14/2004  03:54 PM           111,561 boatCalc04.java
+01/30/2004  01:05 PM           133,154 boatCalc05.java
+02/05/2004  04:33 PM           143,941 boatCalc06.java
+02/10/2004  04:51 PM           147,172 boatCalc07.java
+02/13/2004  02:21 PM           154,801 boatCalc08.java
+02/18/2004  04:55 PM           161,377 boatCalc09.java
+02/26/2004  04:18 PM           172,887 boatCalc10.java
+02/27/2004  03:02 PM           172,988 boatCalc11.java
+03/03/2004  07:50 AM           173,378 boatCalc12.java
+03/12/2004  03:42 PM           201,720 boatCalc13.java
+03/13/2004  07:42 AM           173,381 boatCalc14.java
+03/17/2004  03:40 PM           206,018 boatCalc15.java
+03/18/2004  01:39 PM           204,921 boatCalc16.java
+04/17/2004  10:15 AM           205,074 boatCalc17.java
+04/30/2004  03:38 PM           205,082 boatCalc18.java
+02/18/2004  09:45 AM            11,681 Geometry1.java
+03/03/2004  05:27 PM            11,696 Geometry2.java
+03/03/2004  05:26 PM            52,336 Hull1.java
+03/18/2004  06:00 PM            55,262 Hull2.java
+04/17/2004  09:46 AM            56,880 Hull3.java
+              24 File(s)      3,072,807 bytes

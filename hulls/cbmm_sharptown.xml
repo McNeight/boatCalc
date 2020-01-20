@@ -1,0 +1,267 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<hull stations='9' lines='2'>
+   <water>0</water>
+   <units>1</units>
+   <lstem>true</lstem>
+   <rstem>true</rstem>
+   <designer>Unknown</designer>
+   <designname>CBMM Sharptown Barge</designname>
+   <baseline> -.6875 </baseline>
+   <weights>
+     <wgtItem>
+      <wgtLbl>Hull</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Ballast</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Engine</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Accomodation</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Crew</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl>Stores/Gear</wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+     <wgtItem>
+      <wgtLbl></wgtLbl>
+      <wgtWgt> .0000 </wgtWgt>
+      <wgtX> .0000 </wgtX>
+      <wgtY> .0000 </wgtY>
+      <wgtZ> .0000 </wgtZ>
+     </wgtItem>
+   </weights>
+   <stations>
+      <stnX> .2000 </stnX>
+      <stnX> 6.0000 </stnX>
+      <stnX> 8.0000 </stnX>
+      <stnX> 10.0000 </stnX>
+      <stnX> 12.0000 </stnX>
+      <stnX> 14.0000 </stnX>
+      <stnX> 16.0000 </stnX>
+      <stnX> 18.0000 </stnX>
+      <stnX> 22.0200 </stnX>
+   </stations>
+   <line>
+      <linename>Chine</linename>
+      <point>
+         <valX>1.1900</valX>
+         <valY>.0000</valY>
+         <valZ>.6700</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>6.0000</valX>
+         <valY>1.4600</valY>
+         <valZ>.4700</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>8.0000</valX>
+         <valY>1.7500</valY>
+         <valZ>.4100</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>10.0000</valX>
+         <valY>1.8600</valY>
+         <valZ>.3500</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>12.0000</valX>
+         <valY>1.8500</valY>
+         <valZ>.3300</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>14.0000</valX>
+         <valY>1.7400</valY>
+         <valZ>.3300</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>16.0000</valX>
+         <valY>1.5200</valY>
+         <valZ>.3600</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>18.0000</valX>
+         <valY>1.2100</valY>
+         <valZ>.4100</valZ>
+         <ptValid>false</ptValid>
+      </point>
+      <point>
+         <valX>21.1900</valX>
+         <valY>.4800</valY>
+         <valZ>.5000</valZ>
+         <ptValid>true</ptValid>
+      </point>
+   </line>
+   <line>
+      <linename>Sheer</linename>
+      <point>
+         <valX>.2000</valX>
+         <valY>.0300</valY>
+         <valZ>2.7900</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>6.0000</valX>
+         <valY>1.9600</valY>
+         <valZ>1.9400</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>8.0000</valX>
+         <valY>2.2400</valY>
+         <valZ>1.7700</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>10.0000</valX>
+         <valY>2.3600</valY>
+         <valZ>1.6700</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>12.0000</valX>
+         <valY>2.3600</valY>
+         <valZ>1.6400</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>14.0000</valX>
+         <valY>2.2600</valY>
+         <valZ>1.6500</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>16.0000</valX>
+         <valY>2.0500</valY>
+         <valZ>1.7000</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>18.0000</valX>
+         <valY>1.7500</valY>
+         <valZ>1.8000</valZ>
+         <ptValid>true</ptValid>
+      </point>
+      <point>
+         <valX>22.0200</valX>
+         <valY>.9200</valY>
+         <valZ>2.1500</valZ>
+         <ptValid>true</ptValid>
+      </point>
+   </line>
+   <rig dir='1' valid='true' >
+   <sail type='main' use='false' head='false' roach='false'>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>10.0000</rigX>
+         <rigZ>70.0000</rigZ>
+   </sail>
+   <sail type='jib' use='false' head='false' roach='false'>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>10.0000</rigX>
+         <rigZ>70.0000</rigZ>
+   </sail>
+   <sail type='mizzen' use='false' head='false' roach='false'>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>.0000</rigX>
+         <rigZ>.0000</rigZ>
+         <rigX>10.0000</rigX>
+         <rigZ>70.0000</rigZ>
+   </sail>
+   </rig>
+   <rudder valid='true' >
+   <foil type='rudder' use='true'>
+         <foilX>21.6000</foilX>
+         <foilZ>1.0000</foilZ>
+         <foilX>22.6000</foilX>
+         <foilZ>1.0000</foilZ>
+         <foilX>22.5000</foilX>
+         <foilZ>-1.0000</foilZ>
+         <foilX>20.6000</foilX>
+         <foilZ>-1.1000</foilZ>
+   </foil>
+   <foil type='skeg' use='true'>
+         <foilX>18.3000</foilX>
+         <foilZ>.2000</foilZ>
+         <foilX>21.0000</foilX>
+         <foilZ>.3000</foilZ>
+         <foilX>20.4000</foilX>
+         <foilZ>-1.1000</foilZ>
+         <foilX>18.9000</foilX>
+         <foilZ>-.4000</foilZ>
+   </foil>
+   </rudder>
+</hull>
