@@ -6,1389 +6,546 @@
  * @author Peter H. Vanderwaart Copyright 2004
  */
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.print.*;
-import java.util.*;
-import java.io.*;
-import java.lang.Math;
-import java.text.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.print.PrinterJob;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.Locale;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultBoundedRangeModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JSlider;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+class bcFormat {
+  DecimalFormat DF0d;
+  DecimalFormat DF1d;
+  DecimalFormat DF2d;
+  DecimalFormat DF3d;
+  DecimalFormat DF4d;
+
+  public bcFormat() {
+    final Locale l = new Locale("en", "US");
+    // Locale l = new Locale("fr","FR");
+    final DecimalFormatSymbols dfs = new DecimalFormatSymbols(l);
+    this.DF0d = new DecimalFormat("###,###,###", dfs);
+    this.DF1d = new DecimalFormat("###,###,###.0", dfs);
+    this.DF2d = new DecimalFormat("###,###,###.00", dfs);
+    this.DF3d = new DecimalFormat("###,###,###.000", dfs);
+    this.DF4d = new DecimalFormat("###,###,###.0000", dfs);
+  }// end constructor
+}// enc bcFormat
+
+/* Programming Utilities */
+
+
+class bcLabel extends JLabel {
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
+
+  public bcLabel(final String s, final int l) {
+    this.setText(s);
+    this.setHorizontalAlignment(l);
+    this.setFont(new Font("Serif", Font.BOLD, 12));
+  }
+}
+
 
 public class boatCalc extends javax.swing.JFrame {
-  JMenuBar mb;
-  JMenu menu;
-  JMenuItem m_new;
-  JMenuItem m_open;
-  JMenuItem m_save;
-  JMenuItem m_print;
-  JMenuItem m_exit;
-  JMenuItem m_disp;
-  JMenuItem m_edit;
-  JMenuItem m_instn;
-  JMenuItem m_destn;
-  JMenuItem m_about;
-  JMenuItem m_sailplan;
-  JMenuItem m_rudder;
-  JMenuItem m_board;
-
-  JPanel w;
-  planPanel plan;
-  bodyPanel body;
-  ctrlPanel ctrl;
-
-  JFrame f_analysis;
-  JPanel w_analysis;
-  hdCtrl dispCtrl;
-  hdBody dispFore;
-  hdBody dispAft;
-  JTabbedPane dispPane;
-  hdPanel disp;
-  wgtPanel dispWgt;
-  wlPanel dispWL;
-  wetPanel dispWet;
-  stnPanel dispStn;
-
-  JFrame f_edit;
-  JFrame f_sailplan;
-  JFrame f_rudder;
-  JFrame f_board;
-  JFrame f_wgts;
-
-  Hull hull;
-  JFileChooser fc;
-  // bcFileFilter ff;
-
-  bcUnits units;
-  boolean bOpen = true;
-
-  bcFormat bcf;
-
-  /** Creates a new instance of boatCalc */
-  public boatCalc() {
-    super("boatCalc");
-
-    try {
-      SaveOutput.start("boatCalc.log");
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-
-    bcf = new bcFormat();
-
-    addWindowListener(new WindowAdapter() {
-      public void windowClosing(WindowEvent e) {
-        if (hull.bChanged) {
-          int n = JOptionPane.showConfirmDialog(f_edit, "Save Changes?", "Data has been changed.",
-              JOptionPane.YES_NO_OPTION);
-          if (n == JOptionPane.YES_OPTION) {
-
-            try {
-              // bcFileFilter ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls
-              // files");
-              // fc.setFileFilter(ff);
-              int returnVal = fc.showSaveDialog(null);
-              if (returnVal == JFileChooser.APPROVE_OPTION) {
-                String fn = (fc.getSelectedFile().getName()).toLowerCase();
-                if (fn.indexOf(".hul") > 0)
-                  hull.saveHulls(fc.getSelectedFile());
-                else
-                  hull.saveData(fc.getSelectedFile());
-              }
-            } catch (NullPointerException npe) {
-              System.out.println(npe);
-              return;
-            }
-
-          } else if (n == JOptionPane.CANCEL_OPTION) {
-            return;
-          }
-        }
-
-        SaveOutput.stop();
-        System.exit(0);
-      }
-    });
-
-    mb = new JMenuBar();
-    menu = new JMenu("File");
-
-
-    m_new = new JMenuItem("New");
-    m_new.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        if (hull.bChanged) {
-          int n = JOptionPane.showConfirmDialog(f_edit, "Save Changes?", "Data has been changed.",
-              JOptionPane.YES_NO_OPTION);
-          if (n == JOptionPane.YES_OPTION) {
-
-            try {
-              // bcFileFilter ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls
-              // files");
-              // fc.setFileFilter(ff);
-              int returnVal = fc.showSaveDialog(null);
-              if (returnVal == JFileChooser.APPROVE_OPTION) {
-                String fn = (fc.getSelectedFile().getName()).toLowerCase();
-                if (fn.indexOf(".hul") > 0)
-                  hull.saveHulls(fc.getSelectedFile());
-                else
-                  hull.saveData(fc.getSelectedFile());
-              }
-            } catch (NullPointerException npe) {
-              System.out.println(npe);
-              return;
-            }
-
-          } else if (n == JOptionPane.CANCEL_OPTION) {
-            return;
-          }
-        }
-        String s = JOptionPane.showInputDialog(f_edit, "Number of Stations:");
-        int n_stn = 11;;
-        if ((s != null) && (s.length() > 0)) {
-
-          try {
-            n_stn = Integer.parseInt(s);
-          } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(f_edit, "Bad number format..", "Warning!",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-          }
-        }
-        hull = new Hull();
-        hull.Stations = new double[n_stn];
-        hull.Offsets = new ArrayList();
-        hull.valid = false;
-        hull.designer = "NA";
-        hull.boatname = "new boat";
-        for (int j = 0; j < n_stn; j++)
-          hull.Stations[j] = j;
-        hull.newWgts();
-        hull.setLines();
-        f_edit = new JFrame("Data Entry/Edit");
-        f_edit.setSize(770, 550);
-        pnlDataEntry w_edit = new pnlDataEntry();
-        f_edit.getContentPane().add(w_edit);
-        f_edit.setVisible(true);
-      }
-    });
-    menu.add(m_new);
-
-    m_open = new JMenuItem("Open");
-    m_open.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        getHull();
-        if (hull.valid) {
-          hull.calcDisp();
-          dispWgt.setWeights();
-        }
-        repaint();
-      }
-    });
-    menu.add(m_open);
-
-    m_save = new JMenuItem("Save");
-    m_save.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        saveHull();
-        repaint();
-      }
-    });
-    menu.add(m_save);
-
-    m_print = new JMenuItem("Print");
-    m_print.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        PrinterJob pJ = PrinterJob.getPrinterJob();
-        // pJ.setPrintable(body);
-        // if(pJ.printDialog()){
-        // try{pJ.print();}
-        // catch(Exception ex){System.out.println(ex);}
-        // }
-      }
-    });
-    menu.add(m_print);
-
-
-    m_exit = new JMenuItem("Exit");
-    m_exit.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        if (hull.bChanged) {
-          int n = JOptionPane.showConfirmDialog(f_edit, "Save Changes?", "Data has been changed.",
-              JOptionPane.YES_NO_OPTION);
-          if (n == JOptionPane.YES_OPTION) {
-
-            try {
-              // bcFileFilter ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls
-              // files");
-              // fc.setFileFilter(ff);
-              int returnVal = fc.showSaveDialog(null);
-              if (returnVal == JFileChooser.APPROVE_OPTION) {
-                String fn = (fc.getSelectedFile().getName()).toLowerCase();
-                if (fn.indexOf(".hul") > 0)
-                  hull.saveHulls(fc.getSelectedFile());
-                else
-                  hull.saveData(fc.getSelectedFile());
-              }
-            } catch (NullPointerException npe) {
-              System.out.println(npe);
-              return;
-            }
-
-          } else if (n == JOptionPane.CANCEL_OPTION) {
-            return;
-          }
-        }
-        SaveOutput.stop();
-        System.exit(0);
-      }
-    });
-    menu.add(m_exit);
-    mb.add(menu);
-
-    menu = new JMenu("Edit");
-    m_instn = new JMenuItem("Insert station");
-    m_instn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        insertStation();
-      }
-    });
-    m_destn = new JMenuItem("Delete station");
-    m_destn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        deleteStation();
-      }
-    });
-    m_edit = new JMenuItem("Edit data");
-    m_edit.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        f_edit = new JFrame("Data Entry/Edit");
-        f_edit.setSize(770, 550);
-        pnlDataEntry w_edit = new pnlDataEntry();
-        f_edit.getContentPane().add(w_edit);
-        f_edit.setVisible(true);
-      }
-    });
-    menu.add(m_instn);
-    menu.add(m_destn);
-    menu.add(m_edit);
-    mb.add(menu);
-
-    menu = new JMenu("Design");
-    m_sailplan = new JMenuItem("Sailplan");
-    m_sailplan.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        f_sailplan = new JFrame("Sailplan");
-        f_sailplan.setSize(770, 550);
-        pnlSailplan w_sailplan = new pnlSailplan();
-        f_sailplan.getContentPane().add(w_sailplan);
-        f_sailplan.setVisible(true);
-      }
-    });
-    menu.add(m_sailplan);
-
-    m_rudder = new JMenuItem("Rudder");
-    m_rudder.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        f_rudder = new JFrame("Rudder");
-        f_rudder.setSize(770, 550);
-        pnlRudder w_rudder = new pnlRudder();
-        f_rudder.getContentPane().add(w_rudder);
-        f_rudder.setVisible(true);
-      }
-    });
-    menu.add(m_rudder);
-
-    m_board = new JMenuItem("Centerboard");
-    m_board.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        f_board = new JFrame("Centerboard");
-        f_board.setSize(770, 550);
-        pnlCenterboard w_board = new pnlCenterboard();
-        f_board.getContentPane().add(w_board);
-        f_board.setVisible(true);
-      }
-    });
-    menu.add(m_board);
-
-    mb.add(menu);
-
-    menu = new JMenu("Analysis");
-    m_disp = new JMenuItem("Displacement");
-    m_disp.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        f_analysis.setVisible(true);
-        if (hull.valid) {
-          hull.calcDisp();
-          dispWgt.setWeights();
-        }
-        repaint();
-      }
-    });
-    menu.add(m_disp);
-    mb.add(menu);
-
-    menu = new JMenu("About");
-    m_about = new JMenuItem("About");
-    m_about.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        JOptionPane.showMessageDialog(null, new pnlAbout(), "About",
-            JOptionPane.INFORMATION_MESSAGE);
-      }
-    });
-    menu.add(m_about);
-    mb.add(menu);
-
-    setJMenuBar(mb);
-
-    fc = new JFileChooser(".");
-    bcFileFilter ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls files");
-    fc.setFileFilter(ff);
-
-    // getHull();
-    hull = new Hull();
-
-    ctrl = new ctrlPanel(400, 200);
-    body = new bodyPanel(300, 200);
-    plan = new planPanel(705, 300);
-    w = new JPanel();
-    w.setLayout(new FlowLayout());
-    w.setBorder(BorderFactory.createEtchedBorder());
-    w.add(ctrl);
-    w.add(body);
-    w.add(plan);
-    getContentPane().add(w);
-
-    f_analysis = new JFrame("Displacement Analysis");
-    f_analysis.setSize(770, 550);
-    disp = new hdPanel(710, 300);
-    w_analysis = new JPanel();
-    w_analysis.setLayout(new FlowLayout());
-    w_analysis.setBorder(BorderFactory.createEtchedBorder());
-
-    dispWgt = new wgtPanel(710, 300);
-    dispWL = new wlPanel(710, 300);
-    dispWet = new wetPanel(710, 300);
-    dispStn = new stnPanel(710, 300);
-
-    dispCtrl = new hdCtrl(300, 200);
-    dispFore = new hdBody(200, 200);
-    dispFore.setTitle("Left");
-    dispFore.setType(true);
-    dispAft = new hdBody(200, 200);
-    dispAft.setTitle("Right");
-    dispAft.setType(false);
-    w_analysis.add(dispFore);
-    w_analysis.add(dispAft);
-    w_analysis.add(dispCtrl);
-    dispPane = new JTabbedPane();
-    dispPane.setTabPlacement(JTabbedPane.TOP);
-    dispPane.setPreferredSize(new Dimension(710, 300));
-    dispPane.add("Displacement", disp);
-    dispPane.add("Waterplane", dispWL);
-    dispPane.add("Wetted Surface", dispWet);
-    dispPane.add("Weights", dispWgt);
-    dispPane.add("Station Area", dispStn);
-    w_analysis.add(dispPane);
-
-    f_analysis.getContentPane().add(w_analysis);
-    setCtrls();
-    bOpen = false;
-
-    repaint();
-  }
-
-  public static void main(String[] args) {
-
-    try {
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    } catch (Exception e) {
-    }
-
-    boatCalc c = new boatCalc();
-    c.setSize(770, 570);
-    c.setBackground(Color.white);
-    c.setVisible(true);
-  } // end main
-
-  public class wlPanel extends JPanel {
+  public class bodyPanel extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
     Dimension d;
-    int[][] iComp = new int[2][hull.NDIV + 1];
-    int[][] iCur = new int[2][hull.NDIV + 1];
 
-    public wlPanel(int x, int y) {
-      d = new Dimension(x, y);
-
-
-    }// end constructor
-
-    public Dimension getPreferredSize() {
-      return d;
+    public bodyPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.setBackground(Color.white);
     }
 
-    protected void paintComponent(Graphics g) {
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+    @Override
+    protected void paintComponent(final Graphics g) {
       super.paintComponent(g);
-      double sinone = Math.sin(Math.toRadians(1.0));
+      final Font bigFont = new Font("Serif", Font.PLAIN, 12);
+      new Font("SansSerif", Font.PLAIN, 10);
+      g.setFont(bigFont);
 
-
-      double mx = getWidth();
-      double my = getHeight();
-      int ix = (int) mx;
-      int iy = (int) my;
-      int xb = (int) 100;
-      int yb = (int) my / 2;
-
+      final double my = this.getWidth();
+      final double mz = this.getHeight();
+      int ix = (int) my;
+      int iy = (int) mz;
       g.clearRect(0, 0, ix, iy);
-
-      double rx = (mx - 200.0) / (hull.gx_max - hull.gx_min);
-      double ry = (0.8 * my) / (hull.gy_max - hull.gy_min);
-      double r = Math.min(rx, ry);
-      int iu, iv, iw, iz;
-      iu = xb + (int) (r * (hull.gx_min - hull.gx_min));
-      iv = yb + (int) (r * 0);
-      iw = xb + (int) (r * (hull.gx_max - hull.gx_min));
-      iz = yb + (int) (r * 0);
-
-      // draw axis
-      g.setColor(Color.red);
-      g.drawLine(iu, iv, iw, iz);
-      g.setColor(Color.black);
-
-      if (disp.bComp) {
-        g.setColor(Color.blue);
-        iu = xb + (int) (r * (hull.vDisp[hull.CX][0] - hull.gx_min));
-        for (int i = 1; i <= hull.NDIV; i++) {
-          iv = xb + (int) (r * (hull.vDisp[hull.CX][i] - hull.gx_min));
-          g.drawLine(iu, iComp[0][i - 1], iv, iComp[0][i]);
-          iu = iv;
-        }
-
-        iu = xb + (int) (r * (hull.vDisp[hull.CX][0] - hull.gx_min));
-        for (int i = 1; i <= hull.NDIV; i++) {
-          iv = xb + (int) (r * (hull.vDisp[hull.CX][i] - hull.gx_min));
-          g.drawLine(iu, iComp[1][i - 1], iv, iComp[1][i]);
-          iu = iv;
-        }
-        g.setColor(Color.black);
+      g.drawString("Body", 10, 10);
+      if (!boatCalc.this.hull.valid) {
+        return;
       }
 
-      double x = hull.vDisp[hull.CX][0];
-      double y = hull.vWL[0][0];
-      iu = xb + (int) (r * (x - hull.gx_min));
-      iv = yb - (int) (r * y);
-
-      iCur[0][0] = iv;
-      for (int i = 1; i <= hull.NDIV; i++) {
-        x = hull.vDisp[hull.CX][i];
-        y = hull.vWL[0][i];
-        iw = xb + (int) (r * (x - hull.gx_min));
-        iz = yb - (int) (r * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        iCur[0][i] = iv;
-      }
-
-      x = hull.vDisp[hull.CX][0];
-      y = hull.vWL[1][0];
-      iu = xb + (int) (r * (x - hull.gx_min));
-      iv = yb - (int) (r * y);
-
-      iCur[1][0] = iv;
-      for (int i = 1; i <= hull.NDIV; i++) {
-        x = hull.vDisp[hull.CX][i];
-        y = hull.vWL[1][i];
-        iw = xb + (int) (r * (x - hull.gx_min));
-        iz = yb - (int) (r * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        iCur[1][i] = iv;
-      }
-
-
-      // compute
-
-      double wlCur = hull.vWL[1][0] - hull.vWL[0][0];
-      double wlX = wlCur * hull.vDisp[hull.CX][0];
-      double wlY = wlCur * 0.5 * (hull.vWL[1][0] + hull.vWL[0][0]);
-      double wlSum = wlCur;
-      double wlArea = 0;
-      double wlLast = wlCur;
-      double wlMax = wlCur;
-      double wlXMax = hull.vDisp[hull.CX][0];
-
-      for (int i = 1; i <= hull.NDIV; i++) {
-        wlCur = hull.vWL[1][i] - hull.vWL[0][i];
-        if (wlCur > wlMax) {
-          wlMax = wlCur;
-          wlXMax = hull.vDisp[hull.CX][i];
-        }
-        wlX = wlX + wlCur * hull.vDisp[hull.CX][i];
-        wlY = wlY + wlCur * 0.5 * (hull.vWL[1][i] + hull.vWL[0][i]);
-        wlSum = wlSum + wlCur;
-        wlArea =
-            wlArea + (hull.vDisp[hull.CX][i] - hull.vDisp[hull.CX][i - 1]) * 0.5 * (wlCur + wlLast);
-        wlLast = wlCur;
-      }
-
-      int il = 25;
-      g.drawString("Waterplane Area", 10, il);
-      g.drawString(bcf.DF2d.format(hull.units.coefArea() * wlArea) + hull.units.lblArea(), 125, il);
-      il += 20;
-      g.drawString("Max WL Beam:", 10, il);
-      g.drawString(bcf.DF1d.format(wlMax), 125, il);
-      il += 15;
-      g.drawString("   @Station:", 10, il);
-      g.drawString(bcf.DF1d.format(wlXMax), 125, il);
-      il += 20;
-
-      if (wlSum > 0) {
-        wlX = wlX / wlSum;
-        wlY = wlY / wlSum;
-        g.drawString("CoA @ Station:", 10, il);
-        g.drawString(bcf.DF1d.format(wlX), 125, il);
-        il += 15;
-        g.drawString("   Breadth:", 10, il);
-        g.drawString(bcf.DF1d.format(wlY), 125, il);
-        il += 20;
-        iw = xb + (int) (r * (wlX - hull.gx_min));
-        iz = yb - (int) (r * wlY);
-        g.setColor(Color.red);
-        g.drawArc(iw - 5, iz - 5, 10, 10, 0, 360);
-        g.setColor(Color.black);
-
-
-        wlLast = hull.vWL[1][0] - hull.vWL[0][0];
-        double d, w, h, xm;
-        double mp = 0;
-        for (int i = 1; i <= hull.NDIV; i++) {
-          d = hull.vDisp[hull.CX][i] - hull.vDisp[hull.CX][i - 1]; // delta x
-          wlCur = hull.vWL[1][i] - hull.vWL[0][i];
-          w = 0.5 * (wlCur + wlLast); // average width
-          xm = 0.5 * (hull.vDisp[hull.CX][i] + hull.vDisp[hull.CX][i - 1]); // average x
-          h = sinone * (xm - wlX); // height
-          mp = mp + hull.units.Vol2Wgt() * d * w * h * (xm - wlX);
-          wlLast = wlCur;
-        }
-        il += 75;
-
-        double ppi = wlArea * hull.units.coefPPI() * hull.units.Vol2Wgt();
-        g.drawString("Imersion:", 10, il);
-        g.drawString(bcf.DF1d.format(ppi) + hull.units.lblPPI(), 125, il);
-        il += 20;
-
-        g.drawString("Moment to ", 10, il);
-        il += 15;
-        g.drawString("pitch 1 deg:", 10, il);
-        g.drawString(bcf.DF1d.format(mp) + " " + hull.units.lblMom(), 125, il);
-        il += 20;
-        il = 25;
-
-        int ic = ix - 200;
-        il = 25;
-        g.drawString("Waterplane Coef.:", ic, il);
-        g.drawString(bcf.DF2d.format(wlArea / (wlMax * (hull.lwlRight - hull.lwlLeft))), ic + 150,
-            il);
-
-        // half-angle computation
-        int i1, i2;
-        double a1, a2;
-        il += 20;
-        g.drawString("Half Angles (avg):", ic, il);
-
-        // left
-        if (hull.NDIV > 10) {
-          i1 = 1;
-          i2 = 5;
-        } else {
-          i1 = 1;
-          i2 = 2;
-        }
-        a1 = Math.atan2(hull.vWL[1][i2] - hull.vWL[1][i1],
-            (hull.vDisp[hull.CX][i2] - hull.vDisp[hull.CX][i1]));
-        a2 = Math.atan2(hull.vWL[0][i2] - hull.vWL[0][i1],
-            (hull.vDisp[hull.CX][i2] - hull.vDisp[hull.CX][i1]));
-        il += 15;
-        g.drawString("Left -", ic + 50, il);
-        g.drawString(bcf.DF1d.format(Math.toDegrees(a1 - a2)), ic + 150, il);
-
-        // right
-        if (hull.NDIV > 10) {
-          i1 = hull.NDIV - 1;
-          i2 = hull.NDIV - 4;
-        } else {
-          i1 = hull.NDIV - 1;
-          i2 = hull.NDIV - 2;
-        }
-        a1 = Math.atan2(hull.vWL[1][i2] - hull.vWL[1][i1],
-            (hull.vDisp[hull.CX][i1] - hull.vDisp[hull.CX][i2]));
-        a2 = Math.atan2(hull.vWL[0][i2] - hull.vWL[0][i1],
-            (hull.vDisp[hull.CX][i1] - hull.vDisp[hull.CX][i2]));
-        il += 15;
-        g.drawString("Right -", ic + 50, il);
-        g.drawString(bcf.DF1d.format(Math.toDegrees(a1 - a2)), ic + 150, il);
-        il += 15;
-
-      }
-
-    } // end paintComponent
-  }; // end wlPanel
-
-
-  public class stnPanel extends JPanel implements ChangeListener {
-    Dimension d;
-    int iPct = 50;
-    JPanel pnlSlct;
-    JSlider xSlct;
-
-    public stnPanel(int x, int y) {
-      d = new Dimension(x, y);
-      stnBody body = new stnBody(400, 300);
-      add(body);
-
-      xSlct = new JSlider();
-      xSlct.setPreferredSize(new Dimension(250, 42));
-      xSlct.setMajorTickSpacing(10);
-      xSlct.setMinorTickSpacing(5);
-      xSlct.setPaintTicks(true);
-      xSlct.setPaintLabels(true);
-
-      xSlct.addChangeListener(this);
-
-      pnlSlct = new JPanel();
-      Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-      pnlSlct.setBorder(BorderFactory.createTitledBorder(bcBorder, "Station (%LWL)"));
-      pnlSlct.add(xSlct);
-      add(pnlSlct);
-
-    }// end constructor
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-    public void stateChanged(ChangeEvent e) {
-      iPct = xSlct.getValue();
-      dispStn.repaint();
-    }
-
-
-  }// end stnPanel
-
-  public class stnBody extends JPanel {
-    Dimension d;
-    String title = "Station Area";
-
-    public stnBody(int x, int y) {
-      d = new Dimension(x, y);
-      setBackground(Color.white);
-    }
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-    public void setTitle(String s) {
-      title = s;
-    }
-
-    protected void paintComponent(Graphics g) {
-      super.paintComponent(g);
-      double sinang = Math.sin(Math.toRadians(hull.angHeel));
-      double cosang = Math.cos(Math.toRadians(hull.angHeel));
-
-      double mx = getWidth();
-      double my = getHeight();
-      int ix = (int) mx;
-      int iy = (int) my;
-      int xb = ix / 2;
-      int yb = iy / 2;
+      Set s;
+      Iterator si;
       Point p1, p2;
-      int u, v, w, z;
-      double r = 0.60 * xb / hull.gy_max;
-      g.clearRect(0, 0, ix, iy);
-      int il = 15;
-      g.drawString(title, il, 10);
-      // draw axes
+      YZCompare yzComp;
+      final double[] stn = boatCalc.this.hull.Stations;
+
+      int iw, iz;
+
+      final int py = 2;
+      final int pz = 2;
+      final int pw = (int) my;
+      final int ph = (int) mz - 4;
+
+      int iy_min = py + 5;
+      final int iy_max = (py + pw) - 25;
+      final int iz_min = (pz + ph) - 5;
+      final int iz_max = pz + 5;
+
+      g.clearRect(py, pz, pw, ph);
+      g.drawString("Body", 10, 12);
+
+      // note: what would usually be gy_min is replaced by -gy_max
+
+      double ry, rz, r;
+      ry = (iy_max - iy_min) / (2 * boatCalc.this.hull.gy_max);
+      rz = (iz_max - iz_min) / (boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min);
+      r = Math.min(Math.abs(ry), Math.abs(rz));
+
+      iy_min = (int) ((((my)) / 2.0) - (r * boatCalc.this.hull.gy_max));
+
       g.setColor(Color.red);
-      g.drawLine(xb, 5, xb, iy - 5);
-      g.drawLine(5, yb, ix - 5, yb);
-      g.setColor(Color.black);
-
-      double x = hull.lwlLeft + (0.01 * (double) dispStn.iPct) * (hull.lwlRight - hull.lwlLeft);
-      double hsArea = 0;
-      double ty = 0, tz = 0;
-
-      // draw station
-      Iterator si = hull.getStation(x, hull.angHeel);
-      p1 = (Point) si.next();
-      Point p0 = new Point(p1);
-      while (si.hasNext()) {
-        p2 = (Point) si.next();
-        u = xb + (int) (r * p1.y);
-        v = yb - (int) (r * p1.z);
-        w = xb + (int) (r * p2.y);
-        z = yb - (int) (r * p2.z);
-        g.drawLine(u, v, w, z);
-
-        g.setColor(Color.red);
-        hsArea = hsArea + hull.TriArea(ty, tz, p1.y, p1.z, p2.y, p2.z);
-        u = xb + (int) (r * ty);
-        v = yb - (int) (r * tz);
-        w = xb + (int) (r * p1.y);
-        z = yb - (int) (r * p1.z);
-        g.drawLine(u, v, w, z);
-        u = xb + (int) (r * p2.y);
-        v = yb - (int) (r * p2.z);
-        g.drawLine(u, v, w, z);
-        w = xb + (int) (r * ty);
-        z = yb - (int) (r * tz);
-        g.drawLine(u, v, w, z);
-        g.setColor(Color.black);
-
-        p1 = p2;
-      }
-      p2 = p0;
-      hsArea = hsArea + hull.TriArea(ty, tz, p1.y, p1.z, p2.y, p2.z);
-      g.setColor(Color.red);
-      u = xb + (int) (r * ty);
-      v = yb - (int) (r * tz);
-      w = xb + (int) (r * p1.y);
-      z = yb - (int) (r * p1.z);
-      g.drawLine(u, v, w, z);
-      u = xb + (int) (r * p2.y);
-      v = yb - (int) (r * p2.z);
-      g.drawLine(u, v, w, z);
-      w = xb + (int) (r * ty);
-      z = yb - (int) (r * tz);
-      g.drawLine(u, v, w, z);
-      g.setColor(Color.black);
-
-
-
-      double[] rVals = hull.getArea(x, hull.angHeel, true);
-
-      il += 25;
-      g.drawString("Station (%): " + bcf.DF0d.format(dispStn.iPct), 10, il);
-      il += 20;
-      g.drawString("          @: " + bcf.DF0d.format(x), 10, il);
-      il += 20;
-      g.drawString("Displaced Area: " + bcf.DF1d.format(hull.units.coefArea() * rVals[hull.SAREA])
-          + hull.units.lblArea(), 10, il);
-      il += 20;
-      g.drawString("    Total Area: " + bcf.DF1d.format(hull.units.coefArea() * hsArea)
-          + hull.units.lblArea(), 10, il);
+      ix = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
+      iy = iz_min - (int) (r * (boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min));
+      iw = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
+      iz = iz_min - (int) (r * (boatCalc.this.hull.gz_min - boatCalc.this.hull.gz_min));
+      g.drawLine(ix, iy, iw, iz);
 
       g.setColor(Color.blue);
-      Iterator di = hull.DispTri.iterator();
-      while (di.hasNext()) {
-        double[] tri = (double[]) di.next();
-        u = xb + (int) (r * tri[0]);
-        v = yb - (int) (r * tri[1]);
-        w = xb + (int) (r * tri[2]);
-        z = yb - (int) (r * tri[3]);
-        g.drawLine(u, v, w, z);
-        u = xb + (int) (r * tri[4]);
-        v = yb - (int) (r * tri[5]);
-        g.drawLine(u, v, w, z);
-        w = xb + (int) (r * tri[0]);
-        z = yb - (int) (r * tri[1]);
-        g.drawLine(u, v, w, z);
+      ix = iy_min + (int) (r * (2 * boatCalc.this.hull.gy_max));
+      iy = iz_min - (int) (r * (0 - boatCalc.this.hull.gz_min));
+      iw = iy_min + (int) (r * (boatCalc.this.hull.gy_min - boatCalc.this.hull.gy_min));
+      iz = iz_min - (int) (r * (0 - boatCalc.this.hull.gz_min));
+      g.drawLine(ix, iy, iw, iz);
+      g.setColor(Color.black);
+
+      int j;
+      final int jm = stn.length / 2;
+      for (j = 0; j < stn.length; j++) {
+
+        s = new HashSet();
+
+        double zmin = +1000000.0;
+        double zmax = -1000000.0;
+
+        for (int iHL = 0; iHL < boatCalc.this.hull.hLines.length; iHL++) {
+          final double tx = stn[j];
+          final double x_min = boatCalc.this.hull.hLines[iHL].min("X");
+          final double x_max = boatCalc.this.hull.hLines[iHL].max("X");
+          if ((x_min <= tx) && (tx <= x_max)) {
+            final double ty = boatCalc.this.hull.hLines[iHL].hXY.interp4P(tx);
+            final double tz = boatCalc.this.hull.hLines[iHL].hXZ.interp4P(tx);
+            if (j <= jm) {
+              s.add(new Point(tx, ty, tz));
+            }
+            if (j >= jm) {
+              s.add(new Point(tx, -ty, tz));
+            }
+            zmin = Math.min(zmin, tz);
+            zmax = Math.max(zmax, tz);
+          }
+        }
+
+
+        yzComp = new YZCompare();
+        yzComp.setAdj(0, zmax - (0.3 * (zmax - zmin)));
+        final SortedSet ts = new TreeSet(yzComp);
+        si = s.iterator();
+        while (si.hasNext()) {
+          ts.add(si.next());
+        }
+        si = ts.iterator();
+        p1 = (Point) si.next();
+
+        if (p1.z <= 0) {
+          ix = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
+          iy = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+          iw = iy_min + (int) (r * (p1.y + boatCalc.this.hull.gy_max));
+          iz = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+          g.drawLine(ix, iy, iw, iz);
+        }
+
+        while (si.hasNext()) {
+          p2 = (Point) si.next();
+          ix = iy_min + (int) (r * (p1.y + boatCalc.this.hull.gy_max));
+          iy = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+          iw = iy_min + (int) (r * (p2.y + boatCalc.this.hull.gy_max));
+          iz = iz_min - (int) (r * (p2.z - boatCalc.this.hull.gz_min));
+          g.drawLine(ix, iy, iw, iz);
+          p1 = p2;
+        }
+        if (p1.z <= 0) {
+          ix = iy_min + (int) (r * (p1.y + boatCalc.this.hull.gy_max));
+          iy = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+          iw = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
+          iz = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+          g.drawLine(ix, iy, iw, iz);
+        }
       }
 
+
+
     }// end paint
-  }// end hdBody
-
-
-  public class wetPanel extends JPanel {
+  }// end bodyPanel
+  public class ctrlPanel extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
     Dimension d;
-    int[] iComp = new int[hull.NDIV + 1];
-    int[] iCur = new int[hull.NDIV + 1];
+    h2oPanel hP;
+    JLabel lblNA;
+    JLabel lblName;
+    stmPanel sP;
+    unitPanel uP;
 
-    public wetPanel(int x, int y) {
-      d = new Dimension(x, y);
+    public ctrlPanel(final int x, final int y) {
+      final Font cpFont = new Font("Serif", Font.BOLD, 14);
+      this.d = new Dimension(x, y);
+      this.setBorder(BorderFactory.createEtchedBorder());
+      this.setLayout(new FlowLayout());
+      this.lblName = new JLabel("name here");
+      this.lblName.setFont(cpFont);
+      this.lblName.setHorizontalAlignment(SwingConstants.LEFT);
 
+      this.lblNA = new JLabel("n/a");
+      this.lblNA.setFont(cpFont);
+      this.lblNA.setHorizontalAlignment(SwingConstants.RIGHT);
+
+      this.hP = new h2oPanel(170, 35);
+      this.sP = new stmPanel(210, 35);
+      this.uP = new unitPanel(380, 35);
+      this.add(this.lblName);
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      this.add(this.lblNA);
+      this.add(this.hP);
+      this.add(this.sP);
+      this.add(this.uP);
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+  }// end ctrlPanel
+  class edWgtPanel extends JPanel implements DocumentListener, FocusListener {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    boolean bChanged;
+    public JTextField[] l;
+    JLabel lblTot = new JLabel("CoG:");
+    JLabel lblWgt = new JLabel("n/a");
+    JLabel lblX = new JLabel("n/a");
+    JLabel lblY = new JLabel("n/a");
+    JLabel lblZ = new JLabel("n/a");
+    public JTextField[] w;
+    public JTextField[] x;
+    public JTextField[] y;
+    public JTextField[] z;
+
+    public edWgtPanel() {
+
+      JLabel lbl;
+      final Font wpFont = new Font("Serif", Font.BOLD, 14);
+      this.setBorder(BorderFactory.createEtchedBorder());
+      this.setLayout(new GridLayout(0, 7));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      lbl = new JLabel(" Type ", SwingConstants.CENTER);
+      lbl.setFont(wpFont);
+      this.add(lbl);
+
+      lbl = new JLabel("  Weight  ", SwingConstants.CENTER);
+      lbl.setFont(wpFont);
+      this.add(lbl);
+
+      lbl = new JLabel("  Station  ", SwingConstants.CENTER);
+      lbl.setFont(wpFont);
+      this.add(lbl);
+
+      lbl = new JLabel("  Breadth  ", SwingConstants.CENTER);
+      lbl.setFont(wpFont);
+      this.add(lbl);
+
+      lbl = new JLabel("  Height  ", SwingConstants.CENTER);
+      lbl.setFont(wpFont);
+      this.add(lbl);
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+
+
+      this.l = new JTextField[10];
+      this.w = new JTextField[10];
+      this.x = new JTextField[10];
+      this.y = new JTextField[10];
+      this.z = new JTextField[10];
+
+      for (int i = 0; i < 10; i++) {
+
+        lbl = new JLabel(Integer.toString(i + 1), SwingConstants.CENTER);
+        lbl.setFont(wpFont);
+        this.add(lbl);
+
+        this.l[i] = new JTextField();
+        this.l[i].getDocument().addDocumentListener(this);
+        this.add(this.l[i]);
+
+        this.w[i] = new JTextField();
+        this.w[i].getDocument().addDocumentListener(this);
+        this.w[i].addFocusListener(this);
+        this.add(this.w[i]);
+
+        this.x[i] = new JTextField();
+        this.x[i].getDocument().addDocumentListener(this);
+        this.x[i].addFocusListener(this);
+        this.add(this.x[i]);
+
+        this.y[i] = new JTextField();
+        this.y[i].getDocument().addDocumentListener(this);
+        this.y[i].addFocusListener(this);
+        this.add(this.y[i]);
+
+        this.z[i] = new JTextField();
+        this.z[i].getDocument().addDocumentListener(this);
+        this.z[i].addFocusListener(this);
+        this.add(this.z[i]);
+
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      }
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.lblTot.setFont(wpFont);
+      this.lblWgt.setFont(wpFont);
+      this.lblX.setFont(wpFont);
+      this.lblY.setFont(wpFont);
+      this.lblZ.setFont(wpFont);
+      this.add(this.lblTot);
+      this.add(this.lblWgt);
+      this.add(this.lblX);
+      this.add(this.lblY);
+      this.add(this.lblZ);
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
     }// end constructor
 
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-    protected void paintComponent(Graphics g) {
-      super.paintComponent(g);
-
-      double mx = getWidth();
-      double my = getHeight();
-      int ix = (int) mx;
-      int iy = (int) my;
-      int xb = (int) 100;
-      int yb = (int) my - 50;
-
-      g.clearRect(0, 0, ix, iy);
-
-      double rx = (mx - 200.0) / (hull.gx_max - hull.gx_min);
-      double ry = my / (hull.gy_max - hull.gy_min);
-      double r = Math.min(rx, ry);
-      int iu, iv, iw, iz;
-      iu = xb + (int) (r * (hull.gx_min - hull.gx_min));
-      iv = yb + (int) (r * 0);
-      iw = xb + (int) (r * (hull.gx_max - hull.gx_min));
-      iz = yb + (int) (r * 0);
-
-      // draw axis
-      g.setColor(Color.red);
-      g.drawLine(iu, iv, iw, iz);
-      g.setColor(Color.black);
-
-      if (disp.bComp) {
-        g.setColor(Color.blue);
-        iu = xb + (int) (r * (hull.vDisp[hull.CX][0] - hull.gx_min));
-        for (int i = 1; i <= hull.NDIV; i++) {
-          iv = xb + (int) (r * (hull.vDisp[hull.CX][i] - hull.gx_min));
-          g.drawLine(iu, iComp[i - 1], iv, iComp[i]);
-          iu = iv;
-        }
-        g.setColor(Color.black);
-      }
-
-      double x = hull.vDisp[hull.CX][0];
-      double y = hull.vWet[0];
-      iu = xb + (int) (r * (x - hull.gx_min));
-      iv = yb - (int) (r * y);
-
-      iCur[0] = iv;
-      for (int i = 1; i <= hull.NDIV; i++) {
-        x = hull.vDisp[hull.CX][i];
-        y = hull.vWet[i];
-        iw = xb + (int) (r * (x - hull.gx_min));
-        iz = yb - (int) (r * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        iCur[i] = iv;
-      }
-
-      // compute
-
-      double wetX = hull.vWet[0] * hull.vDisp[hull.CX][0];
-      double wetSum = hull.vWet[0];
-      double wetArea = 0;
-      double wlCur = hull.vWL[1][0] - hull.vWL[0][0];
-
-      for (int i = 1; i <= hull.NDIV; i++) {
-        wetX = wetX + hull.vWet[i] * hull.vDisp[hull.CX][i];
-        wetSum = wetSum + hull.vWet[i];
-        wetArea = wetArea + (hull.vDisp[hull.CX][i] - hull.vDisp[hull.CX][i - 1]) * 0.5
-            * (hull.vWet[i] + hull.vWet[i - 1]);
-        wlCur = hull.vWL[1][i] - hull.vWL[0][i];
-      }
-
-
-      int il = 25;
-      g.drawString("Wetted Surface", 10, il);
-      g.drawString(bcf.DF1d.format(hull.units.coefArea() * wetArea) + hull.units.lblArea(), 125,
-          il);
-      il += 20;
-      if (wetSum > 0) {
-        wetX = wetX / wetSum;
-        g.drawString("Ctr of Area @ Stn: ", 10, il);
-        g.drawString(bcf.DF1d.format(wetX), 125, il);
-      }
-
-
-    } // end paintComponent
-  }; // end wetPanel
-
-
-
-  public class wgtPanel extends JPanel {
-    Dimension d;
-    JLabel[][] lblWgtDisp;
-    JLabel[] lblMoments;
-    bcLabel lblHeel;
-
-    public wgtPanel(int x, int y) {
-      d = new Dimension(x, y);
-      lblHeel = new bcLabel("Heel:", JLabel.CENTER);
-      lblWgtDisp = new JLabel[4][3];
-      lblMoments = new JLabel[2];
-      // setBackground(Color.lightGray) ;
-      setBorder(BorderFactory.createEtchedBorder());
-      setLayout(new GridLayout(0, 8));
-
-      add(lblHeel);
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new bcLabel("CoB", JLabel.CENTER));
-      add(new bcLabel("CoG", JLabel.CENTER));
-      add(new bcLabel("Difference", JLabel.CENTER));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new bcLabel("Weight", JLabel.RIGHT));
-      add(lblWgtDisp[0][0] = new JLabel("disp_x", JLabel.RIGHT));
-      add(lblWgtDisp[0][1] = new JLabel("wgt_x", JLabel.RIGHT));
-      add(lblWgtDisp[0][2] = new JLabel("diff_x", JLabel.RIGHT));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new bcLabel("  Moments  ", JLabel.CENTER));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new bcLabel("Station", JLabel.RIGHT));
-      add(lblWgtDisp[1][0] = new JLabel("disp_x", JLabel.RIGHT));
-      add(lblWgtDisp[1][1] = new JLabel("wgt_x", JLabel.RIGHT));
-      add(lblWgtDisp[1][2] = new JLabel("diff_x", JLabel.RIGHT));
-      add(new bcLabel("Pitch", JLabel.RIGHT));
-      add(lblMoments[0] = new JLabel("moment_p", JLabel.RIGHT));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new bcLabel("Breadth", JLabel.RIGHT));
-      add(lblWgtDisp[2][0] = new JLabel("disp_y", JLabel.RIGHT));
-      add(lblWgtDisp[2][1] = new JLabel("wgt_y", JLabel.RIGHT));
-      add(lblWgtDisp[2][2] = new JLabel("diff_y", JLabel.RIGHT));
-      add(new bcLabel("Heel", JLabel.RIGHT));
-      add(lblMoments[1] = new JLabel("moment_h", JLabel.RIGHT));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new bcLabel("Height", JLabel.RIGHT));
-      add(lblWgtDisp[3][0] = new JLabel("disp_z", JLabel.RIGHT));
-      add(lblWgtDisp[3][1] = new JLabel("wgt_z", JLabel.RIGHT));
-      add(lblWgtDisp[3][2] = new JLabel("diff_z", JLabel.RIGHT));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-    }
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-
-    public void setWeights() {
-      double sinang = Math.sin(Math.toRadians(hull.angHeel));
-      double cosang = Math.cos(Math.toRadians(hull.angHeel));
-
-      double dWgt = hull.units.Vol2Wgt() * hull.hVals[hull.DISP];
-
-      lblHeel.setText("Heel: " + bcf.DF0d.format(hull.angHeel));
-      lblWgtDisp[0][0].setText(bcf.DF1d.format(dWgt));
-      lblWgtDisp[1][0].setText(bcf.DF1d.format(hull.hVals[hull.CX]));
-      lblWgtDisp[2][0].setText(bcf.DF1d.format(hull.hVals[hull.CY]));
-      lblWgtDisp[3][0].setText(bcf.DF1d.format(hull.hVals[hull.CZ]));
-
+    public void addWgts() {
       double tw = 0;
       double tx = 0;
       double ty = 0;
       double tz = 0;
-      for (int i = 0; i < 10; i++) {
-        tw += hull.wgtWgt[i];
-        tx += hull.wgtWgt[i] * hull.wgtX[i];
-        ty += hull.wgtWgt[i] * hull.wgtY[i];
-        tz += hull.wgtWgt[i] * hull.wgtZ[i];
+      try {
+        for (int i = 0; i < 10; i++) {
+          tw += Double.parseDouble(this.w[i].getText());
+          tx += Double.parseDouble(this.w[i].getText()) * Double.parseDouble(this.x[i].getText());
+          ty += Double.parseDouble(this.w[i].getText()) * Double.parseDouble(this.y[i].getText());
+          tz += Double.parseDouble(this.w[i].getText()) * Double.parseDouble(this.z[i].getText());
+        }
+
+        this.lblWgt.setText(boatCalc.this.bcf.DF1d.format(tw));
+        if (tw > 0) {
+          this.lblX.setText(boatCalc.this.bcf.DF1d.format(tx / tw));
+          this.lblY.setText(boatCalc.this.bcf.DF1d.format(ty / tw));
+          this.lblZ.setText(boatCalc.this.bcf.DF1d.format(tz / tw));
+        } else {
+          this.lblX.setText("n/a");
+          this.lblY.setText("n/a");
+          this.lblZ.setText("n/a");
+        }
+
+      } catch (final NumberFormatException e) {
+        this.lblWgt.setText("n/a");
+        this.lblX.setText("n/a");
+        this.lblY.setText("n/a");
+        this.lblZ.setText("n/a");
       }
 
-      if (tw > 0) {
-        tx = tx / tw;
-        ty = ty / tw;
-        tz = tz / tw + hull.base;
-      }
-      double rty = cosang * ty - sinang * tz;
-      double rtz = sinang * ty + cosang * tz;
+    }// end addWgts
 
-      lblWgtDisp[0][1].setText(bcf.DF1d.format(tw));
-      lblWgtDisp[1][1].setText(bcf.DF1d.format(tx));
-      lblWgtDisp[2][1].setText(bcf.DF1d.format(rty));
-      lblWgtDisp[3][1].setText(bcf.DF1d.format(rtz));
-
-      lblWgtDisp[0][2].setText(bcf.DF1d.format(dWgt - tw));
-      lblWgtDisp[1][2].setText(bcf.DF1d.format(hull.hVals[hull.CX] - tx));
-      lblWgtDisp[2][2].setText(bcf.DF1d.format(hull.hVals[hull.CY] - rty));
-      lblWgtDisp[3][2].setText(bcf.DF1d.format(hull.hVals[hull.CZ] - rtz));
-
-      lblMoments[0].setText(bcf.DF1d.format(dWgt * (tx - hull.hVals[hull.CX])));
-      lblMoments[1].setText(bcf.DF1d.format(dWgt * (rty - hull.hVals[hull.CY])));
+    @Override
+    public void changedUpdate(final DocumentEvent e) {
+      this.addWgts();
+      this.bChanged = true;
     }
 
-    // protected void paintComponent(Graphics g) {setWeights();}
-  } // ends wgtPanel
+    @Override
+    public void focusGained(final FocusEvent e) {
+      final JTextField t = (JTextField) e.getComponent();
+      t.select(0, 100);
+    }
 
+    @Override
+    public void focusLost(final FocusEvent e) {}
 
+    @Override
+    public void insertUpdate(final DocumentEvent e) {
+      this.addWgts();
+      this.bChanged = true;
+    }
 
-  public class hdPanel extends JPanel {
+    @Override
+    public void removeUpdate(final DocumentEvent e) {
+      this.addWgts();
+      this.bChanged = true;
+    }
+  }// end edWgtPanel
+  public class h2oPanel extends JPanel implements ActionListener {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    ButtonGroup bGrp;
+    JRadioButton btnFresh;
+    JRadioButton btnSalt;
     Dimension d;
+    JLabel lblH2O;
 
-    boolean bComp = false;
-    int[][] iComp = new int[2][hull.NDIV + 1];
-    int[][] iCur = new int[2][hull.NDIV + 1];
-    double xComp = 0;
-    double yComp = 0;
-    double xCur = 0;
-    double yCur = 0;
+    public h2oPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.lblH2O = new JLabel("Water:");
+      this.btnSalt = new JRadioButton("salt");
+      this.btnSalt.setSelected(true);
+      this.btnFresh = new JRadioButton("fresh");
 
-    public hdPanel(int x, int y) {
-      d = new Dimension(x, y);
-      // setBackground(Color.lightGray) ;
+      this.btnSalt.addActionListener(this);
+      this.btnFresh.addActionListener(this);
+
+      this.bGrp = new ButtonGroup();
+      this.bGrp.add(this.btnSalt);
+      this.bGrp.add(this.btnFresh);
+
+      this.setBorder(BorderFactory.createEtchedBorder());
+      this.setLayout(new FlowLayout());
+      this.add(this.lblH2O);
+      this.add(this.btnSalt);
+      this.add(this.btnFresh);
     }
 
+    @Override
+    public void actionPerformed(final ActionEvent e) {
+      if (this.btnSalt.isSelected()) {
+        boatCalc.this.hull.units.WATER = 0;
+      }
+      if (this.btnFresh.isSelected()) {
+        boatCalc.this.hull.units.WATER = 1;
+      }
+      boatCalc.this.hull.bChanged = true;
+      boatCalc.this.body.repaint();
+      boatCalc.this.plan.repaint();
+    }
+
+    @Override
     public Dimension getPreferredSize() {
-      return d;
+      return this.d;
     }
-
-    protected void paintComponent(Graphics g) {
-      super.paintComponent(g);
-
-      double mx = getWidth();
-      double my = getHeight();
-      int ix = (int) mx;
-      int iy = (int) my;
-      int xb = (int) 100;
-      int yb = (int) my - 50;
-
-      g.clearRect(0, 0, ix, iy);
-
-      double rx = (mx - 200.0) / (hull.gx_max - hull.gx_min);
-      double ry = (0.8 * my) / (hull.gy_max * hull.gy_max);
-      int iu, iv, iw, iz;
-      iu = xb + (int) (rx * (hull.gx_min - hull.gx_min));
-      iv = yb + (int) (ry * 0);
-      iw = xb + (int) (rx * (hull.gx_max - hull.gx_min));
-      iz = yb + (int) (ry * 0);
-
-      // draw horicontal axis
-      g.setColor(Color.red);
-      g.drawLine(iu, iv, iw, iz);
-      g.setColor(Color.black);
-
-      // draw basic area curve
-
-      double lastArea = 0.0;
-      double maxArea = 0;
-      double maxStn = 0;
-      double leftLWL = hull.lwlLeft;
-      double rightLWL = hull.lwlRight;
-
-      double dx = hull.dx;
-      double x = hull.vDisp[hull.CX][0];
-      double y = hull.vDisp[hull.SAREA][0];
-
-      iu = xb + (int) (rx * (x - hull.gx_min));
-      iv = yb - (int) (ry * y);
-
-      int imax, jmax;
-
-      if (bComp) {
-        g.setColor(Color.blue);
-        imax = 0;
-        jmax = iComp[1][0];
-        for (int i = 1; i <= hull.NDIV; i++) {
-          g.drawLine(iComp[0][i - 1], iComp[1][i - 1], iComp[0][i], iComp[1][i]);
-        }
-        g.setColor(Color.cyan);
-        iu = xb + (int) (rx * (xComp - hull.gx_min));
-        iv = yb - (int) (ry * 0);
-        iw = xb + (int) (rx * (xComp - hull.gx_min));
-        iz = yb - (int) (ry * yComp);
-        g.drawLine(iu, iv, iw, iz);
-        g.setColor(Color.black);
-      }
-
-      x = hull.vDisp[hull.CX][0];
-      y = hull.vDisp[hull.SAREA][0];
-      iu = xb + (int) (rx * (x - hull.gx_min));
-      iv = yb - (int) (ry * y);
-
-      iCur[0][0] = iu;
-      iCur[1][0] = iv;
-      for (int i = 1; i <= hull.NDIV; i++) {
-        x = hull.vDisp[hull.CX][i];
-        y = hull.vDisp[hull.SAREA][i];
-        iw = xb + (int) (rx * (x - hull.gx_min));
-        iz = yb - (int) (ry * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        iCur[0][i] = iu;
-        iCur[1][i] = iv;
-
-        if (hull.vDisp[hull.SAREA][i] > maxArea) {
-          maxArea = hull.vDisp[hull.SAREA][i];
-          maxStn = x;
-        }
-        lastArea = hull.vDisp[hull.SAREA][i];
-      }
-      xCur = maxStn;
-      yCur = maxArea;
-
-      g.setColor(Color.red);
-      iu = xb + (int) (rx * (maxStn - hull.gx_min));
-      iv = yb - (int) (ry * 0);
-      iw = xb + (int) (rx * (maxStn - hull.gx_min));
-      iz = yb - (int) (ry * maxArea);
-      g.drawLine(iu, iv, iw, iz);
-
-      double Cp = hull.hVals[hull.DISP] / ((rightLWL - leftLWL) * maxArea);
-
-      g.setColor(Color.black);
-
-      int il = 25;
-      g.drawString("Baseline Offset", 10, il);
-      g.drawString(bcf.DF2d.format(hull.base), 125, il);
-      il += 15;
-      g.drawString("Angle of Heel", 10, il);
-      g.drawString(bcf.DF0d.format(hull.angHeel), 125, il);
-      il += 20;
-
-      g.drawString("LWL - minimum", 10, il);
-      g.drawString(bcf.DF1d.format(leftLWL), 125, il);
-      il += 15;
-      g.drawString("    - maximum", 10, il);
-      g.drawString(bcf.DF1d.format(rightLWL), 125, il);
-      il += 15;
-      g.drawString("    - length", 10, il);
-      g.drawString(bcf.DF1d.format(rightLWL - leftLWL), 125, il);
-      il += 20;
-      g.drawString("Max Section - Area", 10, il);
-      g.drawString(bcf.DF2d.format(hull.units.coefArea() * maxArea) + hull.units.lblArea(), 125,
-          il);
-      il += 15;
-      g.drawString("            @ Station", 10, il);
-      g.drawString(bcf.DF1d.format(maxStn), 125, il);
-
-      il = 25;
-      int ic = ix - 200;
-      g.drawString("Displacement", ic, il);
-      g.drawString(
-          bcf.DF1d.format(hull.units.Vol2Wgt() * hull.hVals[hull.DISP]) + hull.units.lblWgt(),
-          ic + 115, il);
-      il += 15;
-      g.drawString("CoB - Station", ic, il);
-      g.drawString(bcf.DF1d.format(hull.hVals[hull.CX]), ic + 115, il);
-      il += 15;
-      g.drawString("    - Lateral", ic, il);
-      g.drawString(bcf.DF1d.format(hull.hVals[hull.CY]), ic + 115, il);
-      il += 15;
-      g.drawString("    - Height", ic, il);
-      g.drawString(bcf.DF1d.format(hull.hVals[hull.CZ]), ic + 115, il);
-
-      il += 20;
-      g.drawString("Prismatic Coeff", ic, il);
-      g.drawString(bcf.DF3d.format(Cp), ic + 115, il);
-
-      double num, denom;
-      String dlVal, dlLbl;
-
-      if (hull.units.UNITS == 0) {
-        num = hull.units.Vol2Ton() * hull.hVals[hull.DISP];
-        denom = Math.pow(0.01 * (rightLWL - leftLWL) / 12.0, 3.0);
-        dlVal = bcf.DF0d.format(num / denom);
-        dlLbl = "Disp/Length Ratio:";
-      } else if (hull.units.UNITS == 1) {
-        num = hull.units.Vol2Ton() * hull.hVals[hull.DISP];
-        denom = Math.pow(0.01 * (rightLWL - leftLWL), 3.0);
-        dlVal = bcf.DF0d.format(num / denom);
-        dlLbl = "Disp/Length Ratio:";
-      } else {
-        num = rightLWL - leftLWL;
-        denom = Math.pow(hull.hVals[hull.DISP], 0.33333);
-        dlVal = bcf.DF2d.format(num / denom);
-        dlLbl = "Length/Disp ratio:";
-      }
-      il += 20;
-      g.drawString(dlLbl, ic, il);
-      g.drawString(dlVal, ic + 115, il);
-
-
-
-    }// end paint
-
-  }// end hdPanel
-
-
-
-  public class hdCtrl extends JPanel {
-    Dimension d;
-
-    JPanel pnlBase;
-    JSlider slBase;
-
-    JPanel pnlHeel;
-    JSlider slHeel;
-
-    JPanel pnlButton;
-    JToggleButton btnComp;
-    JButton btnWgt;
-
-    public hdCtrl(int x, int y) {
-      d = new Dimension(x, y);
-      setLayout(new FlowLayout());
-      setBorder(BorderFactory.createEtchedBorder());
-
-      Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-
-      double sl_ctr = -(0.5 * (hull.gz_max + hull.gz_min) - hull.base);
-      double sl_min = sl_ctr - 0.5 * (hull.gz_max - hull.gz_min);
-      double sl_max = sl_ctr + 0.5 * (hull.gz_max - hull.gz_min);
-
-      slBase = new JSlider();
-      slBase.setPreferredSize(new Dimension(250, 42));
-
-      slBase.addChangeListener(new ChangeListener() {
-        public void stateChanged(ChangeEvent e) {
-          double r = 4;
-          if (hull.units.UNITS == 1)
-            r = 48;
-          else if (hull.units.UNITS == 2)
-            r = 1;
-          else if (hull.units.UNITS == 3)
-            r = 100;
-          hull.base = ((double) slBase.getValue()) / r;
-          hull.setLines();
-          hull.bChanged = true;
-          hull.calcDisp();
-          dispWgt.setWeights();
-          dispFore.repaint();
-          dispAft.repaint();
-          dispWL.repaint();
-          dispWet.repaint();
-          dispStn.repaint();
-          disp.repaint();
-          body.repaint();
-          plan.repaint();
-        }
-      });
-
-
-      pnlBase = new JPanel();
-      pnlBase.setBorder(BorderFactory.createTitledBorder(bcBorder, "Baseline Offset"));
-      pnlBase.setLayout(new BorderLayout());
-      pnlBase.add(slBase, BorderLayout.CENTER);
-      add(pnlBase);
-
-      slHeel = new JSlider(0, 90, (int) hull.angHeel);
-      slHeel.setPreferredSize(new Dimension(250, 42));
-      slHeel.setMajorTickSpacing(15);
-      slHeel.setMinorTickSpacing(5);
-      slHeel.setPaintTicks(true);
-      slHeel.setPaintLabels(true);
-
-      slHeel.addChangeListener(new ChangeListener() {
-        public void stateChanged(ChangeEvent e) {
-          hull.angHeel = (double) slHeel.getValue();
-          hull.calcDisp();
-          dispWgt.setWeights();
-          dispFore.repaint();
-          dispAft.repaint();
-          dispWL.repaint();
-          dispWet.repaint();
-          dispStn.repaint();
-          disp.repaint();
-        }
-      });
-
-
-      pnlHeel = new JPanel();
-      pnlHeel.setBorder(BorderFactory.createTitledBorder(bcBorder, "Angle of Heel"));
-      pnlHeel.setLayout(new BorderLayout());
-      // pnlHeel.setBackground(Color.lightGray);
-      pnlHeel.add(slHeel, BorderLayout.CENTER);
-      add(pnlHeel);
-
-      pnlButton = new JPanel();
-      pnlButton.setLayout(new FlowLayout());
-      btnComp = new JToggleButton("Set Compare");
-      btnComp.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          if (!btnComp.isSelected()) {
-            disp.bComp = false;
-            disp.repaint();
-            dispWL.repaint();
-            dispWet.repaint();
-            dispStn.repaint();
-          } else {
-            for (int j = 0; j <= hull.NDIV; j++) {
-              disp.iComp[0][j] = disp.iCur[0][j];
-              disp.iComp[1][j] = disp.iCur[1][j];
-              dispWL.iComp[0][j] = dispWL.iCur[0][j];
-              dispWL.iComp[1][j] = dispWL.iCur[1][j];
-              dispWet.iComp[j] = dispWet.iCur[j];
-            }
-            disp.xComp = disp.xCur;
-            disp.yComp = disp.yCur;
-            disp.bComp = true;
-            disp.repaint();
-            dispWL.repaint();
-            dispWet.repaint();
-            dispStn.repaint();
-          }
-        }
-      });
-
-      btnWgt = new JButton("Set Weights");
-      btnWgt.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          wgtEdit();
-        }
-      });
-
-      pnlButton.add(btnComp);
-      pnlButton.add(btnWgt);
-      add(pnlButton);
-
-    }
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-
-  }// end hdCtrl
-
+  }// end h2oPanel
   public class hdBody extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
     Dimension d;
     String title;
     boolean type;
 
-    public hdBody(int x, int y) {
-      d = new Dimension(x, y);
-      setBackground(Color.white);
+    public hdBody(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.setBackground(Color.white);
     }
 
+    @Override
     public Dimension getPreferredSize() {
-      return d;
+      return this.d;
     }
 
-    public void setTitle(String s) {
-      title = s;
-    }
-
-    public void setType(boolean b) {
-      type = b;
-    }
-
-    protected void paintComponent(Graphics g) {
+    @Override
+    protected void paintComponent(final Graphics g) {
       super.paintComponent(g);
-      double sinang = Math.sin(Math.toRadians(hull.angHeel));
-      double cosang = Math.cos(Math.toRadians(hull.angHeel));
+      final double sinang = Math.sin(Math.toRadians(boatCalc.this.hull.angHeel));
+      final double cosang = Math.cos(Math.toRadians(boatCalc.this.hull.angHeel));
 
-      double mx = getWidth();
-      double my = getHeight();
-      int ix = (int) mx;
-      int iy = (int) my;
-      int xb = ix / 2;
-      int yb = iy / 2;
+      final double mx = this.getWidth();
+      final double my = this.getHeight();
+      final int ix = (int) mx;
+      final int iy = (int) my;
+      final int xb = ix / 2;
+      final int yb = iy / 2;
       Point p1, p2;
       int u, v, w, z;
-      double r = 0.85 * xb / hull.gy_max;
+      final double r = (0.85 * xb) / boatCalc.this.hull.gy_max;
       g.clearRect(0, 0, ix, iy);
-      g.drawString(title, 10, 10);
+      g.drawString(this.title, 10, 10);
 
       // draw axes
       g.setColor(Color.red);
@@ -1397,16 +554,16 @@ public class boatCalc extends javax.swing.JFrame {
       g.setColor(Color.black);
 
       int jLow, jHigh;
-      if (type) {
+      if (this.type) {
         jLow = 0;
-        jHigh = hull.Stations.length / 2;
+        jHigh = boatCalc.this.hull.Stations.length / 2;
       } else {
-        jLow = hull.Stations.length / 2;
-        jHigh = hull.Stations.length - 1;
+        jLow = boatCalc.this.hull.Stations.length / 2;
+        jHigh = boatCalc.this.hull.Stations.length - 1;
       }
       for (int j = jLow; j <= jHigh; j++) {
         // draw station
-        Iterator si = hull.getStation(j, hull.angHeel);
+        final Iterator si = boatCalc.this.hull.getStation(j, boatCalc.this.hull.angHeel);
         p1 = (Point) si.next();
         while (si.hasNext()) {
           p2 = (Point) si.next();
@@ -1419,33 +576,37 @@ public class boatCalc extends javax.swing.JFrame {
         }
       }
 
-      int jm = hull.Stations.length / 2;
-      boolean bDraw =
-          (type && hull.CX <= hull.Stations[jm]) || (!type && hull.CX >= hull.Stations[jm]);
+      final int jm = boatCalc.this.hull.Stations.length / 2;
+      final boolean bDraw =
+          (this.type && (boatCalc.this.hull.CX <= boatCalc.this.hull.Stations[jm]))
+              || (!this.type && (boatCalc.this.hull.CX >= boatCalc.this.hull.Stations[jm]));
       // put circle on computed CoG
       g.setColor(Color.red);
-      u = xb + (int) (r * hull.hVals[hull.CY]);
-      v = yb - (int) (r * hull.hVals[hull.CZ]);
-      if (bDraw)
+      u = xb + (int) (r * boatCalc.this.hull.hVals[boatCalc.this.hull.CY]);
+      v = yb - (int) (r * boatCalc.this.hull.hVals[boatCalc.this.hull.CZ]);
+      if (bDraw) {
         g.drawArc(u - 5, v - 5, 10, 10, 0, 360);
+      }
 
       g.setColor(Color.blue);
       double rtw = 0;
       double rty = 0;
       double rtz = 0;
       for (int j = 0; j < 10; j++) {
-        if (hull.wgtWgt[j] > 0) {
-          double ry = cosang * hull.wgtY[j] - sinang * (hull.wgtZ[j] + hull.base);
-          double rz = sinang * hull.wgtY[j] + cosang * (hull.wgtZ[j] + hull.base);
-          if ((type && hull.wgtX[j] <= hull.Stations[jm])
-              || (!type && hull.wgtX[j] >= hull.Stations[jm])) {
+        if (boatCalc.this.hull.wgtWgt[j] > 0) {
+          final double ry = (cosang * boatCalc.this.hull.wgtY[j])
+              - (sinang * (boatCalc.this.hull.wgtZ[j] + boatCalc.this.hull.base));
+          final double rz = (sinang * boatCalc.this.hull.wgtY[j])
+              + (cosang * (boatCalc.this.hull.wgtZ[j] + boatCalc.this.hull.base));
+          if ((this.type && (boatCalc.this.hull.wgtX[j] <= boatCalc.this.hull.Stations[jm]))
+              || (!this.type && (boatCalc.this.hull.wgtX[j] >= boatCalc.this.hull.Stations[jm]))) {
             w = xb + (int) (r * ry);
             z = yb - (int) (r * rz);
             g.fillRect(w - 3, z - 3, 6, 6);
           }
-          rtw = rtw + hull.wgtWgt[j];
-          rty = rty + hull.wgtWgt[j] * ry;
-          rtz = rtz + hull.wgtWgt[j] * rz;
+          rtw = rtw + boatCalc.this.hull.wgtWgt[j];
+          rty = rty + (boatCalc.this.hull.wgtWgt[j] * ry);
+          rtz = rtz + (boatCalc.this.hull.wgtWgt[j] * rz);
         }
       }
       if (bDraw && (rtw > 0)) {
@@ -1461,236 +622,459 @@ public class boatCalc extends javax.swing.JFrame {
       }
 
     }// end paint
+
+    public void setTitle(final String s) {
+      this.title = s;
+    }
+
+    public void setType(final boolean b) {
+      this.type = b;
+    }
   }// end hdBody
+  public class hdCtrl extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
+    JToggleButton btnComp;
 
-  public class bodyPanel extends JPanel {
+    JButton btnWgt;
     Dimension d;
 
-    public bodyPanel(int x, int y) {
-      d = new Dimension(x, y);
-      setBackground(Color.white);
-    }
+    JPanel pnlBase;
+    JPanel pnlButton;
 
-    public Dimension getPreferredSize() {
-      return d;
-    }
+    JPanel pnlHeel;
+    JSlider slBase;
+    JSlider slHeel;
 
-    protected void paintComponent(Graphics g) {
-      super.paintComponent(g);
-      Font bigFont = new Font("Serif", Font.PLAIN, 12);
-      Font lilFont = new Font("SansSerif", Font.PLAIN, 10);
-      g.setFont(bigFont);
+    public hdCtrl(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.setLayout(new FlowLayout());
+      this.setBorder(BorderFactory.createEtchedBorder());
 
-      double my = getWidth();
-      double mz = getHeight();
-      int ix = (int) my;
-      int iy = (int) mz;
-      g.clearRect(0, 0, ix, iy);
-      g.drawString("Body", 10, 10);
-      if (!hull.valid)
-        return;
+      final Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
 
-      Set s;
-      Iterator si;
-      Line ln;
-      Point p1, p2;
-      YZCompare yzComp;
-      double[] stn = hull.Stations;
+      final double sl_ctr = -((0.5 * (boatCalc.this.hull.gz_max + boatCalc.this.hull.gz_min))
+          - boatCalc.this.hull.base);
+      this.slBase = new JSlider();
+      this.slBase.setPreferredSize(new Dimension(250, 42));
 
-      int iw, iz;
+      this.slBase.addChangeListener(new ChangeListener() {
+        @Override
+        public void stateChanged(final ChangeEvent e) {
+          double r = 4;
+          if (boatCalc.this.hull.units.UNITS == 1) {
+            r = 48;
+          } else if (boatCalc.this.hull.units.UNITS == 2) {
+            r = 1;
+          } else if (boatCalc.this.hull.units.UNITS == 3) {
+            r = 100;
+          }
+          boatCalc.this.hull.base = (hdCtrl.this.slBase.getValue()) / r;
+          boatCalc.this.hull.setLines();
+          boatCalc.this.hull.bChanged = true;
+          boatCalc.this.hull.calcDisp();
+          boatCalc.this.dispWgt.setWeights();
+          boatCalc.this.dispFore.repaint();
+          boatCalc.this.dispAft.repaint();
+          boatCalc.this.dispWL.repaint();
+          boatCalc.this.dispWet.repaint();
+          boatCalc.this.dispStn.repaint();
+          boatCalc.this.disp.repaint();
+          boatCalc.this.body.repaint();
+          boatCalc.this.plan.repaint();
+        }
+      });
 
-      int py = 2;
-      int pz = 2;
-      int pw = (int) my;
-      int ph = (int) mz - 4;
 
-      int iy_min = py + 5;
-      int iy_max = py + pw - 25;
-      int iz_min = pz + ph - 5;
-      int iz_max = pz + 5;
+      this.pnlBase = new JPanel();
+      this.pnlBase.setBorder(BorderFactory.createTitledBorder(bcBorder, "Baseline Offset"));
+      this.pnlBase.setLayout(new BorderLayout());
+      this.pnlBase.add(this.slBase, BorderLayout.CENTER);
+      this.add(this.pnlBase);
 
-      g.clearRect(py, pz, pw, ph);
-      g.drawString("Body", 10, 12);
+      this.slHeel = new JSlider(0, 90, (int) boatCalc.this.hull.angHeel);
+      this.slHeel.setPreferredSize(new Dimension(250, 42));
+      this.slHeel.setMajorTickSpacing(15);
+      this.slHeel.setMinorTickSpacing(5);
+      this.slHeel.setPaintTicks(true);
+      this.slHeel.setPaintLabels(true);
 
-      // note: what would usually be gy_min is replaced by -gy_max
+      this.slHeel.addChangeListener(new ChangeListener() {
+        @Override
+        public void stateChanged(final ChangeEvent e) {
+          boatCalc.this.hull.angHeel = hdCtrl.this.slHeel.getValue();
+          boatCalc.this.hull.calcDisp();
+          boatCalc.this.dispWgt.setWeights();
+          boatCalc.this.dispFore.repaint();
+          boatCalc.this.dispAft.repaint();
+          boatCalc.this.dispWL.repaint();
+          boatCalc.this.dispWet.repaint();
+          boatCalc.this.dispStn.repaint();
+          boatCalc.this.disp.repaint();
+        }
+      });
 
-      double ry, rz, r;
-      ry = (iy_max - iy_min) / (2 * hull.gy_max);
-      rz = (iz_max - iz_min) / (hull.gz_max - hull.gz_min);
-      r = Math.min(Math.abs(ry), Math.abs(rz));
 
-      iy_min = (int) (((double) (my)) / 2.0 - r * hull.gy_max);
+      this.pnlHeel = new JPanel();
+      this.pnlHeel.setBorder(BorderFactory.createTitledBorder(bcBorder, "Angle of Heel"));
+      this.pnlHeel.setLayout(new BorderLayout());
+      // pnlHeel.setBackground(Color.lightGray);
+      this.pnlHeel.add(this.slHeel, BorderLayout.CENTER);
+      this.add(this.pnlHeel);
 
-      g.setColor(Color.red);
-      ix = iy_min + (int) (r * (0 + hull.gy_max));
-      iy = iz_min - (int) (r * (hull.gz_max - hull.gz_min));
-      iw = iy_min + (int) (r * (0 + hull.gy_max));
-      iz = iz_min - (int) (r * (hull.gz_min - hull.gz_min));
-      g.drawLine(ix, iy, iw, iz);
-
-      g.setColor(Color.blue);
-      ix = iy_min + (int) (r * (2 * hull.gy_max));
-      iy = iz_min - (int) (r * (0 - hull.gz_min));
-      iw = iy_min + (int) (r * (hull.gy_min - hull.gy_min));
-      iz = iz_min - (int) (r * (0 - hull.gz_min));
-      g.drawLine(ix, iy, iw, iz);
-      g.setColor(Color.black);
-
-      int j;
-      int jm = stn.length / 2;
-      for (j = 0; j < stn.length; j++) {
-
-        s = new HashSet();
-
-        double zmin = +1000000.0;
-        double zmax = -1000000.0;
-
-        for (int iHL = 0; iHL < hull.hLines.length; iHL++) {
-          double tx = stn[j];
-          double x_min = hull.hLines[iHL].min("X");
-          double x_max = hull.hLines[iHL].max("X");
-          if (x_min <= tx && tx <= x_max) {
-            double ty = hull.hLines[iHL].hXY.interp4P(tx);
-            double tz = hull.hLines[iHL].hXZ.interp4P(tx);
-            if (j <= jm)
-              s.add(new Point(tx, ty, tz));
-            if (j >= jm)
-              s.add(new Point(tx, -ty, tz));
-            zmin = Math.min(zmin, tz);
-            zmax = Math.max(zmax, tz);
+      this.pnlButton = new JPanel();
+      this.pnlButton.setLayout(new FlowLayout());
+      this.btnComp = new JToggleButton("Set Compare");
+      this.btnComp.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          if (!hdCtrl.this.btnComp.isSelected()) {
+            boatCalc.this.disp.bComp = false;
+            boatCalc.this.disp.repaint();
+            boatCalc.this.dispWL.repaint();
+            boatCalc.this.dispWet.repaint();
+            boatCalc.this.dispStn.repaint();
+          } else {
+            for (int j = 0; j <= boatCalc.this.hull.NDIV; j++) {
+              boatCalc.this.disp.iComp[0][j] = boatCalc.this.disp.iCur[0][j];
+              boatCalc.this.disp.iComp[1][j] = boatCalc.this.disp.iCur[1][j];
+              boatCalc.this.dispWL.iComp[0][j] = boatCalc.this.dispWL.iCur[0][j];
+              boatCalc.this.dispWL.iComp[1][j] = boatCalc.this.dispWL.iCur[1][j];
+              boatCalc.this.dispWet.iComp[j] = boatCalc.this.dispWet.iCur[j];
+            }
+            boatCalc.this.disp.xComp = boatCalc.this.disp.xCur;
+            boatCalc.this.disp.yComp = boatCalc.this.disp.yCur;
+            boatCalc.this.disp.bComp = true;
+            boatCalc.this.disp.repaint();
+            boatCalc.this.dispWL.repaint();
+            boatCalc.this.dispWet.repaint();
+            boatCalc.this.dispStn.repaint();
           }
         }
+      });
 
-
-        yzComp = new YZCompare();
-        yzComp.setAdj(0, zmax - 0.3 * (zmax - zmin));
-        SortedSet ts = new TreeSet(yzComp);
-        si = s.iterator();
-        while (si.hasNext())
-          ts.add(si.next());
-        si = ts.iterator();
-        p1 = (Point) si.next();
-
-        if (p1.z <= 0) {
-          ix = iy_min + (int) (r * (0 + hull.gy_max));
-          iy = iz_min - (int) (r * (p1.z - hull.gz_min));
-          iw = iy_min + (int) (r * (p1.y + hull.gy_max));
-          iz = iz_min - (int) (r * (p1.z - hull.gz_min));
-          g.drawLine(ix, iy, iw, iz);
+      this.btnWgt = new JButton("Set Weights");
+      this.btnWgt.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          boatCalc.this.wgtEdit();
         }
+      });
 
-        while (si.hasNext()) {
-          p2 = (Point) si.next();
-          ix = iy_min + (int) (r * (p1.y + hull.gy_max));
-          iy = iz_min - (int) (r * (p1.z - hull.gz_min));
-          iw = iy_min + (int) (r * (p2.y + hull.gy_max));
-          iz = iz_min - (int) (r * (p2.z - hull.gz_min));
-          g.drawLine(ix, iy, iw, iz);
-          p1 = p2;
+      this.pnlButton.add(this.btnComp);
+      this.pnlButton.add(this.btnWgt);
+      this.add(this.pnlButton);
+
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+
+  }// end hdCtrl
+  public class hdPanel extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+
+    boolean bComp = false;
+
+    Dimension d;
+    int[][] iComp = new int[2][boatCalc.this.hull.NDIV + 1];
+    int[][] iCur = new int[2][boatCalc.this.hull.NDIV + 1];
+    double xComp = 0;
+    double xCur = 0;
+    double yComp = 0;
+    double yCur = 0;
+
+    public hdPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      // setBackground(Color.lightGray) ;
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+    @Override
+    protected void paintComponent(final Graphics g) {
+      super.paintComponent(g);
+
+      final double mx = this.getWidth();
+      final double my = this.getHeight();
+      final int ix = (int) mx;
+      final int iy = (int) my;
+      final int xb = 100;
+      final int yb = (int) my - 50;
+
+      g.clearRect(0, 0, ix, iy);
+
+      final double rx = (mx - 200.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
+      final double ry = (0.8 * my) / (boatCalc.this.hull.gy_max * boatCalc.this.hull.gy_max);
+      int iu, iv, iw, iz;
+      iu = xb + (int) (rx * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
+      iv = yb + (int) (ry * 0);
+      iw = xb + (int) (rx * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+      iz = yb + (int) (ry * 0);
+
+      // draw horicontal axis
+      g.setColor(Color.red);
+      g.drawLine(iu, iv, iw, iz);
+      g.setColor(Color.black);
+
+      // draw basic area curve
+
+      double maxArea = 0;
+      double maxStn = 0;
+      final double leftLWL = boatCalc.this.hull.lwlLeft;
+      final double rightLWL = boatCalc.this.hull.lwlRight;
+
+      double x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+      double y = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][0];
+
+      iu = xb + (int) (rx * (x - boatCalc.this.hull.gx_min));
+      iv = yb - (int) (ry * y);
+
+      if (this.bComp) {
+        g.setColor(Color.blue);
+        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+          g.drawLine(this.iComp[0][i - 1], this.iComp[1][i - 1], this.iComp[0][i],
+              this.iComp[1][i]);
         }
-        if (p1.z <= 0) {
-          ix = iy_min + (int) (r * (p1.y + hull.gy_max));
-          iy = iz_min - (int) (r * (p1.z - hull.gz_min));
-          iw = iy_min + (int) (r * (0 + hull.gy_max));
-          iz = iz_min - (int) (r * (p1.z - hull.gz_min));
-          g.drawLine(ix, iy, iw, iz);
+        g.setColor(Color.cyan);
+        iu = xb + (int) (rx * (this.xComp - boatCalc.this.hull.gx_min));
+        iv = yb - (int) (ry * 0);
+        iw = xb + (int) (rx * (this.xComp - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (ry * this.yComp);
+        g.drawLine(iu, iv, iw, iz);
+        g.setColor(Color.black);
+      }
+
+      x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+      y = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][0];
+      iu = xb + (int) (rx * (x - boatCalc.this.hull.gx_min));
+      iv = yb - (int) (ry * y);
+
+      this.iCur[0][0] = iu;
+      this.iCur[1][0] = iv;
+      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
+        y = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][i];
+        iw = xb + (int) (rx * (x - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (ry * y);
+        g.drawLine(iu, iv, iw, iz);
+        iu = iw;
+        iv = iz;
+        this.iCur[0][i] = iu;
+        this.iCur[1][i] = iv;
+
+        if (boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][i] > maxArea) {
+          maxArea = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][i];
+          maxStn = x;
         }
       }
+      this.xCur = maxStn;
+      this.yCur = maxArea;
+
+      g.setColor(Color.red);
+      iu = xb + (int) (rx * (maxStn - boatCalc.this.hull.gx_min));
+      iv = yb - (int) (ry * 0);
+      iw = xb + (int) (rx * (maxStn - boatCalc.this.hull.gx_min));
+      iz = yb - (int) (ry * maxArea);
+      g.drawLine(iu, iv, iw, iz);
+
+      final double Cp =
+          boatCalc.this.hull.hVals[boatCalc.this.hull.DISP] / ((rightLWL - leftLWL) * maxArea);
+
+      g.setColor(Color.black);
+
+      int il = 25;
+      g.drawString("Baseline Offset", 10, il);
+      g.drawString(boatCalc.this.bcf.DF2d.format(boatCalc.this.hull.base), 125, il);
+      il += 15;
+      g.drawString("Angle of Heel", 10, il);
+      g.drawString(boatCalc.this.bcf.DF0d.format(boatCalc.this.hull.angHeel), 125, il);
+      il += 20;
+
+      g.drawString("LWL - minimum", 10, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(leftLWL), 125, il);
+      il += 15;
+      g.drawString("    - maximum", 10, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(rightLWL), 125, il);
+      il += 15;
+      g.drawString("    - length", 10, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(rightLWL - leftLWL), 125, il);
+      il += 20;
+      g.drawString("Max Section - Area", 10, il);
+      g.drawString(boatCalc.this.bcf.DF2d.format(boatCalc.this.hull.units.coefArea() * maxArea)
+          + boatCalc.this.hull.units.lblArea(), 125, il);
+      il += 15;
+      g.drawString("            @ Station", 10, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(maxStn), 125, il);
+
+      il = 25;
+      final int ic = ix - 200;
+      g.drawString("Displacement", ic, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(
+          boatCalc.this.hull.units.Vol2Wgt() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP])
+          + boatCalc.this.hull.units.lblWgt(), ic + 115, il);
+      il += 15;
+      g.drawString("CoB - Station", ic, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CX]),
+          ic + 115, il);
+      il += 15;
+      g.drawString("    - Lateral", ic, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CY]),
+          ic + 115, il);
+      il += 15;
+      g.drawString("    - Height", ic, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CZ]),
+          ic + 115, il);
+
+      il += 20;
+      g.drawString("Prismatic Coeff", ic, il);
+      g.drawString(boatCalc.this.bcf.DF3d.format(Cp), ic + 115, il);
+
+      double num, denom;
+      String dlVal, dlLbl;
+
+      if (boatCalc.this.hull.units.UNITS == 0) {
+        num =
+            boatCalc.this.hull.units.Vol2Ton() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP];
+        denom = Math.pow((0.01 * (rightLWL - leftLWL)) / 12.0, 3.0);
+        dlVal = boatCalc.this.bcf.DF0d.format(num / denom);
+        dlLbl = "Disp/Length Ratio:";
+      } else if (boatCalc.this.hull.units.UNITS == 1) {
+        num =
+            boatCalc.this.hull.units.Vol2Ton() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP];
+        denom = Math.pow(0.01 * (rightLWL - leftLWL), 3.0);
+        dlVal = boatCalc.this.bcf.DF0d.format(num / denom);
+        dlLbl = "Disp/Length Ratio:";
+      } else {
+        num = rightLWL - leftLWL;
+        denom = Math.pow(boatCalc.this.hull.hVals[boatCalc.this.hull.DISP], 0.33333);
+        dlVal = boatCalc.this.bcf.DF2d.format(num / denom);
+        dlLbl = "Length/Disp ratio:";
+      }
+      il += 20;
+      g.drawString(dlLbl, ic, il);
+      g.drawString(dlVal, ic + 115, il);
 
 
 
     }// end paint
-  }// end bodyPanel
 
+  }// end hdPanel
   public class planPanel extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
     Dimension d;
 
-    public planPanel(int x, int y) {
-      d = new Dimension(x, y);
-      setBackground(Color.white);
+    public planPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.setBackground(Color.white);
     }
 
+    @Override
     public Dimension getPreferredSize() {
-      return d;
+      return this.d;
     }
 
-    protected void paintComponent(Graphics g) {
+    @Override
+    protected void paintComponent(final Graphics g) {
       super.paintComponent(g);
-      Font bigFont = new Font("Serif", Font.PLAIN, 12);
-      Font lilFont = new Font("SansSerif", Font.PLAIN, 10);
+      final Font bigFont = new Font("Serif", Font.PLAIN, 12);
+      final Font lilFont = new Font("SansSerif", Font.PLAIN, 10);
       g.setFont(bigFont);
 
-      double mx = getWidth();
-      double my = getHeight();
+      final double mx = this.getWidth();
+      final double my = this.getHeight();
       int px = 0;
       int py = 2;
       int pw = (int) mx;
-      int ph = (int) my / 2 - 4;
+      int ph = ((int) my / 2) - 4;
 
       g.clearRect(px, py, pw, ph);
       g.drawString("Plan", px + 10, py + 15);
 
-      g.drawString("Length: " + bcf.DF1d.format(hull.gx_max - hull.gx_min), pw - 100, py + 15);
-      g.drawString("Beam: " + bcf.DF1d.format(2.0 * hull.gy_max), pw - 100, py + 30);
-      g.drawString("Depth: " + bcf.DF1d.format(hull.gz_max - hull.gz_min), pw - 100, py + 45);
+      g.drawString("Length: "
+          + boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min),
+          pw - 100, py + 15);
+      g.drawString("Beam: " + boatCalc.this.bcf.DF1d.format(2.0 * boatCalc.this.hull.gy_max),
+          pw - 100, py + 30);
+      g.drawString("Depth: "
+          + boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min),
+          pw - 100, py + 45);
 
-      g.clearRect(0, (int) my / 2 + 4, (int) mx, (int) my / 2 - 4);
-      g.drawString("Profile", 10, (int) my / 2 + 15);
+      g.clearRect(0, ((int) my / 2) + 4, (int) mx, ((int) my / 2) - 4);
+      g.drawString("Profile", 10, ((int) my / 2) + 15);
 
-      if (!hull.valid)
+      if (!boatCalc.this.hull.valid) {
         return;
+      }
 
-      int i, ix, iy, iw, iz;
+      int ix, iy, iw, iz;
       int iHL;
       double x, y, x_min, x_max;
       // Line ch;
       // Iterator listLine;
 
-      double[] stn = hull.Stations;
+      final double[] stn = boatCalc.this.hull.Stations;
 
       g.setFont(lilFont);
 
       // draw plan view
       int ix_min = px + 100;
-      int ix_max = px + pw - 25;
-      int iy_min = py + ph - 15;
+      int ix_max = (px + pw) - 25;
+      int iy_min = (py + ph) - 15;
       int iy_max = py + 5;
-      int n = stn.length;
-      int n1 = n - 1;
+      final int n = stn.length;
+      final int n1 = n - 1;
 
       double rx, ry, r;
-      rx = (ix_max - ix_min) / (hull.gx_max - hull.gx_min);
+      rx = (ix_max - ix_min) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
       ry = Math.abs(iy_max - iy_min)
-          / Math.max((hull.gy_max - hull.gy_min), (hull.gz_max - hull.gz_min));
+          / Math.max((boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min),
+              (boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min));
       r = Math.min(Math.abs(rx), Math.abs(ry));
 
-      ix = ix_min + (int) (r * (stn[0] - hull.gx_min));
+      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
       iy = iy_min;
-      iw = ix_min + (int) (r * (stn[n1] - hull.gx_min));
+      iw = ix_min + (int) (r * (stn[n1] - boatCalc.this.hull.gx_min));
       iz = iy_min;
       g.setColor(Color.blue);
       g.drawLine(ix, iy, iw, iz);
       g.drawString("0.0", ix - 25, iy);
       for (int ic = 0; ic < stn.length; ic++) {
-        ix = ix_min + (int) (r * (stn[ic] - hull.gx_min));
+        ix = ix_min + (int) (r * (stn[ic] - boatCalc.this.hull.gx_min));
         g.drawLine(ix, iy - 5, ix, iy + 5);
-        g.drawString(bcf.DF2d.format(stn[ic]), ix + 1, iy + 12);
+        g.drawString(boatCalc.this.bcf.DF2d.format(stn[ic]), ix + 1, iy + 12);
       }
 
       // draw vertical axis
       double vmin, vmax;
       double vinc = 12.0;
-      if (hull.units.UNITS == 1)
+      if (boatCalc.this.hull.units.UNITS == 1) {
         vinc = 1.0;
-      else if (hull.units.UNITS == 2)
+      } else if (boatCalc.this.hull.units.UNITS == 2) {
         vinc = 10.0;
-      else if (hull.units.UNITS == 3)
+      } else if (boatCalc.this.hull.units.UNITS == 3) {
         vinc = 0.1;
-      vmax = vinc * Math.ceil(hull.gy_max / vinc);
-      while (vmax / vinc > 4.0)
+      }
+      vmax = vinc * Math.ceil(boatCalc.this.hull.gy_max / vinc);
+      while ((vmax / vinc) > 4.0) {
         vinc = 2.0 * vinc;
-      ix = ix_min + (int) (r * (stn[0] - hull.gx_min));
+      }
+      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
       iy = iy_min - (int) (r * (0));
       iw = ix;
       iz = iy_min - (int) (r * (vmax - 0));
@@ -1705,18 +1089,18 @@ public class boatCalc extends javax.swing.JFrame {
 
       g.setColor(Color.black);
 
-      for (iHL = 0; iHL < hull.hLines.length; iHL++) {
-        x_min = hull.hLines[iHL].min("X");
-        x_max = hull.hLines[iHL].max("X");
+      for (iHL = 0; iHL < boatCalc.this.hull.hLines.length; iHL++) {
+        x_min = boatCalc.this.hull.hLines[iHL].min("X");
+        x_max = boatCalc.this.hull.hLines[iHL].max("X");
 
         x = x_min;
-        y = hull.hLines[iHL].hXY.interp4P(x);
-        ix = ix_min + (int) (r * (x - hull.gx_min));
+        y = boatCalc.this.hull.hLines[iHL].hXY.interp4P(x);
+        ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
         iy = iy_min - (int) (r * (y - 0));
         for (double pct = 0.05; pct < 1.005; pct += 0.05) {
-          x = x_min + pct * (x_max - x_min);
-          y = hull.hLines[iHL].hXY.interp4P(x);
-          iw = ix_min + (int) (r * (x - hull.gx_min));
+          x = x_min + (pct * (x_max - x_min));
+          y = boatCalc.this.hull.hLines[iHL].hXY.interp4P(x);
+          iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
           iz = iy_min - (int) (r * (y - 0));
           g.drawLine(ix, iy, iw, iz);
           ix = iw;
@@ -1727,15 +1111,15 @@ public class boatCalc extends javax.swing.JFrame {
       // draw stems
       g.setColor(Color.lightGray);
       for (int iSL = 0; iSL <= 1; iSL++) {
-        if (hull.bStems[iSL] && hull.sLines[iSL].valid) {
-          x = hull.sLines[iSL].hPoints[0].getX();
-          y = hull.sLines[iSL].hPoints[0].getY();
-          ix = ix_min + (int) (r * (x - hull.gx_min));
+        if (boatCalc.this.hull.bStems[iSL] && boatCalc.this.hull.sLines[iSL].valid) {
+          x = boatCalc.this.hull.sLines[iSL].hPoints[0].getX();
+          y = boatCalc.this.hull.sLines[iSL].hPoints[0].getY();
+          ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
           iy = iy_min - (int) (r * (y - 0));
-          for (int j = 1; j < hull.sLines[iSL].hPoints.length; j++) {
-            x = hull.sLines[iSL].hPoints[j].getX();
-            y = hull.sLines[iSL].hPoints[j].getY();
-            iw = ix_min + (int) (r * (x - hull.gx_min));
+          for (int j = 1; j < boatCalc.this.hull.sLines[iSL].hPoints.length; j++) {
+            x = boatCalc.this.hull.sLines[iSL].hPoints[j].getX();
+            y = boatCalc.this.hull.sLines[iSL].hPoints[j].getY();
+            iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
             iz = iy_min - (int) (r * (y - 0));
             g.drawLine(ix, iy, iw, iz);
             ix = iw;
@@ -1748,49 +1132,51 @@ public class boatCalc extends javax.swing.JFrame {
       // draw profile view
 
       px = 0;
-      py = (int) my / 2 + 4;
+      py = ((int) my / 2) + 4;
       pw = (int) mx;
-      ph = (int) my / 2 - 4;
+      ph = ((int) my / 2) - 4;
 
       ix_min = px + 100;
-      ix_max = px + pw - 25;
-      iy_min = py + ph - 15;
+      ix_max = (px + pw) - 25;
+      iy_min = (py + ph) - 15;
       iy_max = py + 5;
 
       // x-axis
-      ix = ix_min + (int) (r * (stn[0] - hull.gx_min));
-      iy = iy_min - (int) (r * (0 - hull.gz_min));
-      iw = ix_min + (int) (r * (stn[n1] - hull.gx_min));
+      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
+      iy = iy_min - (int) (r * (0 - boatCalc.this.hull.gz_min));
+      iw = ix_min + (int) (r * (stn[n1] - boatCalc.this.hull.gx_min));
       iz = iy;
 
       g.setColor(Color.blue);
       g.drawLine(ix, iy, iw, iz);
       for (int ic = 0; ic < stn.length; ic++) {
-        ix = ix_min + (int) (r * (stn[ic] - hull.gx_min));
+        ix = ix_min + (int) (r * (stn[ic] - boatCalc.this.hull.gx_min));
         g.drawLine(ix, iy - 5, ix, iy + 5);
       }
 
       // y-axis
       vinc = 12.0;
-      if (hull.units.UNITS == 1)
+      if (boatCalc.this.hull.units.UNITS == 1) {
         vinc = 1.0;
-      else if (hull.units.UNITS == 2)
+      } else if (boatCalc.this.hull.units.UNITS == 2) {
         vinc = 10.0;
-      else if (hull.units.UNITS == 3)
+      } else if (boatCalc.this.hull.units.UNITS == 3) {
         vinc = 0.1;
-      vmax = vinc * Math.ceil(hull.gz_max / vinc);
-      vmin = vinc * Math.floor(hull.gz_min / vinc);
-      while ((vmax - vmin) / vinc > 4.0)
+      }
+      vmax = vinc * Math.ceil(boatCalc.this.hull.gz_max / vinc);
+      vmin = vinc * Math.floor(boatCalc.this.hull.gz_min / vinc);
+      while (((vmax - vmin) / vinc) > 4.0) {
         vinc = 2.0 * vinc;
-      ix = ix_min + (int) (r * (stn[0] - hull.gx_min));
+      }
+      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
       // iy = iy_min - (int) (r * (vmin - hull.gz_min)) ;
       iy = iy_min;
       iw = ix;
-      iz = iy_min - (int) (r * (vmax - hull.gz_min));
+      iz = iy_min - (int) (r * (vmax - boatCalc.this.hull.gz_min));
       g.drawLine(ix, iy, iw, iz);
       ix = ix - 5;
       for (double vidx = vmin; vidx <= vmax; vidx += vinc) {
-        iy = iy_min - (int) (r * (vidx - hull.gz_min));
+        iy = iy_min - (int) (r * (vidx - boatCalc.this.hull.gz_min));
         iz = iy;
         if (iy <= iy_min) {
           g.drawLine(ix, iy, iw, iz);
@@ -1800,18 +1186,18 @@ public class boatCalc extends javax.swing.JFrame {
 
       g.setColor(Color.black);
 
-      for (iHL = 0; iHL < hull.hLines.length; iHL++) {
-        x_min = hull.hLines[iHL].min("X");
-        x_max = hull.hLines[iHL].max("X");
+      for (iHL = 0; iHL < boatCalc.this.hull.hLines.length; iHL++) {
+        x_min = boatCalc.this.hull.hLines[iHL].min("X");
+        x_max = boatCalc.this.hull.hLines[iHL].max("X");
         x = x_min;
-        y = hull.hLines[iHL].hXZ.interp4P(x);
-        ix = ix_min + (int) (r * (x - hull.gx_min));
-        iy = iy_min - (int) (r * (y - hull.gz_min));
+        y = boatCalc.this.hull.hLines[iHL].hXZ.interp4P(x);
+        ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
+        iy = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
         for (double pct = 0.05; pct < 1.005; pct += 0.05) {
-          x = x_min + pct * (x_max - x_min);
-          y = hull.hLines[iHL].hXZ.interp4P(x);
-          iw = ix_min + (int) (r * (x - hull.gx_min));
-          iz = iy_min - (int) (r * (y - hull.gz_min));
+          x = x_min + (pct * (x_max - x_min));
+          y = boatCalc.this.hull.hLines[iHL].hXZ.interp4P(x);
+          iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iz = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(ix, iy, iw, iz);
           ix = iw;
           iy = iz;
@@ -1820,16 +1206,16 @@ public class boatCalc extends javax.swing.JFrame {
       // draw stems
       g.setColor(Color.lightGray);
       for (int iSL = 0; iSL <= 1; iSL++) {
-        if (hull.bStems[iSL] && hull.sLines[iSL].valid) {
-          x = hull.sLines[iSL].hPoints[0].getX();
-          y = hull.sLines[iSL].hPoints[0].getZ();
-          ix = ix_min + (int) (r * (x - hull.gx_min));
-          iy = iy_min - (int) (r * (y - hull.gz_min));
-          for (int j = 1; j < hull.sLines[iSL].hPoints.length; j++) {
-            x = hull.sLines[iSL].hPoints[j].getX();
-            y = hull.sLines[iSL].hPoints[j].getZ();
-            iw = ix_min + (int) (r * (x - hull.gx_min));
-            iz = iy_min - (int) (r * (y - hull.gz_min));
+        if (boatCalc.this.hull.bStems[iSL] && boatCalc.this.hull.sLines[iSL].valid) {
+          x = boatCalc.this.hull.sLines[iSL].hPoints[0].getX();
+          y = boatCalc.this.hull.sLines[iSL].hPoints[0].getZ();
+          ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iy = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
+          for (int j = 1; j < boatCalc.this.hull.sLines[iSL].hPoints.length; j++) {
+            x = boatCalc.this.hull.sLines[iSL].hPoints[j].getX();
+            y = boatCalc.this.hull.sLines[iSL].hPoints[j].getZ();
+            iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
+            iz = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
             g.drawLine(ix, iy, iw, iz);
             ix = iw;
             iy = iz;
@@ -1840,590 +1226,499 @@ public class boatCalc extends javax.swing.JFrame {
 
     }// end paint
   }// end planPanel
+  class pnlAbout extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
-  public class ctrlPanel extends JPanel {
-    Dimension d;
-    JLabel lblName;
-    JLabel lblNA;
-    h2oPanel hP;
-    unitPanel uP;
-    stmPanel sP;
-
-    public ctrlPanel(int x, int y) {
-      Font cpFont = new Font("Serif", Font.BOLD, 14);
-      d = new Dimension(x, y);
-      setBorder(BorderFactory.createEtchedBorder());
-      setLayout(new FlowLayout());
-      lblName = new JLabel("name here");
-      lblName.setFont(cpFont);
-      lblName.setHorizontalAlignment(SwingConstants.LEFT);
-
-      lblNA = new JLabel("n/a");
-      lblNA.setFont(cpFont);
-      lblNA.setHorizontalAlignment(SwingConstants.RIGHT);
-
-      hP = new h2oPanel(170, 35);
-      sP = new stmPanel(210, 35);
-      uP = new unitPanel(380, 35);
-      add(lblName);
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      add(lblNA);
-      add(hP);
-      add(sP);
-      add(uP);
+    public pnlAbout() {
+      JLabel lbl;
+      final Font wpFont = new Font("Serif", Font.BOLD, 14);
+      this.setBorder(BorderFactory.createEtchedBorder());
+      this.setLayout(new GridLayout(0, 1));
+      lbl = new JLabel("boatCalc");
+      lbl.setFont(wpFont);
+      lbl.setHorizontalAlignment(SwingConstants.CENTER);
+      this.add(lbl);
+      lbl = new JLabel("Copyright 2004 by Peter H. Vanderwaart");
+      lbl.setFont(wpFont);
+      lbl.setHorizontalAlignment(SwingConstants.CENTER);
+      this.add(lbl);
+      lbl = new JLabel("Version 0.2e - 03/04/2004");
+      lbl.setFont(wpFont);
+      lbl.setHorizontalAlignment(SwingConstants.CENTER);
+      this.add(lbl);
     }
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-  }// end ctrlPanel
-
-
-  public class unitPanel extends JPanel implements ActionListener {
-    Dimension d;
-    JLabel lblUnit;
-    JRadioButton btnInLbs;
-    JRadioButton btnFtLbs;
-    JRadioButton btnCmKg;
-    JRadioButton btnMKg;
-    ButtonGroup bGrp;
-
-    public unitPanel(int x, int y) {
-      d = new Dimension(x, y);
-      lblUnit = new JLabel("Units:");
-      btnInLbs = new JRadioButton("in,lbs");
-      btnInLbs.setSelected(true);
-      btnFtLbs = new JRadioButton("ft,lbs");
-      btnCmKg = new JRadioButton("cm,Kg");
-      btnMKg = new JRadioButton("m,Kg");
-
-      btnInLbs.addActionListener(this);
-      btnFtLbs.addActionListener(this);
-      btnCmKg.addActionListener(this);
-      btnMKg.addActionListener(this);
-
-      bGrp = new ButtonGroup();
-      bGrp.add(btnInLbs);
-      bGrp.add(btnFtLbs);
-      bGrp.add(btnCmKg);
-      bGrp.add(btnMKg);
-
-      setBorder(BorderFactory.createEtchedBorder());
-      setLayout(new FlowLayout());
-      add(lblUnit);
-      add(btnInLbs);
-      add(btnFtLbs);
-      add(btnCmKg);
-      add(btnMKg);
-    }
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      if (btnInLbs.isSelected())
-        hull.units.UNITS = 0;
-      if (btnFtLbs.isSelected())
-        hull.units.UNITS = 1;
-      if (btnCmKg.isSelected())
-        hull.units.UNITS = 2;
-      if (btnMKg.isSelected())
-        hull.units.UNITS = 3;
-      setCtrls();
-    }
-  }// end unitPanel
-
-
-  public class stmPanel extends JPanel implements ActionListener {
-    Dimension d;
-    JLabel lblStem;
-    JRadioButton btnLeft;
-    JRadioButton btnRight;
-
-    public stmPanel(int x, int y) {
-      d = new Dimension(x, y);
-      lblStem = new JLabel("Auto Stem:");
-      btnLeft = new JRadioButton("Left");
-      btnLeft.setSelected(true);
-      btnRight = new JRadioButton("Right");
-      btnRight.setSelected(true);
-
-      btnLeft.addActionListener(this);
-      btnRight.addActionListener(this);
-
-      setBorder(BorderFactory.createEtchedBorder());
-      setLayout(new FlowLayout());
-      add(lblStem);
-      add(btnLeft);
-      add(btnRight);
-    }
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      if (btnLeft.isSelected())
-        hull.bStems[0] = true;
-      else
-        hull.bStems[0] = false;
-      if (btnRight.isSelected())
-        hull.bStems[1] = true;
-      else
-        hull.bStems[1] = false;
-      hull.bChanged = true;
-      body.repaint();
-      plan.repaint();
-    }
-
-  }// end stmPanel
-
-  public class h2oPanel extends JPanel implements ActionListener {
-    Dimension d;
-    JLabel lblH2O;
-    JRadioButton btnSalt;
-    JRadioButton btnFresh;
-    ButtonGroup bGrp;
-
-    public h2oPanel(int x, int y) {
-      d = new Dimension(x, y);
-      lblH2O = new JLabel("Water:");
-      btnSalt = new JRadioButton("salt");
-      btnSalt.setSelected(true);
-      btnFresh = new JRadioButton("fresh");
-
-      btnSalt.addActionListener(this);
-      btnFresh.addActionListener(this);
-
-      bGrp = new ButtonGroup();
-      bGrp.add(btnSalt);
-      bGrp.add(btnFresh);
-
-      setBorder(BorderFactory.createEtchedBorder());
-      setLayout(new FlowLayout());
-      add(lblH2O);
-      add(btnSalt);
-      add(btnFresh);
-    }
-
-    public Dimension getPreferredSize() {
-      return d;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      if (btnSalt.isSelected())
-        hull.units.WATER = 0;
-      if (btnFresh.isSelected())
-        hull.units.WATER = 1;
-      hull.bChanged = true;
-      body.repaint();
-      plan.repaint();
-    }
-  }// end h2oPanel
-
-
-  public void getHull() {
-    String fn;
-    int returnVal;
-
-    try {
-      hull = new Hull();
-
-      // ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls files");
-      // fc.setFileFilter(ff);
-      returnVal = fc.showOpenDialog(null);
-      if (returnVal == JFileChooser.APPROVE_OPTION) {
-        fn = (fc.getSelectedFile().getName()).toLowerCase();
-        if (fn.indexOf(".hul") > 0)
-          hull.getHulls(fc.getSelectedFile());
-        else
-          hull.getData(fc.getSelectedFile());
-        if (!bOpen)
-          setCtrls();
-      }
-    } catch (NullPointerException npe) {
-      System.out.println(npe);
-    }
-  }// end getHull
-
-  public void saveHull() {
-    String fn;
-    int returnVal;
-
-    try {
-      // ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls files");
-      // fc.setFileFilter(ff);
-      returnVal = fc.showSaveDialog(null);
-      if (returnVal == JFileChooser.APPROVE_OPTION) {
-        fn = (fc.getSelectedFile().getName()).toLowerCase();
-        if (fn.indexOf(".hul") > 0)
-          hull.saveHulls(fc.getSelectedFile());
-        else
-          hull.saveData(fc.getSelectedFile());
-      }
-    } catch (NullPointerException npe) {
-      System.out.println(npe);
-    }
-
-  }
-
-  public void setCtrls() {
-    double sl_ctr = -(0.5 * (hull.gz_max + hull.gz_min) - hull.base);
-    double sl_min = sl_ctr - 0.5 * (hull.gz_max - hull.gz_min);
-    double sl_max = sl_ctr + 0.5 * (hull.gz_max - hull.gz_min);
-    int itic, dinc;
-
-    if (hull.base < sl_min || hull.base > sl_max) {
-      hull.base = sl_ctr;
-      JOptionPane.showMessageDialog(null, "Setting baseline offset.", "Warning!",
-          JOptionPane.ERROR_MESSAGE);
-    }
-
-    if (hull.units.UNITS == 0) {
-      sl_min = 12.0 * Math.floor(sl_min / 12.0);
-      sl_max = 12.0 * Math.ceil(sl_max / 12.0);
-
-      itic = 4;
-      dinc = 48;
-      if ((sl_max - sl_min) > 54.0) {
-        itic = 8;
-        dinc = 96;
-      }
-      dispCtrl.slBase.setModel(new DefaultBoundedRangeModel((int) (4.0 * hull.base), 0,
-          4 * (int) sl_min, 4 * (int) sl_max));
-      dispCtrl.slBase.setMajorTickSpacing(48);
-      dispCtrl.slBase.setMinorTickSpacing(itic);
-
-      // Create the label table
-      Hashtable labelTable = new Hashtable();
-      for (double d = 4 * sl_min; d <= 4 * sl_max + 0.5; d += dinc) {
-        labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 4)));
-      }
-      dispCtrl.slBase.setLabelTable(labelTable);
-    }
-
-    else if (hull.units.UNITS == 1) {
-      sl_min = Math.floor(sl_min);
-      sl_max = Math.max(Math.ceil(sl_max), sl_min + 1);
-
-      itic = 4;
-      dinc = 48;
-      if ((sl_max - sl_min) > 72) {
-        itic = 128;
-        dinc = 1536;
-      } else if ((sl_max - sl_min) > 36) {
-        itic = 64;
-        dinc = 768;
-      } else if ((sl_max - sl_min) > 18) {
-        itic = 32;
-        dinc = 384;
-      } else if ((sl_max - sl_min) > 9.0) {
-        itic = 16;
-        dinc = 192;
-      } else if ((sl_max - sl_min) > 4.5) {
-        itic = 8;
-        dinc = 96;
-      }
-      dispCtrl.slBase.setModel(new DefaultBoundedRangeModel((int) (48.0 * hull.base), 0,
-          48 * (int) sl_min, 48 * (int) sl_max));
-      dispCtrl.slBase.setMajorTickSpacing(12 * itic);
-      dispCtrl.slBase.setMinorTickSpacing(itic);
-
-      // Create the label table
-      Hashtable labelTable = new Hashtable();
-      for (double d = 48 * sl_min; d <= 48 * sl_max + 0.5; d += dinc) {
-        labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 48)));
-      }
-      dispCtrl.slBase.setLabelTable(labelTable);
-
-    }
-
-    else if (hull.units.UNITS == 2) {
-      sl_min = 10.0 * Math.floor(sl_min / 10.0);
-      sl_max = 10.0 * Math.ceil(sl_max / 10.0);
-
-      itic = 1;
-      dinc = 50;
-
-      dispCtrl.slBase
-          .setModel(new DefaultBoundedRangeModel((int) hull.base, 0, (int) sl_min, (int) sl_max));
-      dispCtrl.slBase.setMajorTickSpacing(10);
-      dispCtrl.slBase.setMinorTickSpacing(itic);
-
-      // Create the label table
-      Hashtable labelTable = new Hashtable();
-      for (double d = sl_min; d <= sl_max + 0.5; d += dinc) {
-        labelTable.put(new Integer((int) d), new JLabel(Double.toString(d)));
-      }
-      dispCtrl.slBase.setLabelTable(labelTable);
-
-    }
-
-    else if (hull.units.UNITS == 3) {
-      sl_min = 100 * Math.floor(sl_min);
-      sl_max = Math.max(100 * Math.ceil(sl_max), sl_min + 1.0);
-
-      boolean OK = true;
-
-      while (OK && (sl_min < sl_max)) {
-        try {
-          itic = 10;
-          dinc = 50;
-          if ((sl_max - sl_min) > 12.0) {
-            itic = 200;
-            dinc = 400;
-          } else if ((sl_max - sl_min) > 6.0) {
-            itic = 100;
-            dinc = 200;
-          } else if ((sl_max - sl_min) > 3.0) {
-            itic = 50;
-            dinc = 100;
-          }
-
-          dispCtrl.slBase.setModel(new DefaultBoundedRangeModel((int) (100.0 * hull.base), 0,
-              (int) sl_min, (int) sl_max));
-          dispCtrl.slBase.setMajorTickSpacing(10 * itic);
-          dispCtrl.slBase.setMinorTickSpacing(itic);
-
-          // Create the label table
-          Hashtable labelTable = new Hashtable();
-          for (double d = sl_min; d <= sl_max + 0.5; d += dinc) {
-            labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 100.0)));
-          }
-          dispCtrl.slBase.setLabelTable(labelTable);
-          OK = false;
-
-        } catch (IllegalArgumentException iae) {
-          sl_min = sl_min + 100;
-          sl_max = sl_max - 100;
-          System.out.println("slider limits: " + sl_min + " " + sl_max);
-        }
-      } // end while
-
-    }
-
-    dispCtrl.slBase.setPaintTicks(true);
-    dispCtrl.slBase.setPaintLabels(true);
-    dispCtrl.slBase.revalidate();
-    dispCtrl.slBase.repaint();
-
-    ctrl.lblName.setText("Design: " + hull.boatname);
-    ctrl.lblNA.setText("Designer: " + hull.designer);
-
-    if (hull.units.WATER == 0)
-      ctrl.hP.btnSalt.setSelected(true);
-    if (hull.units.WATER == 1)
-      ctrl.hP.btnFresh.setSelected(true);
-
-    if (hull.units.UNITS == 0)
-      ctrl.uP.btnInLbs.setSelected(true);
-    if (hull.units.UNITS == 1)
-      ctrl.uP.btnFtLbs.setSelected(true);
-    if (hull.units.UNITS == 2)
-      ctrl.uP.btnCmKg.setSelected(true);
-    if (hull.units.UNITS == 3)
-      ctrl.uP.btnMKg.setSelected(true);
-
-    ctrl.sP.btnLeft.setSelected(hull.bStems[0]);
-    ctrl.sP.btnRight.setSelected(hull.bStems[1]);
-
-  }// end setCtrls
-
-
-
+  }// end pnlAbout
   class pnlCenterboard extends JPanel {
-    JTabbedPane pDisp;
-    cbDraw pDraw;
-    cbSpec pSpec;
-    cbData pData;
-    cbArea pRpt;
-    Centerboard pCb;
-    Border bCb;
-    cbTabOrder to;
-    boolean cbChange;
+    class cbArea extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      Dimension d;
+      JButton jbApply, jbClose;
+      JLabel jlRArea, jlRCoA;
+      JLabel jlSArea, jlSCoA;
+      JLabel jlTArea, jlTCoA;
 
-    public pnlCenterboard() {
+      public cbArea(final int x, final int y) {
+        this.d = new Dimension(x, y);
+        this.setLayout(new GridLayout(0, 2));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(new bcLabel("Immersed Areas", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
-      if (hull.board.valid)
-        pCb = (Centerboard) hull.board.clone();
-      else
-        pCb = new Centerboard();
-      pCb.setBase(hull.base);
-      cbChange = false;
+        this.add(new bcLabel("Centerboard - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlRArea = new JLabel("0.0", SwingConstants.LEFT));
 
-      bCb = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-      setLayout(new BorderLayout());
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlRCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(new bcLabel("Skeg - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlSArea = new JLabel("0.0", SwingConstants.LEFT));
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlSCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(new bcLabel("Total - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlTArea = new JLabel("0.0", SwingConstants.LEFT));
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlTCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
-      pDisp = new JTabbedPane();
+        this.jbApply = new JButton("Apply");
+        this.jbClose = new JButton("Close");
 
-      pDraw = new cbDraw(750, 325);
-      pDraw.setBackground(Color.white);
-      pDraw.setBorder(bCb);
-      pDisp.add(pDraw, "Drawing");
+        this.jbApply.addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            pnlCenterboard.this.saveCenterboard();
+            pnlCenterboard.this.cbChange = false;
+          }
+        });
 
-      pSpec = new cbSpec(750, 325);
-      pSpec.setBackground(Color.white);
-      pSpec.setBorder(bCb);
-      pDisp.add(pSpec, "Dimensions");
+        this.jbClose.addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            if (pnlCenterboard.this.cbChange) {
+              final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit,
+                  "Data has changed. Do you wish to apply changes?", "Data Edit",
+                  JOptionPane.YES_NO_OPTION);
+              if (n == JOptionPane.YES_OPTION) {
+                pnlCenterboard.this.saveCenterboard();
+                pnlCenterboard.this.cbChange = false;
+              }
+            }
+            boatCalc.this.f_board.setVisible(false);
+          }
+        });
 
-      add(pDisp, BorderLayout.CENTER);
+        this.add(this.jbApply);
+        this.add(this.jbClose);
 
-      pRpt = new cbArea(180, 200);
-      add(pRpt, BorderLayout.LINE_END);
+      }
+
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
+
+      protected void setTable() {
+        String s;
+        double wa = 0;
+        double wx = 0;
+        double wy = 0;
+        if (pnlCenterboard.this.pCb.board.use) {
+          this.jlRArea.setText(boatCalc.this.bcf.DF1d.format(
+              boatCalc.this.hull.units.coefArea() * pnlCenterboard.this.pCb.board.getWetArea())
+              + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(pnlCenterboard.this.pCb.board.getWetX()) + ", "
+              + boatCalc.this.bcf.DF1d.format(pnlCenterboard.this.pCb.board.getWetY());
+          this.jlRCoA.setText(s);
+          wa = wa + pnlCenterboard.this.pCb.board.getWetArea();
+          wx = wx + (pnlCenterboard.this.pCb.board.getWetArea()
+              * pnlCenterboard.this.pCb.board.getWetX());
+          wy = wy + (pnlCenterboard.this.pCb.board.getWetArea()
+              * pnlCenterboard.this.pCb.board.getWetY());
+        } else {
+          this.jlRArea.setText("0.00");
+          this.jlRCoA.setText("-.--, -.--");
+        }
 
 
-      pData = new cbData(750, 185);
-      pData.setBorder(bCb);
-      add(pData, BorderLayout.PAGE_END);
+        if (wa > 0) {
+          this.jlTArea.setText(boatCalc.this.bcf.DF1d.format(wa));
+          this.jlTArea
+              .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.units.coefArea() * wa)
+                  + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(wx / wa) + ", "
+              + boatCalc.this.bcf.DF1d.format(wy / wa);
+          this.jlTCoA.setText(s);
+        } else {
+          this.jlTArea.setText("0.00");
+          this.jlTCoA.setText("-.--, -.--");
+        }
+      }
 
-      // to = new cbTabOrder(this);
-      // f_board.setFocusTraversalPolicy(to);
+    }// end cbArea
+    class cbData extends JPanel implements ActionListener {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      JButton btnInc, btnDec;
+      JComboBox cbxInc;
+      Dimension d;
+      editFoil pCenterboard;
+      editPivot pPivot;
+      JRadioButton rbBLX, rbBLZ, rbBRX, rbBRZ;
+      JRadioButton rbMoveX, rbMoveZ;
+      JRadioButton rbPivotX, rbPivotZ;
+      JRadioButton rbScale;
+      JRadioButton rbTLX, rbTLZ, rbTRX, rbTRZ;
 
-      f_board.addWindowListener(new WindowAdapter() {
-        public void windowClosing(WindowEvent e) {
-          if (cbChange) {
-            int n = JOptionPane.showConfirmDialog(f_sailplan,
-                "Data has changed. Do you wish to apply changes?", "Sailplan Design",
-                JOptionPane.YES_NO_OPTION);
-            if (n == JOptionPane.YES_OPTION) {
-              saveCenterboard();
+      public cbData(final int x, final int y) {
+
+        JPanel pCB;
+
+        this.d = new Dimension(x, y);
+        this.setLayout(new BorderLayout());
+        this.pCenterboard = new editFoil(pnlCenterboard.this.pCb.board);
+        this.pCenterboard.setBorder(BorderFactory.createEtchedBorder());
+
+        this.setLayout(new BorderLayout());
+        this.add(this.pCenterboard, BorderLayout.CENTER);
+
+        this.pPivot = new editPivot();
+        this.add(this.pPivot, BorderLayout.LINE_END);
+
+        final JPanel pInc = new JPanel();
+        pInc.setPreferredSize(new Dimension(x - 5, (3 * y) / 10));
+        pInc.setLayout(new GridLayout(0, 5));
+        final ButtonGroup bgInc = new ButtonGroup();
+
+        this.btnInc = new JButton("Increase");
+        this.btnInc.addActionListener(this);
+        pInc.add(this.btnInc);
+
+        pCB = new JPanel();
+        pCB.add(new JLabel("Top/Left ", SwingConstants.RIGHT));
+        this.rbTLX = new JRadioButton("X");
+        bgInc.add(this.rbTLX);
+        pCB.add(this.rbTLX);
+        this.rbTLZ = new JRadioButton("Z");
+        bgInc.add(this.rbTLZ);
+        pCB.add(this.rbTLZ);
+        pInc.add(pCB);
+
+        pCB = new JPanel();
+        pCB.add(new JLabel("Top/Right ", SwingConstants.RIGHT));
+        this.rbTRX = new JRadioButton("X");
+        bgInc.add(this.rbTRX);
+        pCB.add(this.rbTRX);
+        this.rbTRZ = new JRadioButton("Z");
+        bgInc.add(this.rbTRZ);
+        pCB.add(this.rbTRZ);
+        pInc.add(pCB);
+
+        pCB = new JPanel();
+        pCB.add(new JLabel("Pivot ", SwingConstants.RIGHT));
+        this.rbPivotX = new JRadioButton("X");
+        bgInc.add(this.rbPivotX);
+        pCB.add(this.rbPivotX);
+        this.rbPivotZ = new JRadioButton("Z");
+        bgInc.add(this.rbPivotZ);
+        pCB.add(this.rbPivotZ);
+        pInc.add(pCB);
+
+        pCB = new JPanel();
+        pCB.add(new JLabel("Scale ", SwingConstants.RIGHT));
+        this.rbScale = new JRadioButton("%");
+        bgInc.add(this.rbScale);
+        pCB.add(this.rbScale);
+        // pCB.add(new Box.Filler(new Dimension(20,20),new Dimension(20,20),new Dimension(20,20)));
+        pInc.add(pCB);
+
+
+        this.btnDec = new JButton("Decrease");
+        this.btnDec.addActionListener(this);
+        pInc.add(this.btnDec);
+
+
+        pCB = new JPanel();
+        pCB.add(new JLabel("Bot/Left ", SwingConstants.RIGHT));
+        this.rbBLX = new JRadioButton("X");
+        bgInc.add(this.rbBLX);
+        pCB.add(this.rbBLX);
+        this.rbBLZ = new JRadioButton("Z");
+        bgInc.add(this.rbBLZ);
+        pCB.add(this.rbBLZ);
+        pInc.add(pCB);
+
+        pCB = new JPanel();
+        pCB.add(new JLabel("Bot/Right ", SwingConstants.RIGHT));
+        this.rbBRX = new JRadioButton("X");
+        bgInc.add(this.rbBRX);
+        pCB.add(this.rbBRX);
+        this.rbBRZ = new JRadioButton("Z");
+        bgInc.add(this.rbBRZ);
+        pCB.add(this.rbBRZ);
+        pInc.add(pCB);
+
+        pCB = new JPanel();
+        pCB.add(new JLabel("Move ", SwingConstants.RIGHT));
+        this.rbMoveX = new JRadioButton("X");
+        bgInc.add(this.rbMoveX);
+        pCB.add(this.rbMoveX);
+        this.rbMoveZ = new JRadioButton("Z");
+        bgInc.add(this.rbMoveZ);
+        pCB.add(this.rbMoveZ);
+        pInc.add(pCB);
+
+        pCB = new JPanel();
+        pCB.setLayout(new GridLayout(0, 2));
+        pCB.add(new JLabel("Step: ", SwingConstants.RIGHT));
+
+        final String[] incs =
+            {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
+        this.cbxInc = new JComboBox(incs);
+        this.cbxInc.setEditable(true);
+        this.cbxInc.setSelectedIndex(6);
+        pCB.add(this.cbxInc);
+
+        // tfInc = new JTextField("1.0",8);
+        // pCB.add(tfInc);
+        pInc.add(pCB);
+
+        this.add(pInc, BorderLayout.PAGE_END);
+
+      } // end constructor
+
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        if ((e.getSource() == this.btnInc) || (e.getSource() == this.btnDec)) {
+
+          final rscFoil f = pnlCenterboard.this.pCb.board;
+          final editFoil eF = this.pCenterboard;
+          final editPivot eP = this.pPivot;
+          double d = 0;
+          double v;
+          double sgn;
+
+          try {
+            d = Double.parseDouble((String) this.cbxInc.getSelectedItem());
+          } catch (final NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(null, "Unable to interperet step as number.", "Warning!",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+          }
+
+          if (e.getSource() == this.btnInc) {
+            sgn = 1.0;
+          } else {
+            sgn = -1.0;
+          }
+
+          if (this.rbTLX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.TL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.TL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.TL, v);
+          }
+
+          if (this.rbTLZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.TL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.TL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.TL, v);
+          }
+
+
+          if (this.rbTRX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.TR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.TR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.TR, v);
+          }
+
+          if (this.rbTRZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.TR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.TR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.TR, v);
+          }
+
+
+          if (this.rbBRX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.BR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.BR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.BR, v);
+          }
+
+          if (this.rbBRZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.BR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.BR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.BR, v);
+          }
+
+          if (this.rbBLX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.BL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.BL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.BL, v);
+          }
+
+          if (this.rbBLZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.BL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.BL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.BL, v);
+          }
+
+          if (this.rbPivotX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eP.px.getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eP.px.setText(boatCalc.this.bcf.DF2d.format(v));
+            pnlCenterboard.this.pCb.setPivotX(v);
+          }
+
+          if (this.rbPivotZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eP.py.getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eP.py.setText(boatCalc.this.bcf.DF2d.format(v));
+            pnlCenterboard.this.pCb.setPivotZ(v);
+          }
+
+          if (this.rbScale.isSelected()) {
+            final double mx = pnlCenterboard.this.pCb.getPivotX();
+            final double my = pnlCenterboard.this.pCb.getPivotZ();
+            for (int i = 0; i < 4; i++) {
+              v = mx + (0.01 * (100 + (sgn * d)) * (f.getParamX(i) - mx));
+              eF.ff[0][i].setText(boatCalc.this.bcf.DF2d.format(v));
+              f.setParamX(i, v);
+              v = my + (0.01 * (100 + (sgn * d)) * (f.getParamY(i) - my));
+              eF.ff[1][i].setText(boatCalc.this.bcf.DF2d.format(v));
+              f.setParamY(i, v);
             }
           }
-          f_board.setVisible(false);
+
         }
-      });
-
-      pDraw.repaint();
-      pSpec.repaint();
-      pRpt.setTable();
-
-    }// end constructor
-
-    public void saveCenterboard() {
-      hull.board = (Centerboard) pCb.clone();
-      hull.bChanged = true;
-    }
-
-    public class cbTabOrder extends FocusTraversalPolicy {
-      cbData r;
-
-      public cbTabOrder(pnlCenterboard p) {
-        pnlCenterboard psp = p;
-        r = p.pData;
+        pnlCenterboard.this.pDraw.repaint();
+        pnlCenterboard.this.pSpec.repaint();
+        pnlCenterboard.this.pRpt.setTable();
       }
 
-      public Component getComponentAfter(Container focusCycleRoot, Component aComponent) {
-        return aComponent;
-      }
-
-      public Component getComponentBefore(Container focusCycleRoot, Component aComponent) {
-        return aComponent;
-      }
-
-      public Component getLastComponent(Container focusCycleRoot) {
-        return r;
-      }
-
-      public Component getFirstComponent(Container focusCycleRoot) {
-        return r;
-      }
-
-      public Component getDefaultComponent(Container focusCycleRoot) {
-        return r;
-      }
-    }// end cbTabOrder
-
-    class cbSpec extends JPanel {
-      Dimension d;
-
-      public cbSpec(int x, int y) {
-        d = new Dimension(x, y);
-      }
-
+      @Override
       public Dimension getPreferredSize() {
-        return d;
+        return this.d;
       }
-
-      protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        int iL = 20;
-        int iC1 = 20;
-        int iC2 = 80;
-        int iC3 = 250;
-        int iC4 = 325;
-        int kL = 0;
-        if (pCb.board.use) {
-          int jL = 0;
-          g.drawString("Centerboard", iC1, iL);
-          jL = 20;
-          g.drawString("Area: ", iC1, iL + jL);
-          g.drawString(bcf.DF1d.format(pCb.board.getArea()), iC2, iL + jL);
-          jL = jL + 20;
-          g.drawString("CoA: ", iC1, iL + jL);
-          g.drawString(
-              bcf.DF2d.format(pCb.board.getAreaX()) + ", " + bcf.DF2d.format(pCb.board.getAreaY()),
-              iC2, iL + jL);
-          jL = jL + 20;
-          g.drawString("Points: ", iC1, iL + jL);
-          for (int i = 0; i < 4; i++) {
-            g.drawString(bcf.DF2d.format(pCb.board.getParamX(i)) + ", "
-                + bcf.DF2d.format(pCb.board.getParamY(i)), iC2, iL + jL);
-            jL = jL + 20;
-          }
-          g.drawString("ref: baseline", iC2 + 90, iL + jL - 20);
-          kL = jL;
-          jL = 0;
-          g.drawString("Immersed Portion", iC3, iL);
-          jL = 20;
-          g.drawString("Area: ", iC3, iL + jL);
-          g.drawString(bcf.DF1d.format(pCb.board.getWetArea()), iC4, iL + jL);
-          jL = jL + 20;
-          g.drawString("CoA: ", iC3, iL + jL);
-          g.drawString(
-              bcf.DF2d.format(pCb.board.getWetX()) + ", " + bcf.DF2d.format(pCb.board.getWetY()),
-              iC4, iL + jL);
-          jL = jL + 20;
-          g.drawString("Points: ", iC3, iL + jL);
-
-          SortedSet wp = pCb.board.getWetPts();
-          Iterator pi = wp.iterator();
-          while (pi.hasNext()) {
-            Point p = (Point) pi.next();
-            g.drawString(bcf.DF2d.format(p.x) + ", " + bcf.DF2d.format(p.z), iC4, iL + jL);
-            jL = jL + 20;
-          }
-          g.drawString("ref: lwl", iC4 + 90, iL + jL - 20);
-          kL = Math.max(kL, jL);
-        }
-        iL = iL + kL;
-
-
-      }// end paintComponent
-    }// ends cbSpec
-
+    }// end cbData
     class cbDraw extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       Dimension d;
 
-      public cbDraw(int x, int y) {
-        d = new Dimension(x, y);
+      public cbDraw(final int x, final int y) {
+        this.d = new Dimension(x, y);
       }
 
+      @Override
       public Dimension getPreferredSize() {
-        return d;
+        return this.d;
       }
 
-      protected void paintComponent(Graphics g) {
+      @Override
+      protected void paintComponent(final Graphics g) {
         super.paintComponent(g);
 
-        double mx = getWidth();
-        double my = getHeight();
-        int ix = (int) mx;
-        int iy = (int) my;
-        int xb = (int) 50;
-        int yb = (int) my / 2;
+        final double mx = this.getWidth();
+        final double my = this.getHeight();
+        final int ix = (int) mx;
+        final int iy = (int) my;
+        final int xb = 50;
+        final int yb = (int) my / 2;
         int iu, iv, iw, iz;
 
         g.clearRect(0, 0, ix, iy);
@@ -2435,51 +1730,53 @@ public class boatCalc extends javax.swing.JFrame {
         g.setColor(Color.black);
         g.setColor(Color.black);
 
-        if (!hull.valid)
+        if (!boatCalc.this.hull.valid) {
           return;
+        }
 
-        double rx = (mx - 100.0) / (hull.gx_max - hull.gx_min);
-        double ry = (my - 75.0) / (hull.gy_max - hull.gy_min);
-        double r = Math.min(rx, ry);
+        final double rx = (mx - 100.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
+        final double ry = (my - 75.0) / (boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min);
+        final double r = Math.min(rx, ry);
 
         // draw waterline
-        iu = xb + (int) (r * (hull.gx_min - hull.gx_min));
-        iv = yb - (int) (r * (0.0 - hull.gz_min));
-        iw = xb + (int) (r * (hull.gx_max - hull.gx_min));
-        iz = yb - (int) (r * (0.0 - hull.gz_min));
+        iu = xb + (int) (r * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
+        iv = yb - (int) (r * (0.0 - boatCalc.this.hull.gz_min));
+        iw = xb + (int) (r * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (r * (0.0 - boatCalc.this.hull.gz_min));
         g.setColor(Color.blue);
         g.drawLine(iu, iv, iw, iz);
 
         // draw hull profile
         g.setColor(Color.black);
-        double z1Lo = hull.gz_max;
-        double z1Hi = hull.gz_min;
+        double z1Lo = boatCalc.this.hull.gz_max;
+        double z1Hi = boatCalc.this.hull.gz_min;
         double x1 = 0;
 
-        double[] minHull = new double[101];
+        final double[] minHull = new double[101];
         int idx = -1;
 
         for (double pct = 0.0; pct <= 1.0025; pct = pct + 0.01) {
-          double x = hull.gx_min + pct * (hull.gx_max - hull.gx_min);
-          SortedSet ss = hull.getStnSet(x, 0.0);
-          Iterator si = ss.iterator();
-          double zLo = hull.gz_max;
-          double zHi = hull.gz_min;
+          final double x = boatCalc.this.hull.gx_min
+              + (pct * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+          final SortedSet ss = boatCalc.this.hull.getStnSet(x, 0.0);
+          final Iterator si = ss.iterator();
+          double zLo = boatCalc.this.hull.gz_max;
+          double zHi = boatCalc.this.hull.gz_min;
           boolean bOk = false;
           while (si.hasNext()) {
-            Point p = (Point) si.next();
+            final Point p = (Point) si.next();
             zLo = Math.min(zLo, p.z);
             zHi = Math.max(zHi, p.z);
             bOk = true;
           }
-          if (bOk && pct > 0.0) {
-            iu = xb + (int) (r * (x1 - hull.gx_min));
-            iv = yb - (int) (r * (z1Lo - hull.gz_min));
-            iw = xb + (int) (r * (x - hull.gx_min));
-            iz = yb - (int) (r * (zLo - hull.gz_min));
+          if (bOk && (pct > 0.0)) {
+            iu = xb + (int) (r * (x1 - boatCalc.this.hull.gx_min));
+            iv = yb - (int) (r * (z1Lo - boatCalc.this.hull.gz_min));
+            iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+            iz = yb - (int) (r * (zLo - boatCalc.this.hull.gz_min));
             g.drawLine(iu, iv, iw, iz);
-            iv = yb - (int) (r * (z1Hi - hull.gz_min));
-            iz = yb - (int) (r * (zHi - hull.gz_min));
+            iv = yb - (int) (r * (z1Hi - boatCalc.this.hull.gz_min));
+            iz = yb - (int) (r * (zHi - boatCalc.this.hull.gz_min));
             g.drawLine(iu, iv, iw, iz);
           }
 
@@ -2488,24 +1785,25 @@ public class boatCalc extends javax.swing.JFrame {
           z1Hi = zHi;
 
           idx++;
-          minHull[idx] = Math.min(zLo, 0.0) - hull.base;
+          minHull[idx] = Math.min(zLo, 0.0) - boatCalc.this.hull.base;
 
         }
-        pCb.setMinHull(minHull, hull.gx_min, hull.gx_max, 100);
+        pnlCenterboard.this.pCb.setMinHull(minHull, boatCalc.this.hull.gx_min,
+            boatCalc.this.hull.gx_max, 100);
 
         // draw stems
         g.setColor(Color.lightGray);
         for (int iSL = 0; iSL <= 1; iSL++) {
-          if (hull.bStems[iSL] && hull.sLines[iSL].valid) {
-            double x = hull.sLines[iSL].hPoints[0].getX();
-            double y = hull.sLines[iSL].hPoints[0].getZ();
-            iu = xb + (int) (r * (x - hull.gx_min));
-            iv = yb - (int) (r * (y - hull.gz_min));
-            for (int j = 1; j < hull.sLines[iSL].hPoints.length; j++) {
-              x = hull.sLines[iSL].hPoints[j].getX();
-              y = hull.sLines[iSL].hPoints[j].getZ();
-              iw = xb + (int) (r * (x - hull.gx_min));
-              iz = yb - (int) (r * (y - hull.gz_min));
+          if (boatCalc.this.hull.bStems[iSL] && boatCalc.this.hull.sLines[iSL].valid) {
+            double x = boatCalc.this.hull.sLines[iSL].hPoints[0].getX();
+            double y = boatCalc.this.hull.sLines[iSL].hPoints[0].getZ();
+            iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+            iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
+            for (int j = 1; j < boatCalc.this.hull.sLines[iSL].hPoints.length; j++) {
+              x = boatCalc.this.hull.sLines[iSL].hPoints[j].getX();
+              y = boatCalc.this.hull.sLines[iSL].hPoints[j].getZ();
+              iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+              iz = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
               g.drawLine(iu, iv, iw, iz);
               iu = iw;
               iv = iz;
@@ -2514,35 +1812,35 @@ public class boatCalc extends javax.swing.JFrame {
         }
 
         // draw board
-        if (pCb.board.use) {
+        if (pnlCenterboard.this.pCb.board.use) {
 
           // draw pivot point
 
           g.setColor(Color.red);
-          double xp = pCb.getPivotX();
-          double yp = pCb.getPivotZ() + hull.base;
-          iu = xb + (int) (r * (xp - hull.gx_min));
-          iv = yb - (int) (r * (yp - hull.gz_min));
+          final double xp = pnlCenterboard.this.pCb.getPivotX();
+          final double yp = pnlCenterboard.this.pCb.getPivotZ() + boatCalc.this.hull.base;
+          iu = xb + (int) (r * (xp - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (yp - boatCalc.this.hull.gz_min));
           g.drawLine(iu + 6, iv, iu - 6, iv);
           g.drawLine(iu, iv + 6, iu, iv - 6);
 
           g.setColor(Color.lightGray);
-          iu = xb + (int) (r * (pCb.getRX(0) - hull.gx_min));
-          iv = yb - (int) (r * (pCb.getRZ(0) - hull.gz_min));
-          iw = xb + (int) (r * (pCb.getRX(1) - hull.gx_min));
-          iz = yb - (int) (r * (pCb.getRZ(1) - hull.gz_min));
+          iu = xb + (int) (r * (pnlCenterboard.this.pCb.getRX(0) - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (pnlCenterboard.this.pCb.getRZ(0) - boatCalc.this.hull.gz_min));
+          iw = xb + (int) (r * (pnlCenterboard.this.pCb.getRX(1) - boatCalc.this.hull.gx_min));
+          iz = yb - (int) (r * (pnlCenterboard.this.pCb.getRZ(1) - boatCalc.this.hull.gz_min));
           g.drawLine(iu, iv, iw, iz);
 
-          iu = xb + (int) (r * (pCb.getRX(2) - hull.gx_min));
-          iv = yb - (int) (r * (pCb.getRZ(2) - hull.gz_min));
+          iu = xb + (int) (r * (pnlCenterboard.this.pCb.getRX(2) - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (pnlCenterboard.this.pCb.getRZ(2) - boatCalc.this.hull.gz_min));
           g.drawLine(iw, iz, iu, iv);
 
-          iw = xb + (int) (r * (pCb.getRX(3) - hull.gx_min));
-          iz = yb - (int) (r * (pCb.getRZ(3) - hull.gz_min));
+          iw = xb + (int) (r * (pnlCenterboard.this.pCb.getRX(3) - boatCalc.this.hull.gx_min));
+          iz = yb - (int) (r * (pnlCenterboard.this.pCb.getRZ(3) - boatCalc.this.hull.gz_min));
           g.drawLine(iu, iv, iw, iz);
 
-          iu = xb + (int) (r * (pCb.getRX(0) - hull.gx_min));
-          iv = yb - (int) (r * (pCb.getRZ(0) - hull.gz_min));
+          iu = xb + (int) (r * (pnlCenterboard.this.pCb.getRX(0) - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (pnlCenterboard.this.pCb.getRZ(0) - boatCalc.this.hull.gz_min));
           g.drawLine(iw, iz, iu, iv);
 
           // draw wet board
@@ -2553,36 +1851,38 @@ public class boatCalc extends javax.swing.JFrame {
           // System.out.println(testx+" "+testpct+" "+testint+" "+minHull[testint]);
 
           // System.out.println("before");
-          if (pCb.board.getWetArea() > 0) {
+          if (pnlCenterboard.this.pCb.board.getWetArea() > 0) {
             // System.out.println("in");
 
             g.setColor(Color.red);
-            SortedSet wp = pCb.board.getWetPts();
-            Iterator pi = wp.iterator();
+            final SortedSet wp = pnlCenterboard.this.pCb.board.getWetPts();
+            final Iterator pi = wp.iterator();
             if (pi.hasNext()) {
-              Point p0 = (Point) pi.next();
+              final Point p0 = (Point) pi.next();
               Point p1 = new Point(p0);
               while (pi.hasNext()) {
                 // System.out.println("Point");
 
-                Point p2 = (Point) pi.next();
-                iu = xb + (int) (r * (p1.x - hull.gx_min));
-                iv = yb - (int) (r * (p1.z - hull.gz_min));
-                iw = xb + (int) (r * (p2.x - hull.gx_min));
-                iz = yb - (int) (r * (p2.z - hull.gz_min));
+                final Point p2 = (Point) pi.next();
+                iu = xb + (int) (r * (p1.x - boatCalc.this.hull.gx_min));
+                iv = yb - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+                iw = xb + (int) (r * (p2.x - boatCalc.this.hull.gx_min));
+                iz = yb - (int) (r * (p2.z - boatCalc.this.hull.gz_min));
                 g.drawLine(iu, iv, iw, iz);
                 p1 = p2;
               }
-              iu = xb + (int) (r * (p1.x - hull.gx_min));
-              iv = yb - (int) (r * (p1.z - hull.gz_min));
-              iw = xb + (int) (r * (p0.x - hull.gx_min));
-              iz = yb - (int) (r * (p0.z - hull.gz_min));
+              iu = xb + (int) (r * (p1.x - boatCalc.this.hull.gx_min));
+              iv = yb - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+              iw = xb + (int) (r * (p0.x - boatCalc.this.hull.gx_min));
+              iz = yb - (int) (r * (p0.z - boatCalc.this.hull.gz_min));
               // System.out.println("line");
 
               g.drawLine(iu, iv, iw, iz);
             }
-            int cx = xb + (int) (r * (pCb.board.getWetX() - hull.gx_min));
-            int cy = yb - (int) (r * (pCb.board.getWetY() - hull.gz_min));
+            final int cx = xb
+                + (int) (r * (pnlCenterboard.this.pCb.board.getWetX() - boatCalc.this.hull.gx_min));
+            final int cy = yb
+                - (int) (r * (pnlCenterboard.this.pCb.board.getWetY() - boatCalc.this.hull.gz_min));
             g.drawArc(cx - 5, cy - 5, 10, 10, 0, 360);
             g.drawLine(cx + 5, cy, cx - 5, cy);
             g.drawLine(cx, cy + 5, cx, cy - 5);
@@ -2591,16 +1891,16 @@ public class boatCalc extends javax.swing.JFrame {
 
         /*
          * g.setColor(Color.black);
-         * 
+         *
          * double tA = 0; double tX = 0; double tY = 0; if (pCb.board.use){tA = tA +
          * pCb.board.getWetArea(); tX = tX + pCb.board.getWetArea() * pCb.board.getWetX(); tY = tY +
          * pCb.board.getWetArea() * pCb.board.getWetY();}
-         * 
+         *
          * if (tA > 0){ tX = tX / tA; tY = tY / tA; int cx = xb + (int) (r * (tX - hull.gx_min));
          * int cy = yb - (int) (r * (tY - hull.gz_min)); g.drawLine(cx+4,cy+4,cx-4,cy+4);
          * g.drawLine(cx+4,cy-4,cx-4,cy-4); g.drawLine(cx-4,cy-4,cx-4,cy+4);
          * g.drawLine(cx+4,cy-4,cx+4,cy+4); g.drawLine(cx+6,cy,cx-6,cy);
-         * 
+         *
          * g.drawLine(cx,cy+6,cx,cy-6); }
          */
 
@@ -2608,563 +1908,148 @@ public class boatCalc extends javax.swing.JFrame {
       } // end paintComponent
 
     }// end cbDraw
-
-    class cbArea extends JPanel {
+    class cbSpec extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       Dimension d;
-      JLabel jlRArea, jlRCoA;
-      JLabel jlSArea, jlSCoA;
-      JLabel jlTArea, jlTCoA;
-      JButton jbApply, jbClose;
 
-      public cbArea(int x, int y) {
-        d = new Dimension(x, y);
-        setLayout(new GridLayout(0, 2));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new bcLabel("Immersed Areas", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        add(new bcLabel("Centerboard - Area: ", JLabel.RIGHT));
-        add(jlRArea = new JLabel("0.0", JLabel.LEFT));
-
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlRCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new bcLabel("Skeg - Area: ", JLabel.RIGHT));
-        add(jlSArea = new JLabel("0.0", JLabel.LEFT));
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlSCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new bcLabel("Total - Area: ", JLabel.RIGHT));
-        add(jlTArea = new JLabel("0.0", JLabel.LEFT));
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlTCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        jbApply = new JButton("Apply");
-        jbClose = new JButton("Close");
-
-        jbApply.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            saveCenterboard();
-            cbChange = false;
-          }
-        });
-
-        jbClose.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            if (cbChange) {
-              int n = JOptionPane.showConfirmDialog(f_edit,
-                  "Data has changed. Do you wish to apply changes?", "Data Edit",
-                  JOptionPane.YES_NO_OPTION);
-              if (n == JOptionPane.YES_OPTION) {
-                saveCenterboard();
-                cbChange = false;
-              }
-            }
-            f_board.setVisible(false);
-          }
-        });
-
-        add(jbApply);
-        add(jbClose);
-
+      public cbSpec(final int x, final int y) {
+        this.d = new Dimension(x, y);
       }
 
+      @Override
       public Dimension getPreferredSize() {
-        return d;
+        return this.d;
       }
 
-      protected void setTable() {
-        String s;
-        double wa = 0;
-        double wx = 0;
-        double wy = 0;
-        if (pCb.board.use) {
-          jlRArea.setText(bcf.DF1d.format(hull.units.coefArea() * pCb.board.getWetArea())
-              + hull.units.lblArea());
-          s = bcf.DF1d.format(pCb.board.getWetX()) + ", " + bcf.DF1d.format(pCb.board.getWetY());
-          jlRCoA.setText(s);
-          wa = wa + pCb.board.getWetArea();
-          wx = wx + pCb.board.getWetArea() * pCb.board.getWetX();
-          wy = wy + pCb.board.getWetArea() * pCb.board.getWetY();
-        } else {
-          jlRArea.setText("0.00");
-          jlRCoA.setText("-.--, -.--");
-        }
-
-
-        if (wa > 0) {
-          jlTArea.setText(bcf.DF1d.format(wa));
-          jlTArea.setText(bcf.DF1d.format(hull.units.coefArea() * wa) + hull.units.lblArea());
-          s = bcf.DF1d.format(wx / wa) + ", " + bcf.DF1d.format(wy / wa);
-          jlTCoA.setText(s);
-        } else {
-          jlTArea.setText("0.00");
-          jlTCoA.setText("-.--, -.--");
-        }
-      }
-
-    }// end cbArea
-
-    class cbData extends JPanel implements ActionListener {
-      Dimension d;
-      editFoil pCenterboard;
-      editPivot pPivot;
-      JButton btnInc, btnDec;
-      JRadioButton rbTLX, rbTLZ, rbTRX, rbTRZ;
-      JRadioButton rbBLX, rbBLZ, rbBRX, rbBRZ;
-      JRadioButton rbMoveX, rbMoveZ;
-      JRadioButton rbPivotX, rbPivotZ;
-      JRadioButton rbScale;
-      JComboBox cbxInc;
-
-      public cbData(int x, int y) {
-
-        JPanel pCB;
-
-        d = new Dimension(x, y);
-        setLayout(new BorderLayout());
-        pCenterboard = new editFoil(pCb.board);
-        pCenterboard.setBorder(BorderFactory.createEtchedBorder());
-
-        setLayout(new BorderLayout());
-        add(pCenterboard, BorderLayout.CENTER);
-
-        pPivot = new editPivot();
-        add(pPivot, BorderLayout.LINE_END);
-
-        JPanel pInc = new JPanel();
-        pInc.setPreferredSize(new Dimension(x - 5, (3 * y) / 10));
-        pInc.setLayout(new GridLayout(0, 5));
-        ButtonGroup bgInc = new ButtonGroup();
-
-        btnInc = new JButton("Increase");
-        btnInc.addActionListener(this);
-        pInc.add(btnInc);
-
-        pCB = new JPanel();
-        pCB.add(new JLabel("Top/Left ", JLabel.RIGHT));
-        rbTLX = new JRadioButton("X");
-        bgInc.add(rbTLX);
-        pCB.add(rbTLX);
-        rbTLZ = new JRadioButton("Z");
-        bgInc.add(rbTLZ);
-        pCB.add(rbTLZ);
-        pInc.add(pCB);
-
-        pCB = new JPanel();
-        pCB.add(new JLabel("Top/Right ", JLabel.RIGHT));
-        rbTRX = new JRadioButton("X");
-        bgInc.add(rbTRX);
-        pCB.add(rbTRX);
-        rbTRZ = new JRadioButton("Z");
-        bgInc.add(rbTRZ);
-        pCB.add(rbTRZ);
-        pInc.add(pCB);
-
-        pCB = new JPanel();
-        pCB.add(new JLabel("Pivot ", JLabel.RIGHT));
-        rbPivotX = new JRadioButton("X");
-        bgInc.add(rbPivotX);
-        pCB.add(rbPivotX);
-        rbPivotZ = new JRadioButton("Z");
-        bgInc.add(rbPivotZ);
-        pCB.add(rbPivotZ);
-        pInc.add(pCB);
-
-        pCB = new JPanel();
-        pCB.add(new JLabel("Scale ", JLabel.RIGHT));
-        rbScale = new JRadioButton("%");
-        bgInc.add(rbScale);
-        pCB.add(rbScale);
-        // pCB.add(new Box.Filler(new Dimension(20,20),new Dimension(20,20),new Dimension(20,20)));
-        pInc.add(pCB);
-
-
-        btnDec = new JButton("Decrease");
-        btnDec.addActionListener(this);
-        pInc.add(btnDec);
-
-
-        pCB = new JPanel();
-        pCB.add(new JLabel("Bot/Left ", JLabel.RIGHT));
-        rbBLX = new JRadioButton("X");
-        bgInc.add(rbBLX);
-        pCB.add(rbBLX);
-        rbBLZ = new JRadioButton("Z");
-        bgInc.add(rbBLZ);
-        pCB.add(rbBLZ);
-        pInc.add(pCB);
-
-        pCB = new JPanel();
-        pCB.add(new JLabel("Bot/Right ", JLabel.RIGHT));
-        rbBRX = new JRadioButton("X");
-        bgInc.add(rbBRX);
-        pCB.add(rbBRX);
-        rbBRZ = new JRadioButton("Z");
-        bgInc.add(rbBRZ);
-        pCB.add(rbBRZ);
-        pInc.add(pCB);
-
-        pCB = new JPanel();
-        pCB.add(new JLabel("Move ", JLabel.RIGHT));
-        rbMoveX = new JRadioButton("X");
-        bgInc.add(rbMoveX);
-        pCB.add(rbMoveX);
-        rbMoveZ = new JRadioButton("Z");
-        bgInc.add(rbMoveZ);
-        pCB.add(rbMoveZ);
-        pInc.add(pCB);
-
-        pCB = new JPanel();
-        pCB.setLayout(new GridLayout(0, 2));
-        pCB.add(new JLabel("Step: ", JLabel.RIGHT));
-
-        String[] incs =
-            {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
-        cbxInc = new JComboBox(incs);
-        cbxInc.setEditable(true);
-        cbxInc.setSelectedIndex(6);
-        pCB.add(cbxInc);
-
-        // tfInc = new JTextField("1.0",8);
-        // pCB.add(tfInc);
-        pInc.add(pCB);
-
-        add(pInc, BorderLayout.PAGE_END);
-
-      } // end constructor
-
-      public Dimension getPreferredSize() {
-        return d;
-      }
-
-      public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnInc || e.getSource() == btnDec) {
-
-          rscFoil f = pCb.board;
-          editFoil eF = pCenterboard;
-          editPivot eP = pPivot;
-          double d = 0;
-          double v;
-          double sgn;
-
-          try {
-            d = Double.parseDouble((String) cbxInc.getSelectedItem());
-          } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(null, "Unable to interperet step as number.", "Warning!",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-          }
-
-          if (e.getSource() == btnInc)
-            sgn = 1.0;
-          else
-            sgn = -1.0;
-
-          if (rbTLX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.TL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.TL].setText(bcf.DF2d.format(v));
-            f.setParamX(f.TL, v);
-          }
-
-          if (rbTLZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.TL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.TL].setText(bcf.DF2d.format(v));
-            f.setParamY(f.TL, v);
-          }
-
-
-          if (rbTRX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.TR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.TR].setText(bcf.DF2d.format(v));
-            f.setParamX(f.TR, v);
-          }
-
-          if (rbTRZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.TR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.TR].setText(bcf.DF2d.format(v));
-            f.setParamY(f.TR, v);
-          }
-
-
-          if (rbBRX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.BR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.BR].setText(bcf.DF2d.format(v));
-            f.setParamX(f.BR, v);
-          }
-
-          if (rbBRZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.BR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.BR].setText(bcf.DF2d.format(v));
-            f.setParamY(f.BR, v);
-          }
-
-          if (rbBLX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.BL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.BL].setText(bcf.DF2d.format(v));
-            f.setParamX(f.BL, v);
-          }
-
-          if (rbBLZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.BL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.BL].setText(bcf.DF2d.format(v));
-            f.setParamY(f.BL, v);
-          }
-
-          if (rbPivotX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eP.px.getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eP.px.setText(bcf.DF2d.format(v));
-            pCb.setPivotX(v);
-          }
-
-          if (rbPivotZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eP.py.getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eP.py.setText(bcf.DF2d.format(v));
-            pCb.setPivotZ(v);
-          }
-
-          if (rbScale.isSelected()) {
-            double mx = pCb.getPivotX();
-            double my = pCb.getPivotZ();
-            for (int i = 0; i < 4; i++) {
-              v = mx + 0.01 * (100 + sgn * d) * (f.getParamX(i) - mx);
-              eF.ff[0][i].setText(bcf.DF2d.format(v));
-              f.setParamX(i, v);
-              v = my + 0.01 * (100 + sgn * d) * (f.getParamY(i) - my);
-              eF.ff[1][i].setText(bcf.DF2d.format(v));
-              f.setParamY(i, v);
-            }
-          }
-
-        }
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
-      }
-    }// end cbData
-
-    class editPivot extends JPanel
-        implements DocumentListener, ItemListener, FocusListener, ActionListener {
-
-      JTextField px;
-      JTextField py;
-      JSlider sa;
-      boolean bChanged;
-
-      public editPivot() {
-        super(new GridLayout(0, 1));
-        setBorder(BorderFactory.createEtchedBorder());
-
-        Font efFont = new Font("Serif", Font.BOLD, 14);
-        JLabel lbl;
-        JPanel pRow;
-        JPanel pCol;
-        px = new JTextField(Double.toString(0.0), 6);
-        px.getDocument().addDocumentListener(this);
-        px.addFocusListener(this);
-        py = new JTextField(Double.toString(0.0), 6);
-        py.getDocument().addDocumentListener(this);
-        py.addFocusListener(this);
-
-        lbl = new JLabel("Pivot", JLabel.CENTER);
-        lbl.setFont(efFont);
-        add(lbl);
-
-        pRow = new JPanel();
-        pCol = new JPanel();
-        pCol.add(new JLabel("X:", JLabel.RIGHT));
-        pCol.add(px);
-        pRow.add(pCol);
-        pCol = new JPanel();
-        pCol.add(new JLabel("Y:", JLabel.RIGHT));
-        pCol.add(py);
-        pRow.add(pCol);
-        add(pRow);
-
-        sa = new JSlider(-90, 90, 0);
-
-        // sa.setModel(new DefaultBoundedRangeModel(-90,0,0,90));
-        sa.setMajorTickSpacing(30);
-        sa.setMinorTickSpacing(5);
-        sa.setPaintLabels(true);
-        sa.setPaintTicks(true);
-
-
-        sa.addChangeListener(new ChangeListener() {
-          public void stateChanged(ChangeEvent e) {
-            double a = (double) sa.getValue();
-            pCb.setPivotAngle(a);
-            bChanged = true;
-            pDraw.repaint();
-            pSpec.repaint();
-            pRpt.setTable();
-          }
-        });
-        add(sa);
-      }
-
-      public void changedUpdate(DocumentEvent e) {
-        cbChange = true;
-        bChanged = true;
-      }
-
-      public void insertUpdate(DocumentEvent e) {
-        cbChange = true;
-        bChanged = true;
-      }
-
-      public void removeUpdate(DocumentEvent e) {
-        cbChange = true;
-        bChanged = true;
-      }
-
-      public void itemStateChanged(ItemEvent e) {
-        cbChange = true;
-        bChanged = true;
-      }
-
-      public void focusGained(FocusEvent e) {
-        JTextField t = (JTextField) e.getComponent();
-        t.select(0, 100);
-      }
-
-      public void focusLost(FocusEvent e) {
-        double v, w, a;
-        try {
+      @Override
+      protected void paintComponent(final Graphics g) {
+        super.paintComponent(g);
+        int iL = 20;
+        final int iC1 = 20;
+        final int iC2 = 80;
+        final int iC3 = 250;
+        final int iC4 = 325;
+        int kL = 0;
+        if (pnlCenterboard.this.pCb.board.use) {
+          int jL = 0;
+          g.drawString("Centerboard", iC1, iL);
+          jL = 20;
+          g.drawString("Area: ", iC1, iL + jL);
+          g.drawString(boatCalc.this.bcf.DF1d.format(pnlCenterboard.this.pCb.board.getArea()), iC2,
+              iL + jL);
+          jL = jL + 20;
+          g.drawString("CoA: ", iC1, iL + jL);
+          g.drawString(
+              boatCalc.this.bcf.DF2d.format(pnlCenterboard.this.pCb.board.getAreaX()) + ", "
+                  + boatCalc.this.bcf.DF2d.format(pnlCenterboard.this.pCb.board.getAreaY()),
+              iC2, iL + jL);
+          jL = jL + 20;
+          g.drawString("Points: ", iC1, iL + jL);
           for (int i = 0; i < 4; i++) {
-            v = Double.parseDouble(px.getText());
-            w = Double.parseDouble(py.getText());
-            pCb.setPivotX(v);
-            pCb.setPivotZ(w);
-            a = (double) sa.getValue();
-            pCb.setPivotAngle(a);
+            g.drawString(
+                boatCalc.this.bcf.DF2d.format(pnlCenterboard.this.pCb.board.getParamX(i)) + ", "
+                    + boatCalc.this.bcf.DF2d.format(pnlCenterboard.this.pCb.board.getParamY(i)),
+                iC2, iL + jL);
+            jL = jL + 20;
           }
-        } catch (NumberFormatException nfe) {
-          JOptionPane.showMessageDialog(f_edit, "Bad number format in data entry.", "Warning!",
-              JOptionPane.ERROR_MESSAGE);
-          return;
+          g.drawString("ref: baseline", iC2 + 90, (iL + jL) - 20);
+          kL = jL;
+          jL = 0;
+          g.drawString("Immersed Portion", iC3, iL);
+          jL = 20;
+          g.drawString("Area: ", iC3, iL + jL);
+          g.drawString(boatCalc.this.bcf.DF1d.format(pnlCenterboard.this.pCb.board.getWetArea()),
+              iC4, iL + jL);
+          jL = jL + 20;
+          g.drawString("CoA: ", iC3, iL + jL);
+          g.drawString(
+              boatCalc.this.bcf.DF2d.format(pnlCenterboard.this.pCb.board.getWetX()) + ", "
+                  + boatCalc.this.bcf.DF2d.format(pnlCenterboard.this.pCb.board.getWetY()),
+              iC4, iL + jL);
+          jL = jL + 20;
+          g.drawString("Points: ", iC3, iL + jL);
+
+          final SortedSet wp = pnlCenterboard.this.pCb.board.getWetPts();
+          final Iterator pi = wp.iterator();
+          while (pi.hasNext()) {
+            final Point p = (Point) pi.next();
+            g.drawString(
+                boatCalc.this.bcf.DF2d.format(p.x) + ", " + boatCalc.this.bcf.DF2d.format(p.z), iC4,
+                iL + jL);
+            jL = jL + 20;
+          }
+          g.drawString("ref: lwl", iC4 + 90, (iL + jL) - 20);
+          kL = Math.max(kL, jL);
         }
+        iL = iL + kL;
 
-        cbChange = true;
-        bChanged = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
 
+      }// end paintComponent
+    }// ends cbSpec
+    public class cbTabOrder extends FocusTraversalPolicy {
+      cbData r;
+
+      public cbTabOrder(final pnlCenterboard p) {
+        this.r = p.pData;
       }
 
-      public void actionPerformed(ActionEvent e) {
-        // fo.use = cbFoil.isSelected();
-        cbChange = true;
-        bChanged = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
+      @Override
+      public Component getComponentAfter(final Container focusCycleRoot,
+          final Component aComponent) {
+        return aComponent;
       }
 
-    } // end editPivot
+      @Override
+      public Component getComponentBefore(final Container focusCycleRoot,
+          final Component aComponent) {
+        return aComponent;
+      }
 
+      @Override
+      public Component getDefaultComponent(final Container focusCycleRoot) {
+        return this.r;
+      }
 
+      @Override
+      public Component getFirstComponent(final Container focusCycleRoot) {
+        return this.r;
+      }
+
+      @Override
+      public Component getLastComponent(final Container focusCycleRoot) {
+        return this.r;
+      }
+    }// end cbTabOrder
     class editFoil extends JPanel
         implements DocumentListener, ItemListener, FocusListener, ActionListener {
-      Dimension d;
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       boolean bChanged;
       JCheckBox cbFoil;
-      rscFoil fo;
+      Dimension d;
       JTextField[][] ff;
+      rscFoil fo;
 
 
-      public editFoil(rscFoil f) {
+      public editFoil(final rscFoil f) {
         super(new GridLayout(0, 5));
-        d = new Dimension(600, 150);
-        Font efFont = new Font("Serif", Font.BOLD, 14);
-        fo = f;
+        this.d = new Dimension(600, 150);
+        final Font efFont = new Font("Serif", Font.BOLD, 14);
+        this.fo = f;
 
-        ff = new JTextField[2][4];
+        this.ff = new JTextField[2][4];
         for (int i = 0; i < 4; i++) {
-          ff[0][i] = new JTextField(Double.toString(f.getParamX(i)), 6);
-          ff[0][i].getDocument().addDocumentListener(this);
-          ff[0][i].addFocusListener(this);
-          ff[1][i] = new JTextField(Double.toString(f.getParamY(i)), 6);
-          ff[1][i].getDocument().addDocumentListener(this);
-          ff[1][i].addFocusListener(this);
+          this.ff[0][i] = new JTextField(Double.toString(f.getParamX(i)), 6);
+          this.ff[0][i].getDocument().addDocumentListener(this);
+          this.ff[0][i].addFocusListener(this);
+          this.ff[1][i] = new JTextField(Double.toString(f.getParamY(i)), 6);
+          this.ff[1][i].getDocument().addDocumentListener(this);
+          this.ff[1][i].addFocusListener(this);
         }
 
 
@@ -3172,365 +2057,1676 @@ public class boatCalc extends javax.swing.JFrame {
         JPanel pC;
 
         // row 1, labels
-        cbFoil = new JCheckBox("Use");
-        cbFoil.setHorizontalAlignment(SwingConstants.LEFT);
-        cbFoil.setSelected(fo.use);
-        cbFoil.addActionListener(this);
-        add(cbFoil);
-        lbl = new JLabel("Left", JLabel.RIGHT);
+        this.cbFoil = new JCheckBox("Use");
+        this.cbFoil.setHorizontalAlignment(SwingConstants.LEFT);
+        this.cbFoil.setSelected(this.fo.use);
+        this.cbFoil.addActionListener(this);
+        this.add(this.cbFoil);
+        lbl = new JLabel("Left", SwingConstants.RIGHT);
         lbl.setFont(efFont);
-        add(lbl);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        lbl = new JLabel("Right", JLabel.RIGHT);
+        this.add(lbl);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        lbl = new JLabel("Right", SwingConstants.RIGHT);
         lbl.setFont(efFont);
-        add(lbl);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(lbl);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
         // row 2, top
-        lbl = new JLabel("Top:", JLabel.CENTER);
+        lbl = new JLabel("Top:", SwingConstants.CENTER);
         lbl.setFont(efFont);
-        add(lbl);
+        this.add(lbl);
 
         pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.TL]);
-        add(pC);
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.TL]);
+        this.add(pC);
 
         pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.TL]);
-        add(pC);
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.TL]);
+        this.add(pC);
 
         pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.TR]);
-        add(pC);
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.TR]);
+        this.add(pC);
 
         pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.TR]);
-        add(pC);
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.TR]);
+        this.add(pC);
 
         // row 3, bottom
-        lbl = new JLabel("Bottom:", JLabel.CENTER);
+        lbl = new JLabel("Bottom:", SwingConstants.CENTER);
         lbl.setFont(efFont);
-        add(lbl);
+        this.add(lbl);
         pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.BL]);
-        add(pC);
-
-        pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.BL]);
-        add(pC);
-        pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.BR]);
-        add(pC);
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.BL]);
+        this.add(pC);
 
         pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.BR]);
-        add(pC);
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.BL]);
+        this.add(pC);
+        pC = new JPanel();
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.BR]);
+        this.add(pC);
+
+        pC = new JPanel();
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.BR]);
+        this.add(pC);
 
       }
 
-      public Dimension getPreferredSize() {
-        return d;
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        this.fo.use = this.cbFoil.isSelected();
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+        pnlCenterboard.this.pDraw.repaint();
+        pnlCenterboard.this.pSpec.repaint();
+        pnlCenterboard.this.pRpt.setTable();
       }
 
-      public void changedUpdate(DocumentEvent e) {
-        cbChange = true;
-        bChanged = true;
+      @Override
+      public void changedUpdate(final DocumentEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
       }
 
-      public void insertUpdate(DocumentEvent e) {
-        cbChange = true;
-        bChanged = true;
-      }
-
-      public void removeUpdate(DocumentEvent e) {
-        cbChange = true;
-        bChanged = true;
-      }
-
-      public void itemStateChanged(ItemEvent e) {
-        cbChange = true;
-        bChanged = true;
-      }
-
-      public void focusGained(FocusEvent e) {
-        JTextField t = (JTextField) e.getComponent();
+      @Override
+      public void focusGained(final FocusEvent e) {
+        final JTextField t = (JTextField) e.getComponent();
         t.select(0, 100);
       }
 
-      public void focusLost(FocusEvent e) {
+      @Override
+      public void focusLost(final FocusEvent e) {
         double v, w;
         try {
           for (int i = 0; i < 4; i++) {
-            v = Double.parseDouble(ff[0][i].getText());
-            w = Double.parseDouble(ff[1][i].getText());
-            fo.setParamXY(i, v, w);
+            v = Double.parseDouble(this.ff[0][i].getText());
+            w = Double.parseDouble(this.ff[1][i].getText());
+            this.fo.setParamXY(i, v, w);
           }
-        } catch (NumberFormatException nfe) {
-          JOptionPane.showMessageDialog(f_edit, "Bad number format in data entry.", "Warning!",
+        } catch (final NumberFormatException nfe) {
+          JOptionPane.showMessageDialog(boatCalc.this.f_edit, "Bad number format in data entry.",
+              "Warning!", JOptionPane.ERROR_MESSAGE);
+          return;
+        }
+
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+        pnlCenterboard.this.pDraw.repaint();
+        pnlCenterboard.this.pSpec.repaint();
+        pnlCenterboard.this.pRpt.setTable();
+
+      }
+
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
+
+      @Override
+      public void insertUpdate(final DocumentEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void itemStateChanged(final ItemEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void removeUpdate(final DocumentEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+      }
+
+    }// end editFoil
+    class editPivot extends JPanel
+        implements DocumentListener, ItemListener, FocusListener, ActionListener {
+
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      boolean bChanged;
+      JTextField px;
+      JTextField py;
+      JSlider sa;
+
+      public editPivot() {
+        super(new GridLayout(0, 1));
+        this.setBorder(BorderFactory.createEtchedBorder());
+
+        final Font efFont = new Font("Serif", Font.BOLD, 14);
+        JLabel lbl;
+        JPanel pRow;
+        JPanel pCol;
+        this.px = new JTextField(Double.toString(0.0), 6);
+        this.px.getDocument().addDocumentListener(this);
+        this.px.addFocusListener(this);
+        this.py = new JTextField(Double.toString(0.0), 6);
+        this.py.getDocument().addDocumentListener(this);
+        this.py.addFocusListener(this);
+
+        lbl = new JLabel("Pivot", SwingConstants.CENTER);
+        lbl.setFont(efFont);
+        this.add(lbl);
+
+        pRow = new JPanel();
+        pCol = new JPanel();
+        pCol.add(new JLabel("X:", SwingConstants.RIGHT));
+        pCol.add(this.px);
+        pRow.add(pCol);
+        pCol = new JPanel();
+        pCol.add(new JLabel("Y:", SwingConstants.RIGHT));
+        pCol.add(this.py);
+        pRow.add(pCol);
+        this.add(pRow);
+
+        this.sa = new JSlider(-90, 90, 0);
+
+        // sa.setModel(new DefaultBoundedRangeModel(-90,0,0,90));
+        this.sa.setMajorTickSpacing(30);
+        this.sa.setMinorTickSpacing(5);
+        this.sa.setPaintLabels(true);
+        this.sa.setPaintTicks(true);
+
+
+        this.sa.addChangeListener(new ChangeListener() {
+          @Override
+          public void stateChanged(final ChangeEvent e) {
+            final double a = editPivot.this.sa.getValue();
+            pnlCenterboard.this.pCb.setPivotAngle(a);
+            editPivot.this.bChanged = true;
+            pnlCenterboard.this.pDraw.repaint();
+            pnlCenterboard.this.pSpec.repaint();
+            pnlCenterboard.this.pRpt.setTable();
+          }
+        });
+        this.add(this.sa);
+      }
+
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        // fo.use = cbFoil.isSelected();
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+        pnlCenterboard.this.pDraw.repaint();
+        pnlCenterboard.this.pSpec.repaint();
+        pnlCenterboard.this.pRpt.setTable();
+      }
+
+      @Override
+      public void changedUpdate(final DocumentEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void focusGained(final FocusEvent e) {
+        final JTextField t = (JTextField) e.getComponent();
+        t.select(0, 100);
+      }
+
+      @Override
+      public void focusLost(final FocusEvent e) {
+        double v, w, a;
+        try {
+          for (int i = 0; i < 4; i++) {
+            v = Double.parseDouble(this.px.getText());
+            w = Double.parseDouble(this.py.getText());
+            pnlCenterboard.this.pCb.setPivotX(v);
+            pnlCenterboard.this.pCb.setPivotZ(w);
+            a = this.sa.getValue();
+            pnlCenterboard.this.pCb.setPivotAngle(a);
+          }
+        } catch (final NumberFormatException nfe) {
+          JOptionPane.showMessageDialog(boatCalc.this.f_edit, "Bad number format in data entry.",
+              "Warning!", JOptionPane.ERROR_MESSAGE);
+          return;
+        }
+
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+        pnlCenterboard.this.pDraw.repaint();
+        pnlCenterboard.this.pSpec.repaint();
+        pnlCenterboard.this.pRpt.setTable();
+
+      }
+
+      @Override
+      public void insertUpdate(final DocumentEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void itemStateChanged(final ItemEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void removeUpdate(final DocumentEvent e) {
+        pnlCenterboard.this.cbChange = true;
+        this.bChanged = true;
+      }
+
+    } // end editPivot
+
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Border bCb;
+    boolean cbChange;
+
+    Centerboard pCb;
+
+    cbData pData;
+
+    JTabbedPane pDisp;
+
+    cbDraw pDraw;
+
+    cbArea pRpt;
+
+    cbSpec pSpec;
+
+    cbTabOrder to;
+
+    public pnlCenterboard() {
+
+      if (boatCalc.this.hull.board.valid) {
+        this.pCb = (Centerboard) boatCalc.this.hull.board.clone();
+      } else {
+        this.pCb = new Centerboard();
+      }
+      this.pCb.setBase(boatCalc.this.hull.base);
+      this.cbChange = false;
+
+      this.bCb = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+      this.setLayout(new BorderLayout());
+
+      this.pDisp = new JTabbedPane();
+
+      this.pDraw = new cbDraw(750, 325);
+      this.pDraw.setBackground(Color.white);
+      this.pDraw.setBorder(this.bCb);
+      this.pDisp.add(this.pDraw, "Drawing");
+
+      this.pSpec = new cbSpec(750, 325);
+      this.pSpec.setBackground(Color.white);
+      this.pSpec.setBorder(this.bCb);
+      this.pDisp.add(this.pSpec, "Dimensions");
+
+      this.add(this.pDisp, BorderLayout.CENTER);
+
+      this.pRpt = new cbArea(180, 200);
+      this.add(this.pRpt, BorderLayout.LINE_END);
+
+
+      this.pData = new cbData(750, 185);
+      this.pData.setBorder(this.bCb);
+      this.add(this.pData, BorderLayout.PAGE_END);
+
+      // to = new cbTabOrder(this);
+      // f_board.setFocusTraversalPolicy(to);
+
+      boatCalc.this.f_board.addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosing(final WindowEvent e) {
+          if (pnlCenterboard.this.cbChange) {
+            final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_sailplan,
+                "Data has changed. Do you wish to apply changes?", "Sailplan Design",
+                JOptionPane.YES_NO_OPTION);
+            if (n == JOptionPane.YES_OPTION) {
+              pnlCenterboard.this.saveCenterboard();
+            }
+          }
+          boatCalc.this.f_board.setVisible(false);
+        }
+      });
+
+      this.pDraw.repaint();
+      this.pSpec.repaint();
+      this.pRpt.setTable();
+
+    }// end constructor
+
+
+    public void saveCenterboard() {
+      boatCalc.this.hull.board = (Centerboard) this.pCb.clone();
+      boatCalc.this.hull.bChanged = true;
+    }
+
+  }// end pnlCenterboard
+  class pnlDataEntry extends JPanel implements DocumentListener, ItemListener, FocusListener {
+    class edLinePanel extends JPanel implements ActionListener {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      public JButton btnWtr, btnButt;
+      public int nf;
+      public JCheckBox[] v;
+      public JTextField[] x;
+      public JTextField[] y;
+      public JTextField[] z;
+
+      public edLinePanel(final int n) {
+
+        final Font lpFont = new Font("Serif", Font.BOLD, 14);
+        JLabel lbl;
+        this.nf = n;
+        this.setLayout(new GridLayout(0, 6));
+
+        lbl = new JLabel("   #  ", SwingConstants.CENTER);
+        lbl.setFont(lpFont);
+        this.add(lbl);
+
+        lbl = new JLabel("  Station  ", SwingConstants.CENTER);
+        lbl.setFont(lpFont);
+        this.add(lbl);
+
+        lbl = new JLabel("  Breadth  ", SwingConstants.CENTER);
+        lbl.setFont(lpFont);
+        this.add(lbl);
+
+        lbl = new JLabel("  Height  ", SwingConstants.CENTER);
+        lbl.setFont(lpFont);
+        this.add(lbl);
+
+        lbl = new JLabel("  In Use  ", SwingConstants.LEFT);
+        lbl.setFont(lpFont);
+        this.add(lbl);
+
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        this.x = new JTextField[n];
+        this.y = new JTextField[n];
+        this.z = new JTextField[n];
+        this.v = new JCheckBox[n];
+
+        for (int i = 0; i < n; i++) {
+
+          lbl = new JLabel(Integer.toString(i), SwingConstants.CENTER);
+          lbl.setFont(lpFont);
+          this.add(lbl);
+
+          this.x[i] = new JTextField();
+          this.add(this.x[i]);
+
+          this.y[i] = new JTextField();
+          this.add(this.y[i]);
+
+          this.z[i] = new JTextField();
+          this.add(this.z[i]);
+
+          this.v[i] = new JCheckBox();
+          this.add(this.v[i]);
+          if (i == 1) {
+            this.btnWtr = new JButton("Waterline");
+            this.btnWtr.addActionListener(this);
+            this.add(this.btnWtr);
+          } else if (i == 3) {
+            this.btnButt = new JButton("Buttock");
+            this.btnButt.addActionListener(this);
+            this.add(this.btnButt);
+          } else {
+            this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20),
+                new Dimension(20, 20)));
+          }
+        }
+
+      }// end constructor
+
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        final JButton btn = (JButton) e.getSource();
+        boolean bOpt;
+        String prompt;
+        if (0 == btn.getText().compareTo("Waterline")) {
+          bOpt = true;
+          prompt = "Height from baseline: ";
+        } else {
+          bOpt = false;
+          prompt = "Breadth from centerline: ";
+        }
+
+        final String s = JOptionPane.showInputDialog(boatCalc.this.f_edit, prompt);
+        if (s == null) {
+          return;
+        }
+
+        try {
+          Double.parseDouble(s);
+        } catch (final NumberFormatException nfe) {
+          JOptionPane.showMessageDialog(boatCalc.this.f_edit, "Bad number format.", "Warning!",
               JOptionPane.ERROR_MESSAGE);
           return;
         }
 
-        cbChange = true;
-        bChanged = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
+        for (int i = 0; i < this.nf; i++) {
+          if (bOpt) {
+            this.z[i].setText(s);
+          } else {
+            this.y[i].setText(s);
+          }
+        }
+      }
+    }// end edLinePanel
+    public class pdeTabOrder extends FocusTraversalPolicy {
+      pnlDataEntry pde;
 
+      public pdeTabOrder(final pnlDataEntry de) {
+        this.pde = de;
       }
 
-      public void actionPerformed(ActionEvent e) {
-        fo.use = cbFoil.isSelected();
-        cbChange = true;
-        bChanged = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
-      }
+      @Override
+      public Component getComponentAfter(final Container focusCycleRoot,
+          final Component aComponent) {
 
-    }// end editFoil
+        if (aComponent.equals(this.pde.btnHName)) {
+          return this.pde.btnNA;
+        }
+        if (aComponent.equals(this.pde.btnNA)) {
+          return this.pde.btnName;
+        }
+        if (aComponent.equals(this.pde.btnName)) {
+          return this.pde.btnInsert;
+        }
+        if (aComponent.equals(this.pde.btnInsert)) {
+          return this.pde.btnAdd;
+        }
+        if (aComponent.equals(this.pde.btnAdd)) {
+          return this.pde.btnDele;
+        }
+        if (aComponent.equals(this.pde.btnDele)) {
+          return this.pde.btnSave;
+        }
+        if (aComponent.equals(this.pde.btnSave)) {
+          return this.pde.btnClose;
+        }
 
-  }// end pnlCenterboard
-
-
-  class pnlRudder extends JPanel {
-    JTabbedPane pDisp;
-    rdrDraw pDraw;
-    rdrSpec pSpec;
-    rdrData pData;
-    rdrArea pRpt;
-    Rudder pRdr;
-    Border bRdr;
-    rdrTabOrder to;
-    boolean rdrChange;
-
-    public pnlRudder() {
-
-      if (hull.rudder.valid)
-        pRdr = (Rudder) hull.rudder.clone();
-      else
-        pRdr = new Rudder();
-      pRdr.setBase(hull.base);
-      rdrChange = false;
-
-      bRdr = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-      setLayout(new BorderLayout());
-
-      pDisp = new JTabbedPane();
-
-      pDraw = new rdrDraw(750, 325);
-      pDraw.setBackground(Color.white);
-      pDraw.setBorder(bRdr);
-      pDisp.add(pDraw, "Drawing");
-
-      pSpec = new rdrSpec(750, 325);
-      pSpec.setBackground(Color.white);
-      pSpec.setBorder(bRdr);
-      pDisp.add(pSpec, "Dimensions");
-
-      add(pDisp, BorderLayout.CENTER);
-
-      pRpt = new rdrArea(180, 200);
-      add(pRpt, BorderLayout.LINE_END);
-
-
-      pData = new rdrData(750, 185);
-      pData.setBorder(bRdr);
-      add(pData, BorderLayout.PAGE_END);
-
-      // to = new rdrTabOrder(this);
-      // f_rudder.setFocusTraversalPolicy(to);
-
-      f_rudder.addWindowListener(new WindowAdapter() {
-        public void windowClosing(WindowEvent e) {
-          if (rdrChange) {
-            int n = JOptionPane.showConfirmDialog(f_rudder,
-                "Data has changed. Do you wish to apply changes?", "Sailplan Design",
-                JOptionPane.YES_NO_OPTION);
-            if (n == JOptionPane.YES_OPTION) {
-              saveRudder();
+        if (this.pde.tp.getSelectedIndex() == 0) {
+          if (aComponent.equals(this.pde.btnClose)) {
+            return this.pde.stn[0];
+          }
+          for (int i = 1; i < this.pde.stn.length; i++) {
+            if (aComponent.equals(this.pde.stn[i - 1])) {
+              return this.pde.stn[i];
             }
           }
-          f_rudder.setVisible(false);
+          return this.pde.btnHName;
+        } else {
+          final edLinePanel pL = (edLinePanel) this.pde.tp.getSelectedComponent();
+
+          if (aComponent.equals(this.pde.btnClose)) {
+            return pL.x[0];
+          }
+          if (aComponent.equals(pL.btnWtr)) {
+            return pL.btnButt;
+          }
+          if (aComponent.equals(pL.btnButt)) {
+            return this.pde.btnHName;
+          }
+
+          for (int i = 0; i < pL.x.length; i++) {
+            if (aComponent.equals(pL.x[i])) {
+              return pL.y[i];
+            }
+            if (aComponent.equals(pL.y[i])) {
+              return pL.z[i];
+            }
+            if (aComponent.equals(pL.z[i])) {
+              return pL.v[i];
+            }
+            if (aComponent.equals(pL.v[i])) {
+              final int j = i + 1;
+              if (j > (pL.x.length - 1)) {
+                return pL.btnWtr;
+              }
+              return pL.x[j];
+            }
+          }
+        }
+        return aComponent;
+      }
+
+      @Override
+      public Component getComponentBefore(final Container focusCycleRoot,
+          final Component aComponent) {
+
+        if (aComponent.equals(this.pde.btnNA)) {
+          return this.pde.btnHName;
+        }
+        if (aComponent.equals(this.pde.btnName)) {
+          return this.pde.btnNA;
+        }
+        if (aComponent.equals(this.pde.btnInsert)) {
+          return this.pde.btnName;
+        }
+        if (aComponent.equals(this.pde.btnAdd)) {
+          return this.pde.btnInsert;
+        }
+        if (aComponent.equals(this.pde.btnDele)) {
+          return this.pde.btnAdd;
+        }
+        if (aComponent.equals(this.pde.btnSave)) {
+          return this.pde.btnDele;
+        }
+        if (aComponent.equals(this.pde.btnClose)) {
+          return this.pde.btnSave;
+        }
+
+        if (this.pde.tp.getSelectedIndex() == 0) {
+          if (aComponent.equals(this.pde.btnHName)) {
+            return this.pde.stn[this.pde.stn.length - 1];
+          }
+          for (int i = 0; i < (this.pde.stn.length - 1); i++) {
+            if (aComponent.equals(this.pde.stn[i + 1])) {
+              return this.pde.stn[i];
+            }
+          }
+          return this.pde.btnClose;
+        } else {
+          final edLinePanel pL = (edLinePanel) this.pde.tp.getSelectedComponent();
+          if (aComponent.equals(this.pde.btnHName)) {
+            return pL.btnButt;
+          }
+          if (aComponent.equals(pL.btnButt)) {
+            return pL.btnWtr;
+          }
+          if (aComponent.equals(pL.btnWtr)) {
+            return pL.v[pL.v.length - 1];
+          }
+
+          for (int i = 0; i < pL.x.length; i++) {
+            if (aComponent.equals(pL.v[i])) {
+              return pL.z[i];
+            }
+            if (aComponent.equals(pL.z[i])) {
+              return pL.y[i];
+            }
+            if (aComponent.equals(pL.y[i])) {
+              return pL.x[i];
+            }
+            if (aComponent.equals(pL.x[i])) {
+              final int j = i - 1;
+              if (j < 0) {
+                return this.pde.btnClose;
+              }
+              return pL.v[j];
+            }
+          }
+        }
+        return aComponent;
+      }
+
+      @Override
+      public Component getDefaultComponent(final Container focusCycleRoot) {
+        return this.pde.btnClose;
+      }
+
+      @Override
+      public Component getFirstComponent(final Container focusCycleRoot) {
+        return this.pde.btnClose;
+      }
+
+      @Override
+      public Component getLastComponent(final Container focusCycleRoot) {
+        return this.pde.btnClose;
+      }
+    }// end pdeTabOrder
+
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+
+    boolean bChanged = false;
+    JButton btnHName, btnNA, btnName, btnInsert, btnAdd, btnDele, btnSave, btnClose;
+    JPanel de = new JPanel();
+    String DName;
+    JLabel lblDName;
+    JLabel lblNA;
+    String NA;
+
+    JTextField[] stn = new JTextField[boatCalc.this.hull.Stations.length];
+
+
+    JTabbedPane tp = new JTabbedPane();
+
+    public pnlDataEntry() {
+      super(new GridLayout(1, 1));
+      JLabel lbl;
+      final Font deFont = new Font("Serif", Font.BOLD, 14);
+      this.de.setLayout(new BorderLayout());
+
+      this.DName = boatCalc.this.hull.boatname;
+      this.NA = boatCalc.this.hull.designer;
+      this.lblDName = new JLabel(this.DName);
+      this.lblDName.setFont(deFont);
+      this.lblNA = new JLabel(this.NA);
+      this.lblNA.setFont(deFont);
+
+      final JPanel ttl = new JPanel();
+      ttl.setLayout(new GridLayout(0, 3));
+      ttl.add(this.lblDName);
+      ttl.add(this.lblNA);
+      ttl.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.de.add(ttl, BorderLayout.PAGE_START);
+
+      final JPanel pO = new JPanel();
+      pO.setLayout(new GridLayout(0, 6));
+
+      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      lbl = new JLabel("  Station  ", SwingConstants.CENTER);
+      lbl.setFont(deFont);
+      pO.add(lbl);
+      lbl = new JLabel("  Value  ", SwingConstants.LEFT);
+      lbl.setFont(deFont);
+      pO.add(lbl);
+      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+
+      for (int i = 0; i < boatCalc.this.hull.Stations.length; i++) {
+
+        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        lbl = new JLabel(Integer.toString(i), SwingConstants.CENTER);
+        lbl.setFont(deFont);
+        this.stn[i] = new JTextField(Double.toString(boatCalc.this.hull.Stations[i]));
+        this.stn[i].getDocument().addDocumentListener(this);
+        this.stn[i].addFocusListener(this);
+
+        lbl.setLabelFor(this.stn[i]);
+        pO.add(lbl);
+        pO.add(this.stn[i]);
+        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      }
+      this.tp.addTab("Stations", pO);
+
+      edLinePanel pL = new edLinePanel(this.stn.length);
+      final ListIterator l = boatCalc.this.hull.Offsets.listIterator();
+      while (l.hasNext()) {
+        final rawLine rL = (rawLine) l.next();
+        final Line ln = rL.ln;
+
+        pL = new edLinePanel(this.stn.length);
+
+        for (int i = 0; i < boatCalc.this.hull.Stations.length; i++) {
+
+          pL.x[i].setText(Double.toString(ln.valX(i)));
+          pL.x[i].getDocument().addDocumentListener(this);
+          pL.x[i].addFocusListener(this);
+
+          pL.y[i].setText(Double.toString(ln.valY(i)));
+          pL.y[i].getDocument().addDocumentListener(this);
+          pL.y[i].addFocusListener(this);
+
+          pL.z[i].setText(Double.toString(ln.valZ(i)));
+          pL.z[i].getDocument().addDocumentListener(this);
+          pL.z[i].addFocusListener(this);
+
+          pL.v[i].setSelected(ln.valid(i));
+          pL.v[i].addItemListener(this);
+
+        }
+        this.tp.addTab(rL.lnName, pL);
+      }
+
+      final Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+      this.de.setBorder(BorderFactory.createTitledBorder(bcBorder));
+
+      this.de.add(this.tp, BorderLayout.CENTER);
+
+      final JPanel bp = new JPanel();
+      bp.setLayout(new FlowLayout());
+
+      this.btnHName = new JButton("Design Name");
+      this.btnHName.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          final String s = JOptionPane.showInputDialog("Design Name:", pnlDataEntry.this.DName);
+          if ((s != null) && (s.length() > 0)) {
+            pnlDataEntry.this.DName = s;
+            pnlDataEntry.this.lblDName.setText("Design: " + pnlDataEntry.this.DName);
+            pnlDataEntry.this.bChanged = true;
+          }
         }
       });
 
-      pDraw.repaint();
-      pSpec.repaint();
-      pRpt.setTable();
+      this.btnNA = new JButton("Designer");
+      this.btnNA.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          final String s = JOptionPane.showInputDialog("Designer:", pnlDataEntry.this.NA);
+          if ((s != null) && (s.length() > 0)) {
+            pnlDataEntry.this.NA = s;
+            pnlDataEntry.this.lblNA.setText("Designer: " + pnlDataEntry.this.NA);
+            pnlDataEntry.this.bChanged = true;
+          }
+        }
+      });
 
-    }// end constructor
+      this.btnName = new JButton("Line Name");
+      this.btnName.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          final int i = pnlDataEntry.this.tp.getSelectedIndex();
+          if (i == 0) {
+            JOptionPane.showMessageDialog(boatCalc.this.f_edit,
+                "Name 'Stations' cannot be changed.", "Warning!", JOptionPane.ERROR_MESSAGE);
+            return;
+          }
 
-    public void saveRudder() {
-      hull.rudder = (Rudder) pRdr.clone();
-      hull.bChanged = true;
+          final String s = JOptionPane.showInputDialog("Name:");
+          if ((s != null) && (s.length() > 0)) {
+            pnlDataEntry.this.tp.setTitleAt(i, s);
+            pnlDataEntry.this.bChanged = true;
+          }
+        }
+      });
+
+      this.btnInsert = new JButton("Insert Line");
+      this.btnInsert.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit,
+              "Insert additional Line?", "Data Edit", JOptionPane.YES_NO_OPTION);
+          if (n == JOptionPane.YES_OPTION) {
+            final String s = JOptionPane.showInputDialog(boatCalc.this.f_edit, "Name:");
+            if ((s != null) && (s.length() > 0)) {
+              pnlDataEntry.this.addLine(1, s);
+            }
+          }
+        }
+      });
+
+      this.btnAdd = new JButton("Add Line");
+      this.btnAdd.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit, "Add additional Line?",
+              "Data Edit", JOptionPane.YES_NO_OPTION);
+          if (n == JOptionPane.YES_OPTION) {
+            final String s = JOptionPane.showInputDialog(boatCalc.this.f_edit, "Name:");
+            if ((s != null) && (s.length() > 0)) {
+              pnlDataEntry.this.addLine(0, s);
+            }
+          }
+        }
+      });
+
+      this.btnDele = new JButton("Delete Line");
+      this.btnDele.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          final int i = pnlDataEntry.this.tp.getSelectedIndex();
+          if (i == 0) {
+            JOptionPane.showMessageDialog(boatCalc.this.f_edit,
+                "Stations pannel cannot be deleted.", "Warning!", JOptionPane.ERROR_MESSAGE);
+            return;
+          }
+
+          final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit, "Delete Selected line?",
+              "Data Edit", JOptionPane.YES_NO_OPTION);
+          if (n == JOptionPane.YES_OPTION) {
+            pnlDataEntry.this.tp.remove(i);
+            pnlDataEntry.this.bChanged = true;
+          }
+
+        }
+      });
+
+
+      this.btnSave = new JButton("Apply");
+      this.btnSave.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          pnlDataEntry.this.saveEdit();
+        }
+      });
+
+
+      this.btnClose = new JButton("Close");
+      this.btnClose.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          if (pnlDataEntry.this.bChanged) {
+            final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit,
+                "Data has changed. Do you wish to apply changes?", "Data Edit",
+                JOptionPane.YES_NO_OPTION);
+            if (n == JOptionPane.YES_OPTION) {
+              pnlDataEntry.this.saveEdit();
+            }
+          }
+          boatCalc.this.f_edit.setVisible(false);
+        }
+      });
+
+      bp.add(this.btnHName);
+      bp.add(this.btnNA);
+      bp.add(this.btnName);
+      bp.add(this.btnInsert);
+      bp.add(this.btnAdd);
+      bp.add(this.btnDele);
+      bp.add(this.btnSave);
+      bp.add(this.btnClose);
+
+      // de.add(new Box.Filler(new Dimension(20,20),new Dimension(20,20),new
+      // Dimension(20,20)),BorderLayout.PAGE_START);
+
+      this.de.add(bp, BorderLayout.PAGE_END);
+      boatCalc.this.f_edit.addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosing(final WindowEvent e) {
+          if (pnlDataEntry.this.bChanged) {
+            final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit,
+                "Data has changed. Do you wish to apply changes?", "Data Edit",
+                JOptionPane.YES_NO_OPTION);
+            if (n == JOptionPane.YES_OPTION) {
+              pnlDataEntry.this.saveEdit();
+            }
+          }
+          boatCalc.this.f_edit.setVisible(false);
+        }
+      });
+
+      this.add(this.de);
+
+      boatCalc.this.f_edit.setFocusTraversalPolicy(new pdeTabOrder(this));
+
+    }// end constructor PnlDataEntry
+
+    public void addLine(int it, final String name) {
+
+      // add new line
+
+      final edLinePanel pL = new edLinePanel(this.stn.length);
+
+      for (int i = 0; i < boatCalc.this.hull.Stations.length; i++) {
+
+        pL.x[i].setText("00");
+        pL.x[i].setText(this.stn[i].getText());
+        pL.x[i].getDocument().addDocumentListener(this);
+        pL.x[i].addFocusListener(this);
+
+        pL.y[i].setText("0.0");
+        pL.y[i].getDocument().addDocumentListener(this);
+        pL.y[i].addFocusListener(this);
+
+        pL.z[i].setText("0.0");
+        pL.z[i].getDocument().addDocumentListener(this);
+        pL.z[i].addFocusListener(this);
+
+        pL.v[i].setSelected(true);
+        pL.v[i].addItemListener(this);
+
+      }
+      if (it < 1) {
+        this.tp.addTab(name, pL);
+      } else {
+        it = Math.max(1, this.tp.getSelectedIndex());
+        this.tp.insertTab(name, null, pL, "new tab", it);
+      }
+      this.tp.setSelectedComponent(pL);
+      this.bChanged = true;
+    } // end addLine
+
+    // public Dimension getPreferredSize(){return new Dimension(700,200) ; }
+    @Override
+    public void changedUpdate(final DocumentEvent e) {
+      this.bChanged = true;
     }
 
-    public class rdrTabOrder extends FocusTraversalPolicy {
-      rdrData r;
+    @Override
+    public void focusGained(final FocusEvent e) {
+      final JTextField t = (JTextField) e.getComponent();
+      t.select(0, 100);
+    }
 
-      public rdrTabOrder(pnlRudder p) {
-        pnlRudder psp = p;
-        r = p.pData;
+    @Override
+    public void focusLost(final FocusEvent e) {}
+
+    @Override
+    public void insertUpdate(final DocumentEvent e) {
+      this.bChanged = true;
+    }
+
+    @Override
+    public void itemStateChanged(final ItemEvent e) {
+      this.bChanged = true;
+    }
+
+    @Override
+    public void removeUpdate(final DocumentEvent e) {
+      this.bChanged = true;
+    }
+
+
+    public void saveEdit() {
+      final double[] sta = new double[boatCalc.this.hull.Stations.length];
+      final ArrayList o = new ArrayList();
+
+      try {
+        for (int i = 0; i < sta.length; i++) {
+          sta[i] = Double.parseDouble(this.stn[i].getText());
+        }
+      } catch (final NumberFormatException nfe) {
+        JOptionPane.showMessageDialog(boatCalc.this.f_edit,
+            "Bad number format in Stations entries.", "Warning!", JOptionPane.ERROR_MESSAGE);
+        return;
       }
 
-      public Component getComponentAfter(Container focusCycleRoot, Component aComponent) {
-        return aComponent;
-      }
+      Point[] p;
+      int iLine;
+      double x, y, z;
 
-      public Component getComponentBefore(Container focusCycleRoot, Component aComponent) {
-        return aComponent;
-      }
+      for (int j = 1; j < this.tp.getTabCount(); j++) {
 
-      public Component getLastComponent(Container focusCycleRoot) {
-        return r;
-      }
+        final edLinePanel pL = (edLinePanel) this.tp.getComponentAt(j);
 
-      public Component getFirstComponent(Container focusCycleRoot) {
-        return r;
-      }
+        try {
 
-      public Component getDefaultComponent(Container focusCycleRoot) {
-        return r;
-      }
-    }// end rdrTabOrder
+          p = new Point[this.stn.length];
+          for (iLine = 0; iLine < p.length; iLine++) {
+            p[iLine] = new Point();
+          }
 
-    class rdrSpec extends JPanel {
+          for (int i = 0; i < this.stn.length; i++) {
+
+            x = Double.parseDouble(pL.x[i].getText());
+            y = Double.parseDouble(pL.y[i].getText());
+            z = Double.parseDouble(pL.z[i].getText());
+            p[i] = new Point(x, y, z);
+            p[i].valid = pL.v[i].isSelected();
+          }
+          final rawLine rL = new rawLine();
+          rL.ln = new Line(p);
+          rL.lnName = this.tp.getTitleAt(j);
+          o.add(rL);
+        } catch (final NumberFormatException nfe) {
+          JOptionPane.showMessageDialog(boatCalc.this.f_edit,
+              "Bad number format in Line entries" + j + ".", "Warning!", JOptionPane.ERROR_MESSAGE);
+          return;
+        }
+
+      } // end j
+
+      boatCalc.this.hull.Offsets = o;
+      boatCalc.this.hull.Stations = sta;
+      boatCalc.this.hull.setLines();
+      boatCalc.this.hull.bChanged = true;
+      boatCalc.this.hull.valid = (o.size() > 0);
+      boatCalc.this.hull.designer = this.NA;
+      boatCalc.this.hull.boatname = this.DName;
+      this.bChanged = false;
+      boatCalc.this.setCtrls();
+      return;
+
+    }// end saveEdit
+
+  }// end pnlDataEntry
+  class pnlRudder extends JPanel {
+    class editFoil extends JPanel
+        implements DocumentListener, ItemListener, FocusListener, ActionListener {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      boolean bChanged;
+      JCheckBox cbFoil;
       Dimension d;
+      JTextField[][] ff;
+      rscFoil fo;
 
-      public rdrSpec(int x, int y) {
-        d = new Dimension(x, y);
+      public editFoil(final rscFoil f) {
+        super(new GridLayout(0, 8));
+        this.d = new Dimension(600, 150);
+        final Font efFont = new Font("Serif", Font.BOLD, 14);
+        this.fo = f;
+
+        this.ff = new JTextField[2][4];
+        for (int i = 0; i < 4; i++) {
+          this.ff[0][i] = new JTextField(Double.toString(f.getParamX(i)), 6);
+          this.ff[0][i].getDocument().addDocumentListener(this);
+          this.ff[0][i].addFocusListener(this);
+          this.ff[1][i] = new JTextField(Double.toString(f.getParamY(i)), 6);
+          this.ff[1][i].getDocument().addDocumentListener(this);
+          this.ff[1][i].addFocusListener(this);
+        }
+
+
+        JLabel lbl;
+        JPanel pC;
+
+        // row 1, labels
+        this.cbFoil = new JCheckBox("Use");
+        this.cbFoil.setHorizontalAlignment(SwingConstants.LEFT);
+        this.cbFoil.setSelected(this.fo.use);
+        this.cbFoil.addActionListener(this);
+        this.add(this.cbFoil);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        lbl = new JLabel("Left", SwingConstants.RIGHT);
+        lbl.setFont(efFont);
+        this.add(lbl);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        lbl = new JLabel("Right", SwingConstants.RIGHT);
+        lbl.setFont(efFont);
+        this.add(lbl);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        // row 2, top
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        lbl = new JLabel("Top:", SwingConstants.CENTER);
+        lbl.setFont(efFont);
+        this.add(lbl);
+
+        pC = new JPanel();
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.TL]);
+        this.add(pC);
+
+        pC = new JPanel();
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.TL]);
+        this.add(pC);
+
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        pC = new JPanel();
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.TR]);
+        this.add(pC);
+
+        pC = new JPanel();
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.TR]);
+        this.add(pC);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        // row 3, bottom
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        lbl = new JLabel("Bottom:", SwingConstants.CENTER);
+        lbl.setFont(efFont);
+        this.add(lbl);
+        pC = new JPanel();
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.BL]);
+        this.add(pC);
+
+        pC = new JPanel();
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.BL]);
+        this.add(pC);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        pC = new JPanel();
+        pC.add(new JLabel("X:", SwingConstants.RIGHT));
+        pC.add(this.ff[0][rscFoil.BR]);
+        this.add(pC);
+
+        pC = new JPanel();
+        pC.add(new JLabel("Z:", SwingConstants.RIGHT));
+        pC.add(this.ff[1][rscFoil.BR]);
+        this.add(pC);
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
       }
 
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        this.fo.use = this.cbFoil.isSelected();
+        pnlRudder.this.rdrChange = true;
+        this.bChanged = true;
+        pnlRudder.this.pDraw.repaint();
+        pnlRudder.this.pSpec.repaint();
+        pnlRudder.this.pRpt.setTable();
+      }
+
+      @Override
+      public void changedUpdate(final DocumentEvent e) {
+        pnlRudder.this.rdrChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void focusGained(final FocusEvent e) {
+        final JTextField t = (JTextField) e.getComponent();
+        t.select(0, 100);
+      }
+
+      @Override
+      public void focusLost(final FocusEvent e) {
+        double v, w;
+        try {
+          for (int i = 0; i < 4; i++) {
+            v = Double.parseDouble(this.ff[0][i].getText());
+            w = Double.parseDouble(this.ff[1][i].getText());
+            this.fo.setParamXY(i, v, w);
+          }
+        } catch (final NumberFormatException nfe) {
+          JOptionPane.showMessageDialog(boatCalc.this.f_edit, "Bad number format in data entry.",
+              "Warning!", JOptionPane.ERROR_MESSAGE);
+          return;
+        }
+
+        pnlRudder.this.rdrChange = true;
+        this.bChanged = true;
+        pnlRudder.this.pDraw.repaint();
+        pnlRudder.this.pSpec.repaint();
+        pnlRudder.this.pRpt.setTable();
+
+      }
+
+      @Override
       public Dimension getPreferredSize() {
-        return d;
+        return this.d;
       }
 
-      protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        int iL = 20;
-        int iC1 = 20;
-        int iC2 = 80;
-        int iC3 = 250;
-        int iC4 = 325;
-        int kL = 0;
-        if (pRdr.rudder.use) {
-          int jL = 0;
-          g.drawString("Rudder", iC1, iL);
-          jL = 20;
-          g.drawString("Area: ", iC1, iL + jL);
-          g.drawString(bcf.DF1d.format(pRdr.rudder.getArea()), iC2, iL + jL);
-          jL = jL + 20;
-          g.drawString("CoA: ", iC1, iL + jL);
-          g.drawString(bcf.DF2d.format(pRdr.rudder.getAreaX()) + ", "
-              + bcf.DF2d.format(pRdr.rudder.getAreaY()), iC2, iL + jL);
-          jL = jL + 20;
-          g.drawString("Points: ", iC1, iL + jL);
-          for (int i = 0; i < 4; i++) {
-            g.drawString(bcf.DF2d.format(pRdr.rudder.getParamX(i)) + ", "
-                + bcf.DF2d.format(pRdr.rudder.getParamY(i)), iC2, iL + jL);
-            jL = jL + 20;
-          }
-          g.drawString("ref: baseline", iC2 + 90, iL + jL - 20);
-          kL = jL;
-          jL = 0;
-          g.drawString("Immersed Portion", iC3, iL);
-          jL = 20;
-          g.drawString("Area: ", iC3, iL + jL);
-          g.drawString(bcf.DF1d.format(pRdr.rudder.getWetArea()), iC4, iL + jL);
-          jL = jL + 20;
-          g.drawString("CoA: ", iC3, iL + jL);
-          g.drawString(bcf.DF2d.format(pRdr.rudder.getWetX()) + ", "
-              + bcf.DF2d.format(pRdr.rudder.getWetY()), iC4, iL + jL);
-          jL = jL + 20;
-          g.drawString("Points: ", iC3, iL + jL);
+      @Override
+      public void insertUpdate(final DocumentEvent e) {
+        pnlRudder.this.rdrChange = true;
+        this.bChanged = true;
+      }
 
-          SortedSet wp = pRdr.rudder.getWetPts();
-          Iterator pi = wp.iterator();
-          while (pi.hasNext()) {
-            Point p = (Point) pi.next();
-            g.drawString(bcf.DF2d.format(p.x) + ", " + bcf.DF2d.format(p.z), iC4, iL + jL);
-            jL = jL + 20;
+      @Override
+      public void itemStateChanged(final ItemEvent e) {
+        pnlRudder.this.rdrChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void removeUpdate(final DocumentEvent e) {
+        pnlRudder.this.rdrChange = true;
+        this.bChanged = true;
+      }
+
+    }// end editFoil
+    class rdrArea extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      Dimension d;
+      JButton jbApply, jbClose;
+      JLabel jlRArea, jlRCoA;
+      JLabel jlSArea, jlSCoA;
+      JLabel jlTArea, jlTCoA;
+
+      public rdrArea(final int x, final int y) {
+        this.d = new Dimension(x, y);
+        this.setLayout(new GridLayout(0, 2));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(new bcLabel("Immersed Areas", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        this.add(new bcLabel("Rudder - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlRArea = new JLabel("0.0", SwingConstants.LEFT));
+
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlRCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(new bcLabel("Skeg - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlSArea = new JLabel("0.0", SwingConstants.LEFT));
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlSCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(new bcLabel("Total - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlTArea = new JLabel("0.0", SwingConstants.LEFT));
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlTCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        this.jbApply = new JButton("Apply");
+        this.jbClose = new JButton("Close");
+
+        this.jbApply.addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            pnlRudder.this.saveRudder();
+            pnlRudder.this.rdrChange = false;
           }
-          g.drawString("ref: lwl", iC4 + 90, iL + jL - 20);
-          kL = Math.max(kL, jL);
+        });
+
+        this.jbClose.addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            if (pnlRudder.this.rdrChange) {
+              final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit,
+                  "Data has changed. Do you wish to apply changes?", "Data Edit",
+                  JOptionPane.YES_NO_OPTION);
+              if (n == JOptionPane.YES_OPTION) {
+                pnlRudder.this.saveRudder();
+                pnlRudder.this.rdrChange = false;
+              }
+            }
+            boatCalc.this.f_rudder.setVisible(false);
+          }
+        });
+
+        this.add(this.jbApply);
+        this.add(this.jbClose);
+
+      }
+
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
+
+      protected void setTable() {
+        String s;
+        double wa = 0;
+        double wx = 0;
+        double wy = 0;
+        if (pnlRudder.this.pRdr.rudder.use) {
+          this.jlRArea.setText(boatCalc.this.bcf.DF1d
+              .format(boatCalc.this.hull.units.coefArea() * pnlRudder.this.pRdr.rudder.getWetArea())
+              + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.rudder.getWetX()) + ", "
+              + boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.rudder.getWetY());
+          this.jlRCoA.setText(s);
+          wa = wa + pnlRudder.this.pRdr.rudder.getWetArea();
+          wx = wx
+              + (pnlRudder.this.pRdr.rudder.getWetArea() * pnlRudder.this.pRdr.rudder.getWetX());
+          wy = wy
+              + (pnlRudder.this.pRdr.rudder.getWetArea() * pnlRudder.this.pRdr.rudder.getWetY());
+        } else {
+          this.jlRArea.setText("0.00");
+          this.jlRCoA.setText("-.--, -.--");
         }
-        iL = iL + kL;
-        if (pRdr.skeg.use) {
-          int jL = 0;
-          g.drawString("Skeg", iC1, iL);
-          jL = 20;
-          g.drawString("Area: ", iC1, iL + jL);
-          g.drawString(bcf.DF1d.format(pRdr.skeg.getArea()), iC2, iL + jL);
-          jL = jL + 20;
-          g.drawString("CoA: ", iC1, iL + jL);
-          g.drawString(
-              bcf.DF2d.format(pRdr.skeg.getAreaX()) + ", " + bcf.DF2d.format(pRdr.skeg.getAreaY()),
-              iC2, iL + jL);
-          jL = jL + 20;
-          g.drawString("Points: ", iC1, iL + jL);
-          for (int i = 0; i < 4; i++) {
-            g.drawString(bcf.DF2d.format(pRdr.skeg.getParamX(i)) + ", "
-                + bcf.DF2d.format(pRdr.skeg.getParamY(i)), iC2, iL + jL);
-            jL = jL + 20;
-          }
-          g.drawString("ref: baseline", iC2 + 90, iL + jL - 20);
-          kL = jL;
-          jL = 0;
-          g.drawString("Immersed Portion", iC3, iL);
-          jL = 20;
-          g.drawString("Area: ", iC3, iL + jL);
-          g.drawString(bcf.DF1d.format(pRdr.skeg.getWetArea()), iC4, iL + jL);
-          jL = jL + 20;
-          g.drawString("CoA: ", iC3, iL + jL);
-          g.drawString(
-              bcf.DF2d.format(pRdr.skeg.getWetX()) + ", " + bcf.DF2d.format(pRdr.skeg.getWetY()),
-              iC4, iL + jL);
-          jL = jL + 20;
-          g.drawString("Points: ", iC3, iL + jL);
 
-          SortedSet wp = pRdr.skeg.getWetPts();
-          Iterator pi = wp.iterator();
-          while (pi.hasNext()) {
-            Point p = (Point) pi.next();
-            g.drawString(bcf.DF2d.format(p.x) + ", " + bcf.DF2d.format(p.z), iC4, iL + jL);
-            jL = jL + 20;
-          }
-          g.drawString("ref: lwl", iC4 + 90, iL + jL - 20);
-          // kL = Math.max(kL,jL);
+        if (pnlRudder.this.pRdr.skeg.use) {
+          this.jlSArea.setText(boatCalc.this.bcf.DF1d
+              .format(boatCalc.this.hull.units.coefArea() * pnlRudder.this.pRdr.skeg.getWetArea())
+              + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.skeg.getWetX()) + ", "
+              + boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.skeg.getWetY());
+          this.jlSCoA.setText(s);
+          wa = wa + pnlRudder.this.pRdr.skeg.getWetArea();
+          wx = wx + (pnlRudder.this.pRdr.skeg.getWetArea() * pnlRudder.this.pRdr.skeg.getWetX());
+          wy = wy + (pnlRudder.this.pRdr.skeg.getWetArea() * pnlRudder.this.pRdr.skeg.getWetY());
+        } else {
+          this.jlSArea.setText("0.00");
+          this.jlSCoA.setText("-.--, -.--");
         }
 
-      }// end paintComponent
-    }// ends rdrSpec
+        if (wa > 0) {
+          this.jlTArea.setText(boatCalc.this.bcf.DF1d.format(wa));
+          this.jlTArea
+              .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.units.coefArea() * wa)
+                  + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(wx / wa) + ", "
+              + boatCalc.this.bcf.DF1d.format(wy / wa);
+          this.jlTCoA.setText(s);
+        } else {
+          this.jlTArea.setText("0.00");
+          this.jlTCoA.setText("-.--, -.--");
+        }
+      }
 
+    }// end rdrArea
+    class rdrData extends JPanel implements ActionListener {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      JButton btnInc, btnDec;
+      JComboBox cbxInc;
+      Dimension d;
+      editFoil pRudder;
+      editFoil pSkeg;
+      JRadioButton rbBLX, rbBLZ, rbBRX, rbBRZ;
+      JRadioButton rbMoveX, rbMoveZ;
+      JRadioButton rbScale;
+      JRadioButton rbTLX, rbTLZ, rbTRX, rbTRZ;
+      JTabbedPane tp = new JTabbedPane();
+
+      public rdrData(final int x, final int y) {
+
+        JPanel pCB;
+
+        this.d = new Dimension(x, y);
+        this.setLayout(new BorderLayout());
+        this.pRudder = new editFoil(pnlRudder.this.pRdr.rudder);
+        this.tp.addTab("Rudder", this.pRudder);
+        this.pSkeg = new editFoil(pnlRudder.this.pRdr.skeg);
+        this.tp.addTab("Skeg", this.pSkeg);
+        this.add(this.tp, BorderLayout.CENTER);
+
+        final JPanel pInc = new JPanel();
+        pInc.setPreferredSize(new Dimension(x - 5, (3 * y) / 10));
+        pInc.setLayout(new GridLayout(0, 8));
+        final ButtonGroup bgInc = new ButtonGroup();
+
+        this.btnInc = new JButton("Increase");
+        this.btnInc.addActionListener(this);
+        pInc.add(this.btnInc);
+
+        pInc.add(new JLabel("Top/Left ", SwingConstants.RIGHT));
+        pCB = new JPanel();
+        this.rbTLX = new JRadioButton("X");
+        bgInc.add(this.rbTLX);
+        pCB.add(this.rbTLX);
+        this.rbTLZ = new JRadioButton("Z");
+        bgInc.add(this.rbTLZ);
+        pCB.add(this.rbTLZ);
+        pInc.add(pCB);
+
+        pInc.add(new JLabel("Top/Right ", SwingConstants.RIGHT));
+        pCB = new JPanel();
+        this.rbTRX = new JRadioButton("X");
+        bgInc.add(this.rbTRX);
+        pCB.add(this.rbTRX);
+        this.rbTRZ = new JRadioButton("Z");
+        bgInc.add(this.rbTRZ);
+        pCB.add(this.rbTRZ);
+        pInc.add(pCB);
+
+        pInc.add(new JLabel("Move ", SwingConstants.RIGHT));
+        pCB = new JPanel();
+        this.rbMoveX = new JRadioButton("X");
+        bgInc.add(this.rbMoveX);
+        pCB.add(this.rbMoveX);
+        this.rbMoveZ = new JRadioButton("Z");
+        bgInc.add(this.rbMoveZ);
+        pCB.add(this.rbMoveZ);
+        pInc.add(pCB);
+
+        pInc.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+
+        this.btnDec = new JButton("Decrease");
+        this.btnDec.addActionListener(this);
+        pInc.add(this.btnDec);
+
+        pInc.add(new JLabel("Bottom/Left ", SwingConstants.RIGHT));
+
+        pCB = new JPanel();
+        this.rbBLX = new JRadioButton("X");
+        bgInc.add(this.rbBLX);
+        pCB.add(this.rbBLX);
+        this.rbBLZ = new JRadioButton("Z");
+        bgInc.add(this.rbBLZ);
+        pCB.add(this.rbBLZ);
+        pInc.add(pCB);
+
+        pInc.add(new JLabel("Bottom/Right ", SwingConstants.RIGHT));
+        pCB = new JPanel();
+        this.rbBRX = new JRadioButton("X");
+        bgInc.add(this.rbBRX);
+        pCB.add(this.rbBRX);
+        this.rbBRZ = new JRadioButton("Z");
+        bgInc.add(this.rbBRZ);
+        pCB.add(this.rbBRZ);
+        pInc.add(pCB);
+
+        pInc.add(new JLabel("Scale ", SwingConstants.RIGHT));
+        pCB = new JPanel();
+        this.rbScale = new JRadioButton("%");
+        bgInc.add(this.rbScale);
+        pCB.add(this.rbScale);
+        pCB.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        pInc.add(pCB);
+
+        pCB = new JPanel();
+        pCB.setLayout(new GridLayout(0, 2));
+        pCB.add(new JLabel("Step: ", SwingConstants.RIGHT));
+
+
+        final String[] incs =
+            {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
+        this.cbxInc = new JComboBox(incs);
+        this.cbxInc.setEditable(true);
+        this.cbxInc.setSelectedIndex(6);
+        pCB.add(this.cbxInc);
+
+        // tfInc = new JTextField("1.0",8);
+        // pCB.add(tfInc);
+        pInc.add(pCB);
+
+        this.add(pInc, BorderLayout.PAGE_END);
+
+      } // end constructor
+
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        if ((e.getSource() == this.btnInc) || (e.getSource() == this.btnDec)) {
+
+          rscFoil f = pnlRudder.this.pRdr.rudder;
+          editFoil eF = this.pRudder;
+          if (this.tp.getSelectedIndex() == 1) {
+            f = pnlRudder.this.pRdr.skeg;
+            eF = this.pSkeg;
+          }
+          double d = 0;
+          double v;
+          double sgn;
+
+          try {
+            d = Double.parseDouble((String) this.cbxInc.getSelectedItem());
+          } catch (final NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(null, "Unable to interperet step as number.", "Warning!",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+          }
+
+          if (e.getSource() == this.btnInc) {
+            sgn = 1.0;
+          } else {
+            sgn = -1.0;
+          }
+
+          if (this.rbTLX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.TL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.TL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.TL, v);
+          }
+
+          if (this.rbTLZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.TL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.TL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.TL, v);
+          }
+
+
+          if (this.rbTRX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.TR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.TR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.TR, v);
+          }
+
+          if (this.rbTRZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.TR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.TR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.TR, v);
+          }
+
+
+          if (this.rbBRX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.BR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.BR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.BR, v);
+          }
+
+          if (this.rbBRZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.BR].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.BR].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.BR, v);
+          }
+
+          if (this.rbBLX.isSelected() || this.rbMoveX.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[0][rscFoil.BL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[0][rscFoil.BL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamX(rscFoil.BL, v);
+          }
+
+          if (this.rbBLZ.isSelected() || this.rbMoveZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eF.ff[1][rscFoil.BL].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eF.ff[1][rscFoil.BL].setText(boatCalc.this.bcf.DF2d.format(v));
+            f.setParamY(rscFoil.BL, v);
+          }
+
+          if (this.rbScale.isSelected()) {
+            final double mx = 0.25 * (f.getParamX(rscFoil.TL) + f.getParamX(rscFoil.TR)
+                + f.getParamX(rscFoil.BR) + f.getParamX(rscFoil.BL));
+            final double my = 0.25 * (f.getParamY(rscFoil.TL) + f.getParamY(rscFoil.TR)
+                + f.getParamY(rscFoil.BR) + f.getParamY(rscFoil.BL));
+            for (int i = 0; i < 4; i++) {
+              v = mx + (0.01 * (100 + (sgn * d)) * (f.getParamX(i) - mx));
+              eF.ff[0][i].setText(boatCalc.this.bcf.DF2d.format(v));
+              f.setParamX(i, v);
+              v = my + (0.01 * (100 + (sgn * d)) * (f.getParamY(i) - my));
+              eF.ff[1][i].setText(boatCalc.this.bcf.DF2d.format(v));
+              f.setParamY(i, v);
+            }
+          }
+
+        }
+        pnlRudder.this.pDraw.repaint();
+        pnlRudder.this.pSpec.repaint();
+        pnlRudder.this.pRpt.setTable();
+      }
+
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
+    }// end rdrData
     class rdrDraw extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       Dimension d;
 
-      public rdrDraw(int x, int y) {
-        d = new Dimension(x, y);
+      public rdrDraw(final int x, final int y) {
+        this.d = new Dimension(x, y);
       }
 
+      @Override
       public Dimension getPreferredSize() {
-        return d;
+        return this.d;
       }
 
-      protected void paintComponent(Graphics g) {
+      @Override
+      protected void paintComponent(final Graphics g) {
         super.paintComponent(g);
 
-        double mx = getWidth();
-        double my = getHeight();
-        int ix = (int) mx;
-        int iy = (int) my;
-        int xb = (int) 50;
-        int yb = (int) my / 2;
+        final double mx = this.getWidth();
+        final double my = this.getHeight();
+        final int ix = (int) mx;
+        final int iy = (int) my;
+        final int xb = 50;
+        final int yb = (int) my / 2;
         int iu, iv, iw, iz;
 
         g.clearRect(0, 0, ix, iy);
@@ -3547,47 +3743,49 @@ public class boatCalc extends javax.swing.JFrame {
         g.drawLine(60, 37, 85, 37);
         g.setColor(Color.black);
 
-        if (!hull.valid)
+        if (!boatCalc.this.hull.valid) {
           return;
+        }
 
-        double rx = (mx - 100.0) / (hull.gx_max - hull.gx_min);
-        double ry = (my - 75.0) / (hull.gy_max - hull.gy_min);
-        double r = Math.min(rx, ry);
+        final double rx = (mx - 100.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
+        final double ry = (my - 75.0) / (boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min);
+        final double r = Math.min(rx, ry);
 
         // draw waterline
-        iu = xb + (int) (r * (hull.gx_min - hull.gx_min));
-        iv = yb - (int) (r * (0.0 - hull.gz_min));
-        iw = xb + (int) (r * (hull.gx_max - hull.gx_min));
-        iz = yb - (int) (r * (0.0 - hull.gz_min));
+        iu = xb + (int) (r * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
+        iv = yb - (int) (r * (0.0 - boatCalc.this.hull.gz_min));
+        iw = xb + (int) (r * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (r * (0.0 - boatCalc.this.hull.gz_min));
         g.setColor(Color.blue);
         g.drawLine(iu, iv, iw, iz);
 
         // draw hull profile
         g.setColor(Color.black);
-        double z1Lo = hull.gz_max;
-        double z1Hi = hull.gz_min;
+        double z1Lo = boatCalc.this.hull.gz_max;
+        double z1Hi = boatCalc.this.hull.gz_min;
         double x1 = 0;
         for (double pct = 0.0; pct <= 1.0025; pct = pct + 0.01) {
-          double x = hull.gx_min + pct * (hull.gx_max - hull.gx_min);
-          SortedSet ss = hull.getStnSet(x, 0.0);
-          Iterator si = ss.iterator();
-          double zLo = hull.gz_max;
-          double zHi = hull.gz_min;
+          final double x = boatCalc.this.hull.gx_min
+              + (pct * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+          final SortedSet ss = boatCalc.this.hull.getStnSet(x, 0.0);
+          final Iterator si = ss.iterator();
+          double zLo = boatCalc.this.hull.gz_max;
+          double zHi = boatCalc.this.hull.gz_min;
           boolean bOk = false;
           while (si.hasNext()) {
-            Point p = (Point) si.next();
+            final Point p = (Point) si.next();
             zLo = Math.min(zLo, p.z);
             zHi = Math.max(zHi, p.z);
             bOk = true;
           }
-          if (bOk && pct > 0.0) {
-            iu = xb + (int) (r * (x1 - hull.gx_min));
-            iv = yb - (int) (r * (z1Lo - hull.gz_min));
-            iw = xb + (int) (r * (x - hull.gx_min));
-            iz = yb - (int) (r * (zLo - hull.gz_min));
+          if (bOk && (pct > 0.0)) {
+            iu = xb + (int) (r * (x1 - boatCalc.this.hull.gx_min));
+            iv = yb - (int) (r * (z1Lo - boatCalc.this.hull.gz_min));
+            iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+            iz = yb - (int) (r * (zLo - boatCalc.this.hull.gz_min));
             g.drawLine(iu, iv, iw, iz);
-            iv = yb - (int) (r * (z1Hi - hull.gz_min));
-            iz = yb - (int) (r * (zHi - hull.gz_min));
+            iv = yb - (int) (r * (z1Hi - boatCalc.this.hull.gz_min));
+            iz = yb - (int) (r * (zHi - boatCalc.this.hull.gz_min));
             g.drawLine(iu, iv, iw, iz);
           }
 
@@ -3600,16 +3798,16 @@ public class boatCalc extends javax.swing.JFrame {
         // draw stems
         g.setColor(Color.lightGray);
         for (int iSL = 0; iSL <= 1; iSL++) {
-          if (hull.bStems[iSL] && hull.sLines[iSL].valid) {
-            double x = hull.sLines[iSL].hPoints[0].getX();
-            double y = hull.sLines[iSL].hPoints[0].getZ();
-            iu = xb + (int) (r * (x - hull.gx_min));
-            iv = yb - (int) (r * (y - hull.gz_min));
-            for (int j = 1; j < hull.sLines[iSL].hPoints.length; j++) {
-              x = hull.sLines[iSL].hPoints[j].getX();
-              y = hull.sLines[iSL].hPoints[j].getZ();
-              iw = xb + (int) (r * (x - hull.gx_min));
-              iz = yb - (int) (r * (y - hull.gz_min));
+          if (boatCalc.this.hull.bStems[iSL] && boatCalc.this.hull.sLines[iSL].valid) {
+            double x = boatCalc.this.hull.sLines[iSL].hPoints[0].getX();
+            double y = boatCalc.this.hull.sLines[iSL].hPoints[0].getZ();
+            iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+            iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
+            for (int j = 1; j < boatCalc.this.hull.sLines[iSL].hPoints.length; j++) {
+              x = boatCalc.this.hull.sLines[iSL].hPoints[j].getX();
+              y = boatCalc.this.hull.sLines[iSL].hPoints[j].getZ();
+              iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+              iz = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
               g.drawLine(iu, iv, iw, iz);
               iu = iw;
               iv = iz;
@@ -3618,62 +3816,64 @@ public class boatCalc extends javax.swing.JFrame {
         }
 
         // draw rudder
-        if (pRdr.rudder.use) {
+        if (pnlRudder.this.pRdr.rudder.use) {
           g.setColor(Color.lightGray);
           double x, y;
-          x = pRdr.rudder.getParamX(pRdr.rudder.TL);
-          y = pRdr.rudder.getParamY(pRdr.rudder.TL) + hull.base;
-          iu = xb + (int) (r * (x - hull.gx_min));
-          iv = yb - (int) (r * (y - hull.gz_min));
-          x = pRdr.rudder.getParamX(pRdr.rudder.TR);
-          y = pRdr.rudder.getParamY(pRdr.rudder.TR) + hull.base;
-          iw = xb + (int) (r * (x - hull.gx_min));
-          iz = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.rudder.getParamX(rscFoil.TL);
+          y = pnlRudder.this.pRdr.rudder.getParamY(rscFoil.TL) + boatCalc.this.hull.base;
+          iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
+          x = pnlRudder.this.pRdr.rudder.getParamX(rscFoil.TR);
+          y = pnlRudder.this.pRdr.rudder.getParamY(rscFoil.TR) + boatCalc.this.hull.base;
+          iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iz = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iu, iv, iw, iz);
 
-          x = pRdr.rudder.getParamX(pRdr.rudder.BR);
-          y = pRdr.rudder.getParamY(pRdr.rudder.BR) + hull.base;
-          iu = xb + (int) (r * (x - hull.gx_min));
-          iv = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.rudder.getParamX(rscFoil.BR);
+          y = pnlRudder.this.pRdr.rudder.getParamY(rscFoil.BR) + boatCalc.this.hull.base;
+          iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iw, iz, iu, iv);
 
-          x = pRdr.rudder.getParamX(pRdr.rudder.BL);
-          y = pRdr.rudder.getParamY(pRdr.rudder.BL) + hull.base;
-          iw = xb + (int) (r * (x - hull.gx_min));
-          iz = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.rudder.getParamX(rscFoil.BL);
+          y = pnlRudder.this.pRdr.rudder.getParamY(rscFoil.BL) + boatCalc.this.hull.base;
+          iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iz = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iu, iv, iw, iz);
 
-          x = pRdr.rudder.getParamX(pRdr.rudder.TL);
-          y = pRdr.rudder.getParamY(pRdr.rudder.TL) + hull.base;
-          iu = xb + (int) (r * (x - hull.gx_min));
-          iv = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.rudder.getParamX(rscFoil.TL);
+          y = pnlRudder.this.pRdr.rudder.getParamY(rscFoil.TL) + boatCalc.this.hull.base;
+          iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iw, iz, iu, iv);
 
           // draw wet rudder
-          if (pRdr.rudder.getWetArea() > 0) {
+          if (pnlRudder.this.pRdr.rudder.getWetArea() > 0) {
             g.setColor(Color.blue);
-            SortedSet wp = pRdr.rudder.getWetPts();
-            Iterator pi = wp.iterator();
+            final SortedSet wp = pnlRudder.this.pRdr.rudder.getWetPts();
+            final Iterator pi = wp.iterator();
             if (pi.hasNext()) {
-              Point p0 = (Point) pi.next();
+              final Point p0 = (Point) pi.next();
               Point p1 = new Point(p0);
               while (pi.hasNext()) {
-                Point p2 = (Point) pi.next();
-                iu = xb + (int) (r * (p1.x - hull.gx_min));
-                iv = yb - (int) (r * (p1.z - hull.gz_min));
-                iw = xb + (int) (r * (p2.x - hull.gx_min));
-                iz = yb - (int) (r * (p2.z - hull.gz_min));
+                final Point p2 = (Point) pi.next();
+                iu = xb + (int) (r * (p1.x - boatCalc.this.hull.gx_min));
+                iv = yb - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+                iw = xb + (int) (r * (p2.x - boatCalc.this.hull.gx_min));
+                iz = yb - (int) (r * (p2.z - boatCalc.this.hull.gz_min));
                 g.drawLine(iu, iv, iw, iz);
                 p1 = p2;
               }
-              iu = xb + (int) (r * (p1.x - hull.gx_min));
-              iv = yb - (int) (r * (p1.z - hull.gz_min));
-              iw = xb + (int) (r * (p0.x - hull.gx_min));
-              iz = yb - (int) (r * (p0.z - hull.gz_min));
+              iu = xb + (int) (r * (p1.x - boatCalc.this.hull.gx_min));
+              iv = yb - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+              iw = xb + (int) (r * (p0.x - boatCalc.this.hull.gx_min));
+              iz = yb - (int) (r * (p0.z - boatCalc.this.hull.gz_min));
               g.drawLine(iu, iv, iw, iz);
             }
-            int cx = xb + (int) (r * (pRdr.rudder.getWetX() - hull.gx_min));
-            int cy = yb - (int) (r * (pRdr.rudder.getWetY() - hull.gz_min));
+            final int cx =
+                xb + (int) (r * (pnlRudder.this.pRdr.rudder.getWetX() - boatCalc.this.hull.gx_min));
+            final int cy =
+                yb - (int) (r * (pnlRudder.this.pRdr.rudder.getWetY() - boatCalc.this.hull.gz_min));
             g.drawArc(cx - 5, cy - 5, 10, 10, 0, 360);
             g.drawLine(cx + 5, cy, cx - 5, cy);
             g.drawLine(cx, cy + 5, cx, cy - 5);
@@ -3681,62 +3881,64 @@ public class boatCalc extends javax.swing.JFrame {
         } // end if use rudder
 
         // draw skeg
-        if (pRdr.skeg.use) {
+        if (pnlRudder.this.pRdr.skeg.use) {
           g.setColor(Color.orange);
           double x, y;
-          x = pRdr.skeg.getParamX(pRdr.skeg.TL);
-          y = pRdr.skeg.getParamY(pRdr.skeg.TL) + hull.base;
-          iu = xb + (int) (r * (x - hull.gx_min));
-          iv = yb - (int) (r * (y - hull.gz_min));
-          x = pRdr.skeg.getParamX(pRdr.skeg.TR);
-          y = pRdr.skeg.getParamY(pRdr.skeg.TR) + hull.base;
-          iw = xb + (int) (r * (x - hull.gx_min));
-          iz = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.skeg.getParamX(rscFoil.TL);
+          y = pnlRudder.this.pRdr.skeg.getParamY(rscFoil.TL) + boatCalc.this.hull.base;
+          iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
+          x = pnlRudder.this.pRdr.skeg.getParamX(rscFoil.TR);
+          y = pnlRudder.this.pRdr.skeg.getParamY(rscFoil.TR) + boatCalc.this.hull.base;
+          iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iz = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iu, iv, iw, iz);
 
-          x = pRdr.skeg.getParamX(pRdr.skeg.BR);
-          y = pRdr.skeg.getParamY(pRdr.skeg.BR) + hull.base;
-          iu = xb + (int) (r * (x - hull.gx_min));
-          iv = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.skeg.getParamX(rscFoil.BR);
+          y = pnlRudder.this.pRdr.skeg.getParamY(rscFoil.BR) + boatCalc.this.hull.base;
+          iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iw, iz, iu, iv);
 
-          x = pRdr.skeg.getParamX(pRdr.skeg.BL);
-          y = pRdr.skeg.getParamY(pRdr.skeg.BL) + hull.base;
-          iw = xb + (int) (r * (x - hull.gx_min));
-          iz = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.skeg.getParamX(rscFoil.BL);
+          y = pnlRudder.this.pRdr.skeg.getParamY(rscFoil.BL) + boatCalc.this.hull.base;
+          iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iz = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iu, iv, iw, iz);
 
-          x = pRdr.skeg.getParamX(pRdr.skeg.TL);
-          y = pRdr.skeg.getParamY(pRdr.skeg.TL) + hull.base;
-          iu = xb + (int) (r * (x - hull.gx_min));
-          iv = yb - (int) (r * (y - hull.gz_min));
+          x = pnlRudder.this.pRdr.skeg.getParamX(rscFoil.TL);
+          y = pnlRudder.this.pRdr.skeg.getParamY(rscFoil.TL) + boatCalc.this.hull.base;
+          iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+          iv = yb - (int) (r * (y - boatCalc.this.hull.gz_min));
           g.drawLine(iw, iz, iu, iv);
 
           // draw wet skeg
-          if (pRdr.skeg.getWetArea() > 0) {
+          if (pnlRudder.this.pRdr.skeg.getWetArea() > 0) {
             g.setColor(Color.green);
-            SortedSet wp = pRdr.skeg.getWetPts();
-            Iterator pi = wp.iterator();
+            final SortedSet wp = pnlRudder.this.pRdr.skeg.getWetPts();
+            final Iterator pi = wp.iterator();
             if (pi.hasNext()) {
-              Point p0 = (Point) pi.next();
+              final Point p0 = (Point) pi.next();
               Point p1 = new Point(p0);
               while (pi.hasNext()) {
-                Point p2 = (Point) pi.next();
-                iu = xb + (int) (r * (p1.x - hull.gx_min));
-                iv = yb - (int) (r * (p1.z - hull.gz_min));
-                iw = xb + (int) (r * (p2.x - hull.gx_min));
-                iz = yb - (int) (r * (p2.z - hull.gz_min));
+                final Point p2 = (Point) pi.next();
+                iu = xb + (int) (r * (p1.x - boatCalc.this.hull.gx_min));
+                iv = yb - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+                iw = xb + (int) (r * (p2.x - boatCalc.this.hull.gx_min));
+                iz = yb - (int) (r * (p2.z - boatCalc.this.hull.gz_min));
                 g.drawLine(iu, iv, iw, iz);
                 p1 = p2;
               }
-              iu = xb + (int) (r * (p1.x - hull.gx_min));
-              iv = yb - (int) (r * (p1.z - hull.gz_min));
-              iw = xb + (int) (r * (p0.x - hull.gx_min));
-              iz = yb - (int) (r * (p0.z - hull.gz_min));
+              iu = xb + (int) (r * (p1.x - boatCalc.this.hull.gx_min));
+              iv = yb - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
+              iw = xb + (int) (r * (p0.x - boatCalc.this.hull.gx_min));
+              iz = yb - (int) (r * (p0.z - boatCalc.this.hull.gz_min));
               g.drawLine(iu, iv, iw, iz);
             }
-            int cx = xb + (int) (r * (pRdr.skeg.getWetX() - hull.gx_min));
-            int cy = yb - (int) (r * (pRdr.skeg.getWetY() - hull.gz_min));
+            final int cx =
+                xb + (int) (r * (pnlRudder.this.pRdr.skeg.getWetX() - boatCalc.this.hull.gx_min));
+            final int cy =
+                yb - (int) (r * (pnlRudder.this.pRdr.skeg.getWetY() - boatCalc.this.hull.gz_min));
             g.drawArc(cx - 5, cy - 5, 10, 10, 0, 360);
             g.drawLine(cx + 5, cy, cx - 5, cy);
             g.drawLine(cx, cy + 5, cx, cy - 5);
@@ -3748,21 +3950,23 @@ public class boatCalc extends javax.swing.JFrame {
         double tA = 0;
         double tX = 0;
         double tY = 0;
-        if (pRdr.rudder.use) {
-          tA = tA + pRdr.rudder.getWetArea();
-          tX = tX + pRdr.rudder.getWetArea() * pRdr.rudder.getWetX();
-          tY = tY + pRdr.rudder.getWetArea() * pRdr.rudder.getWetY();
+        if (pnlRudder.this.pRdr.rudder.use) {
+          tA = tA + pnlRudder.this.pRdr.rudder.getWetArea();
+          tX = tX
+              + (pnlRudder.this.pRdr.rudder.getWetArea() * pnlRudder.this.pRdr.rudder.getWetX());
+          tY = tY
+              + (pnlRudder.this.pRdr.rudder.getWetArea() * pnlRudder.this.pRdr.rudder.getWetY());
         }
-        if (pRdr.skeg.use) {
-          tA = tA + pRdr.skeg.getWetArea();
-          tX = tX + pRdr.skeg.getWetArea() * pRdr.skeg.getWetX();
-          tY = tY + pRdr.skeg.getWetArea() * pRdr.skeg.getWetY();
+        if (pnlRudder.this.pRdr.skeg.use) {
+          tA = tA + pnlRudder.this.pRdr.skeg.getWetArea();
+          tX = tX + (pnlRudder.this.pRdr.skeg.getWetArea() * pnlRudder.this.pRdr.skeg.getWetX());
+          tY = tY + (pnlRudder.this.pRdr.skeg.getWetArea() * pnlRudder.this.pRdr.skeg.getWetY());
         }
         if (tA > 0) {
           tX = tX / tA;
           tY = tY / tA;
-          int cx = xb + (int) (r * (tX - hull.gx_min));
-          int cy = yb - (int) (r * (tY - hull.gz_min));
+          final int cx = xb + (int) (r * (tX - boatCalc.this.hull.gx_min));
+          final int cy = yb - (int) (r * (tY - boatCalc.this.hull.gz_min));
           g.drawLine(cx + 4, cy + 4, cx - 4, cy + 4);
           g.drawLine(cx + 4, cy - 4, cx - 4, cy - 4);
           g.drawLine(cx - 4, cy - 4, cx - 4, cy + 4);
@@ -3775,694 +3979,489 @@ public class boatCalc extends javax.swing.JFrame {
       } // end paintComponent
 
     }// end rdrDraw
-
-    class rdrArea extends JPanel {
+    class rdrSpec extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       Dimension d;
-      JLabel jlRArea, jlRCoA;
-      JLabel jlSArea, jlSCoA;
-      JLabel jlTArea, jlTCoA;
-      JButton jbApply, jbClose;
 
-      public rdrArea(int x, int y) {
-        d = new Dimension(x, y);
-        setLayout(new GridLayout(0, 2));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new bcLabel("Immersed Areas", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        add(new bcLabel("Rudder - Area: ", JLabel.RIGHT));
-        add(jlRArea = new JLabel("0.0", JLabel.LEFT));
-
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlRCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new bcLabel("Skeg - Area: ", JLabel.RIGHT));
-        add(jlSArea = new JLabel("0.0", JLabel.LEFT));
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlSCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new bcLabel("Total - Area: ", JLabel.RIGHT));
-        add(jlTArea = new JLabel("0.0", JLabel.LEFT));
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlTCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        jbApply = new JButton("Apply");
-        jbClose = new JButton("Close");
-
-        jbApply.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            saveRudder();
-            rdrChange = false;
-          }
-        });
-
-        jbClose.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            if (rdrChange) {
-              int n = JOptionPane.showConfirmDialog(f_edit,
-                  "Data has changed. Do you wish to apply changes?", "Data Edit",
-                  JOptionPane.YES_NO_OPTION);
-              if (n == JOptionPane.YES_OPTION) {
-                saveRudder();
-                rdrChange = false;
-              }
-            }
-            f_rudder.setVisible(false);
-          }
-        });
-
-        add(jbApply);
-        add(jbClose);
-
+      public rdrSpec(final int x, final int y) {
+        this.d = new Dimension(x, y);
       }
 
+      @Override
       public Dimension getPreferredSize() {
-        return d;
+        return this.d;
       }
 
-      protected void setTable() {
-        String s;
-        double wa = 0;
-        double wx = 0;
-        double wy = 0;
-        if (pRdr.rudder.use) {
-          jlRArea.setText(bcf.DF1d.format(hull.units.coefArea() * pRdr.rudder.getWetArea())
-              + hull.units.lblArea());
-          s = bcf.DF1d.format(pRdr.rudder.getWetX()) + ", "
-              + bcf.DF1d.format(pRdr.rudder.getWetY());
-          jlRCoA.setText(s);
-          wa = wa + pRdr.rudder.getWetArea();
-          wx = wx + pRdr.rudder.getWetArea() * pRdr.rudder.getWetX();
-          wy = wy + pRdr.rudder.getWetArea() * pRdr.rudder.getWetY();
-        } else {
-          jlRArea.setText("0.00");
-          jlRCoA.setText("-.--, -.--");
-        }
-
-        if (pRdr.skeg.use) {
-          jlSArea.setText(bcf.DF1d.format(hull.units.coefArea() * pRdr.skeg.getWetArea())
-              + hull.units.lblArea());
-          s = bcf.DF1d.format(pRdr.skeg.getWetX()) + ", " + bcf.DF1d.format(pRdr.skeg.getWetY());
-          jlSCoA.setText(s);
-          wa = wa + pRdr.skeg.getWetArea();
-          wx = wx + pRdr.skeg.getWetArea() * pRdr.skeg.getWetX();
-          wy = wy + pRdr.skeg.getWetArea() * pRdr.skeg.getWetY();
-        } else {
-          jlSArea.setText("0.00");
-          jlSCoA.setText("-.--, -.--");
-        }
-
-        if (wa > 0) {
-          jlTArea.setText(bcf.DF1d.format(wa));
-          jlTArea.setText(bcf.DF1d.format(hull.units.coefArea() * wa) + hull.units.lblArea());
-          s = bcf.DF1d.format(wx / wa) + ", " + bcf.DF1d.format(wy / wa);
-          jlTCoA.setText(s);
-        } else {
-          jlTArea.setText("0.00");
-          jlTCoA.setText("-.--, -.--");
-        }
-      }
-
-    }// end rdrArea
-
-    class rdrData extends JPanel implements ActionListener {
-      Dimension d;
-      JTabbedPane tp = new JTabbedPane();
-      editFoil pRudder;
-      editFoil pSkeg;
-      JButton btnInc, btnDec;
-      JRadioButton rbTLX, rbTLZ, rbTRX, rbTRZ;
-      JRadioButton rbBLX, rbBLZ, rbBRX, rbBRZ;
-      JRadioButton rbMoveX, rbMoveZ;
-      JRadioButton rbScale;
-      JComboBox cbxInc;
-
-      public rdrData(int x, int y) {
-
-        JPanel pCB;
-
-        d = new Dimension(x, y);
-        setLayout(new BorderLayout());
-        pRudder = new editFoil(pRdr.rudder);
-        tp.addTab("Rudder", pRudder);
-        pSkeg = new editFoil(pRdr.skeg);
-        tp.addTab("Skeg", pSkeg);
-        add(tp, BorderLayout.CENTER);
-
-        JPanel pInc = new JPanel();
-        pInc.setPreferredSize(new Dimension(x - 5, (3 * y) / 10));
-        pInc.setLayout(new GridLayout(0, 8));
-        ButtonGroup bgInc = new ButtonGroup();
-
-        btnInc = new JButton("Increase");
-        btnInc.addActionListener(this);
-        pInc.add(btnInc);
-
-        pInc.add(new JLabel("Top/Left ", JLabel.RIGHT));
-        pCB = new JPanel();
-        rbTLX = new JRadioButton("X");
-        bgInc.add(rbTLX);
-        pCB.add(rbTLX);
-        rbTLZ = new JRadioButton("Z");
-        bgInc.add(rbTLZ);
-        pCB.add(rbTLZ);
-        pInc.add(pCB);
-
-        pInc.add(new JLabel("Top/Right ", JLabel.RIGHT));
-        pCB = new JPanel();
-        rbTRX = new JRadioButton("X");
-        bgInc.add(rbTRX);
-        pCB.add(rbTRX);
-        rbTRZ = new JRadioButton("Z");
-        bgInc.add(rbTRZ);
-        pCB.add(rbTRZ);
-        pInc.add(pCB);
-
-        pInc.add(new JLabel("Move ", JLabel.RIGHT));
-        pCB = new JPanel();
-        rbMoveX = new JRadioButton("X");
-        bgInc.add(rbMoveX);
-        pCB.add(rbMoveX);
-        rbMoveZ = new JRadioButton("Z");
-        bgInc.add(rbMoveZ);
-        pCB.add(rbMoveZ);
-        pInc.add(pCB);
-
-        pInc.add(
-            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-
-        btnDec = new JButton("Decrease");
-        btnDec.addActionListener(this);
-        pInc.add(btnDec);
-
-        pInc.add(new JLabel("Bottom/Left ", JLabel.RIGHT));
-
-        pCB = new JPanel();
-        rbBLX = new JRadioButton("X");
-        bgInc.add(rbBLX);
-        pCB.add(rbBLX);
-        rbBLZ = new JRadioButton("Z");
-        bgInc.add(rbBLZ);
-        pCB.add(rbBLZ);
-        pInc.add(pCB);
-
-        pInc.add(new JLabel("Bottom/Right ", JLabel.RIGHT));
-        pCB = new JPanel();
-        rbBRX = new JRadioButton("X");
-        bgInc.add(rbBRX);
-        pCB.add(rbBRX);
-        rbBRZ = new JRadioButton("Z");
-        bgInc.add(rbBRZ);
-        pCB.add(rbBRZ);
-        pInc.add(pCB);
-
-        pInc.add(new JLabel("Scale ", JLabel.RIGHT));
-        pCB = new JPanel();
-        rbScale = new JRadioButton("%");
-        bgInc.add(rbScale);
-        pCB.add(rbScale);
-        pCB.add(
-            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        pInc.add(pCB);
-
-        pCB = new JPanel();
-        pCB.setLayout(new GridLayout(0, 2));
-        pCB.add(new JLabel("Step: ", JLabel.RIGHT));
-
-
-        String[] incs =
-            {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
-        cbxInc = new JComboBox(incs);
-        cbxInc.setEditable(true);
-        cbxInc.setSelectedIndex(6);
-        pCB.add(cbxInc);
-
-        // tfInc = new JTextField("1.0",8);
-        // pCB.add(tfInc);
-        pInc.add(pCB);
-
-        add(pInc, BorderLayout.PAGE_END);
-
-      } // end constructor
-
-      public Dimension getPreferredSize() {
-        return d;
-      }
-
-      public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnInc || e.getSource() == btnDec) {
-
-          rscFoil f = pRdr.rudder;
-          editFoil eF = pRudder;
-          if (tp.getSelectedIndex() == 1) {
-            f = pRdr.skeg;
-            eF = pSkeg;
-          }
-          double d = 0;
-          double v;
-          double sgn;
-
-          try {
-            d = Double.parseDouble((String) cbxInc.getSelectedItem());
-          } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(null, "Unable to interperet step as number.", "Warning!",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-          }
-
-          if (e.getSource() == btnInc)
-            sgn = 1.0;
-          else
-            sgn = -1.0;
-
-          if (rbTLX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.TL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.TL].setText(bcf.DF2d.format(v));
-            f.setParamX(f.TL, v);
-          }
-
-          if (rbTLZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.TL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.TL].setText(bcf.DF2d.format(v));
-            f.setParamY(f.TL, v);
-          }
-
-
-          if (rbTRX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.TR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.TR].setText(bcf.DF2d.format(v));
-            f.setParamX(f.TR, v);
-          }
-
-          if (rbTRZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.TR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.TR].setText(bcf.DF2d.format(v));
-            f.setParamY(f.TR, v);
-          }
-
-
-          if (rbBRX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.BR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.BR].setText(bcf.DF2d.format(v));
-            f.setParamX(f.BR, v);
-          }
-
-          if (rbBRZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.BR].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.BR].setText(bcf.DF2d.format(v));
-            f.setParamY(f.BR, v);
-          }
-
-          if (rbBLX.isSelected() || rbMoveX.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[0][f.BL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[0][f.BL].setText(bcf.DF2d.format(v));
-            f.setParamX(f.BL, v);
-          }
-
-          if (rbBLZ.isSelected() || rbMoveZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eF.ff[1][f.BL].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eF.ff[1][f.BL].setText(bcf.DF2d.format(v));
-            f.setParamY(f.BL, v);
-          }
-
-          if (rbScale.isSelected()) {
-            double mx = 0.25
-                * (f.getParamX(f.TL) + f.getParamX(f.TR) + f.getParamX(f.BR) + f.getParamX(f.BL));
-            double my = 0.25
-                * (f.getParamY(f.TL) + f.getParamY(f.TR) + f.getParamY(f.BR) + f.getParamY(f.BL));
-            for (int i = 0; i < 4; i++) {
-              v = mx + 0.01 * (100 + sgn * d) * (f.getParamX(i) - mx);
-              eF.ff[0][i].setText(bcf.DF2d.format(v));
-              f.setParamX(i, v);
-              v = my + 0.01 * (100 + sgn * d) * (f.getParamY(i) - my);
-              eF.ff[1][i].setText(bcf.DF2d.format(v));
-              f.setParamY(i, v);
-            }
-          }
-
-        }
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
-      }
-    }// end rdrData
-
-    class editFoil extends JPanel
-        implements DocumentListener, ItemListener, FocusListener, ActionListener {
-      Dimension d;
-      boolean bChanged;
-      JCheckBox cbFoil;
-      rscFoil fo;
-      JTextField[][] ff;
-
-      public editFoil(rscFoil f) {
-        super(new GridLayout(0, 8));
-        d = new Dimension(600, 150);
-        Font efFont = new Font("Serif", Font.BOLD, 14);
-        fo = f;
-
-        ff = new JTextField[2][4];
-        for (int i = 0; i < 4; i++) {
-          ff[0][i] = new JTextField(Double.toString(f.getParamX(i)), 6);
-          ff[0][i].getDocument().addDocumentListener(this);
-          ff[0][i].addFocusListener(this);
-          ff[1][i] = new JTextField(Double.toString(f.getParamY(i)), 6);
-          ff[1][i].getDocument().addDocumentListener(this);
-          ff[1][i].addFocusListener(this);
-        }
-
-
-        JLabel lbl;
-        JPanel pC;
-
-        // row 1, labels
-        cbFoil = new JCheckBox("Use");
-        cbFoil.setHorizontalAlignment(SwingConstants.LEFT);
-        cbFoil.setSelected(fo.use);
-        cbFoil.addActionListener(this);
-        add(cbFoil);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        lbl = new JLabel("Left", JLabel.RIGHT);
-        lbl.setFont(efFont);
-        add(lbl);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        lbl = new JLabel("Right", JLabel.RIGHT);
-        lbl.setFont(efFont);
-        add(lbl);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        // row 2, top
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        lbl = new JLabel("Top:", JLabel.CENTER);
-        lbl.setFont(efFont);
-        add(lbl);
-
-        pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.TL]);
-        add(pC);
-
-        pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.TL]);
-        add(pC);
-
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.TR]);
-        add(pC);
-
-        pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.TR]);
-        add(pC);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        // row 3, bottom
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        lbl = new JLabel("Bottom:", JLabel.CENTER);
-        lbl.setFont(efFont);
-        add(lbl);
-        pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.BL]);
-        add(pC);
-
-        pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.BL]);
-        add(pC);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        pC = new JPanel();
-        pC.add(new JLabel("X:", JLabel.RIGHT));
-        pC.add(ff[0][fo.BR]);
-        add(pC);
-
-        pC = new JPanel();
-        pC.add(new JLabel("Z:", JLabel.RIGHT));
-        pC.add(ff[1][fo.BR]);
-        add(pC);
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      }
-
-      public Dimension getPreferredSize() {
-        return d;
-      }
-
-      public void changedUpdate(DocumentEvent e) {
-        rdrChange = true;
-        bChanged = true;
-      }
-
-      public void insertUpdate(DocumentEvent e) {
-        rdrChange = true;
-        bChanged = true;
-      }
-
-      public void removeUpdate(DocumentEvent e) {
-        rdrChange = true;
-        bChanged = true;
-      }
-
-      public void itemStateChanged(ItemEvent e) {
-        rdrChange = true;
-        bChanged = true;
-      }
-
-      public void focusGained(FocusEvent e) {
-        JTextField t = (JTextField) e.getComponent();
-        t.select(0, 100);
-      }
-
-      public void focusLost(FocusEvent e) {
-        double v, w;
-        try {
+      @Override
+      protected void paintComponent(final Graphics g) {
+        super.paintComponent(g);
+        int iL = 20;
+        final int iC1 = 20;
+        final int iC2 = 80;
+        final int iC3 = 250;
+        final int iC4 = 325;
+        int kL = 0;
+        if (pnlRudder.this.pRdr.rudder.use) {
+          int jL = 0;
+          g.drawString("Rudder", iC1, iL);
+          jL = 20;
+          g.drawString("Area: ", iC1, iL + jL);
+          g.drawString(boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.rudder.getArea()), iC2,
+              iL + jL);
+          jL = jL + 20;
+          g.drawString("CoA: ", iC1, iL + jL);
+          g.drawString(
+              boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.rudder.getAreaX()) + ", "
+                  + boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.rudder.getAreaY()),
+              iC2, iL + jL);
+          jL = jL + 20;
+          g.drawString("Points: ", iC1, iL + jL);
           for (int i = 0; i < 4; i++) {
-            v = Double.parseDouble(ff[0][i].getText());
-            w = Double.parseDouble(ff[1][i].getText());
-            fo.setParamXY(i, v, w);
+            g.drawString(
+                boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.rudder.getParamX(i)) + ", "
+                    + boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.rudder.getParamY(i)),
+                iC2, iL + jL);
+            jL = jL + 20;
           }
-        } catch (NumberFormatException nfe) {
-          JOptionPane.showMessageDialog(f_edit, "Bad number format in data entry.", "Warning!",
-              JOptionPane.ERROR_MESSAGE);
-          return;
+          g.drawString("ref: baseline", iC2 + 90, (iL + jL) - 20);
+          kL = jL;
+          jL = 0;
+          g.drawString("Immersed Portion", iC3, iL);
+          jL = 20;
+          g.drawString("Area: ", iC3, iL + jL);
+          g.drawString(boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.rudder.getWetArea()), iC4,
+              iL + jL);
+          jL = jL + 20;
+          g.drawString("CoA: ", iC3, iL + jL);
+          g.drawString(
+              boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.rudder.getWetX()) + ", "
+                  + boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.rudder.getWetY()),
+              iC4, iL + jL);
+          jL = jL + 20;
+          g.drawString("Points: ", iC3, iL + jL);
+
+          final SortedSet wp = pnlRudder.this.pRdr.rudder.getWetPts();
+          final Iterator pi = wp.iterator();
+          while (pi.hasNext()) {
+            final Point p = (Point) pi.next();
+            g.drawString(
+                boatCalc.this.bcf.DF2d.format(p.x) + ", " + boatCalc.this.bcf.DF2d.format(p.z), iC4,
+                iL + jL);
+            jL = jL + 20;
+          }
+          g.drawString("ref: lwl", iC4 + 90, (iL + jL) - 20);
+          kL = Math.max(kL, jL);
+        }
+        iL = iL + kL;
+        if (pnlRudder.this.pRdr.skeg.use) {
+          int jL = 0;
+          g.drawString("Skeg", iC1, iL);
+          jL = 20;
+          g.drawString("Area: ", iC1, iL + jL);
+          g.drawString(boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.skeg.getArea()), iC2,
+              iL + jL);
+          jL = jL + 20;
+          g.drawString("CoA: ", iC1, iL + jL);
+          g.drawString(
+              boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.skeg.getAreaX()) + ", "
+                  + boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.skeg.getAreaY()),
+              iC2, iL + jL);
+          jL = jL + 20;
+          g.drawString("Points: ", iC1, iL + jL);
+          for (int i = 0; i < 4; i++) {
+            g.drawString(
+                boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.skeg.getParamX(i)) + ", "
+                    + boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.skeg.getParamY(i)),
+                iC2, iL + jL);
+            jL = jL + 20;
+          }
+          g.drawString("ref: baseline", iC2 + 90, (iL + jL) - 20);
+          kL = jL;
+          jL = 0;
+          g.drawString("Immersed Portion", iC3, iL);
+          jL = 20;
+          g.drawString("Area: ", iC3, iL + jL);
+          g.drawString(boatCalc.this.bcf.DF1d.format(pnlRudder.this.pRdr.skeg.getWetArea()), iC4,
+              iL + jL);
+          jL = jL + 20;
+          g.drawString("CoA: ", iC3, iL + jL);
+          g.drawString(
+              boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.skeg.getWetX()) + ", "
+                  + boatCalc.this.bcf.DF2d.format(pnlRudder.this.pRdr.skeg.getWetY()),
+              iC4, iL + jL);
+          jL = jL + 20;
+          g.drawString("Points: ", iC3, iL + jL);
+
+          final SortedSet wp = pnlRudder.this.pRdr.skeg.getWetPts();
+          final Iterator pi = wp.iterator();
+          while (pi.hasNext()) {
+            final Point p = (Point) pi.next();
+            g.drawString(
+                boatCalc.this.bcf.DF2d.format(p.x) + ", " + boatCalc.this.bcf.DF2d.format(p.z), iC4,
+                iL + jL);
+            jL = jL + 20;
+          }
+          g.drawString("ref: lwl", iC4 + 90, (iL + jL) - 20);
+          // kL = Math.max(kL,jL);
         }
 
-        rdrChange = true;
-        bChanged = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
+      }// end paintComponent
+    }// ends rdrSpec
+    public class rdrTabOrder extends FocusTraversalPolicy {
+      rdrData r;
 
+      public rdrTabOrder(final pnlRudder p) {
+        this.r = p.pData;
       }
 
-      public void actionPerformed(ActionEvent e) {
-        fo.use = cbFoil.isSelected();
-        rdrChange = true;
-        bChanged = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
+      @Override
+      public Component getComponentAfter(final Container focusCycleRoot,
+          final Component aComponent) {
+        return aComponent;
       }
 
-    }// end editFoil
+      @Override
+      public Component getComponentBefore(final Container focusCycleRoot,
+          final Component aComponent) {
+        return aComponent;
+      }
 
-  }// end pnlRudder
+      @Override
+      public Component getDefaultComponent(final Container focusCycleRoot) {
+        return this.r;
+      }
 
+      @Override
+      public Component getFirstComponent(final Container focusCycleRoot) {
+        return this.r;
+      }
 
-  class pnlSailplan extends JPanel {
+      @Override
+      public Component getLastComponent(final Container focusCycleRoot) {
+        return this.r;
+      }
+    }// end rdrTabOrder
+
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Border bRdr;
+    rdrData pData;
     JTabbedPane pDisp;
-    sailDraw pDraw;
-    sailSpec pSpec;
-    sailData pData;
-    sailArea pRpt;
-    Rig pRig;
-    Border bSail;
-    pspTabOrder to;
-    boolean rigChange;
 
-    public pnlSailplan() {
+    rdrDraw pDraw;
 
-      if (hull.rig.valid)
-        pRig = (Rig) hull.rig.clone();
-      else
-        pRig = new Rig();
-      rigChange = false;
+    Rudder pRdr;
 
-      bSail = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-      setLayout(new BorderLayout());
+    rdrArea pRpt;
 
-      pDisp = new JTabbedPane();
+    rdrSpec pSpec;
 
-      pDraw = new sailDraw(750, 325);
-      pDraw.setBackground(Color.white);
-      pDraw.setBorder(bSail);
-      pDisp.add(pDraw, "Drawing");
+    boolean rdrChange;
 
-      pSpec = new sailSpec(750, 325);
-      pSpec.setBackground(Color.white);
-      pSpec.setBorder(bSail);
-      pDisp.add(pSpec, "Dimensions");
+    rdrTabOrder to;
 
-      add(pDisp, BorderLayout.CENTER);
+    public pnlRudder() {
 
-      pRpt = new sailArea(180, 200);
-      add(pRpt, BorderLayout.LINE_END);
+      if (boatCalc.this.hull.rudder.valid) {
+        this.pRdr = (Rudder) boatCalc.this.hull.rudder.clone();
+      } else {
+        this.pRdr = new Rudder();
+      }
+      this.pRdr.setBase(boatCalc.this.hull.base);
+      this.rdrChange = false;
+
+      this.bRdr = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+      this.setLayout(new BorderLayout());
+
+      this.pDisp = new JTabbedPane();
+
+      this.pDraw = new rdrDraw(750, 325);
+      this.pDraw.setBackground(Color.white);
+      this.pDraw.setBorder(this.bRdr);
+      this.pDisp.add(this.pDraw, "Drawing");
+
+      this.pSpec = new rdrSpec(750, 325);
+      this.pSpec.setBackground(Color.white);
+      this.pSpec.setBorder(this.bRdr);
+      this.pDisp.add(this.pSpec, "Dimensions");
+
+      this.add(this.pDisp, BorderLayout.CENTER);
+
+      this.pRpt = new rdrArea(180, 200);
+      this.add(this.pRpt, BorderLayout.LINE_END);
 
 
-      pData = new sailData(750, 185);
-      // pData.setBackground(Color.white) ;
-      pData.setBorder(bSail);
-      add(pData, BorderLayout.PAGE_END);
+      this.pData = new rdrData(750, 185);
+      this.pData.setBorder(this.bRdr);
+      this.add(this.pData, BorderLayout.PAGE_END);
 
-      to = new pspTabOrder(this);
-      f_sailplan.setFocusTraversalPolicy(to);
+      // to = new rdrTabOrder(this);
+      // f_rudder.setFocusTraversalPolicy(to);
 
-      f_sailplan.addWindowListener(new WindowAdapter() {
-        public void windowClosing(WindowEvent e) {
-          if (rigChange) {
-            int n = JOptionPane.showConfirmDialog(f_sailplan,
+      boatCalc.this.f_rudder.addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosing(final WindowEvent e) {
+          if (pnlRudder.this.rdrChange) {
+            final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_rudder,
                 "Data has changed. Do you wish to apply changes?", "Sailplan Design",
                 JOptionPane.YES_NO_OPTION);
             if (n == JOptionPane.YES_OPTION) {
-              saveRig();
+              pnlRudder.this.saveRudder();
             }
           }
-          f_sailplan.setVisible(false);
+          boatCalc.this.f_rudder.setVisible(false);
         }
       });
 
-      pDraw.repaint();
-      pSpec.repaint();
-      pRpt.setTable();
-
+      this.pDraw.repaint();
+      this.pSpec.repaint();
+      this.pRpt.setTable();
 
     }// end constructor
 
-    public void saveRig() {
-      hull.rig = (Rig) pRig.clone();
-      hull.bChanged = true;
+    public void saveRudder() {
+      boatCalc.this.hull.rudder = (Rudder) this.pRdr.clone();
+      boatCalc.this.hull.bChanged = true;
     }
 
+  }// end pnlRudder
+  class pnlSailplan extends JPanel {
+    class editSail extends JPanel
+        implements DocumentListener, ItemListener, FocusListener, ActionListener {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      boolean bChanged;
+      JCheckBox cbSail, cbGaff, cbRoach;
+      Dimension d;
+      JTextField[][] sf;
+      Sail so;
+
+      public editSail(final Sail s) {
+        super(new GridLayout(0, 11));
+        this.d = new Dimension(600, 200);
+        final Font spFont = new Font("Serif", Font.BOLD, 14);
+        this.so = s;
+
+        this.sf = new JTextField[2][5];
+        for (int i = 0; i < 5; i++) {
+          this.sf[0][i] = new JTextField(Double.toString(s.getParamX(i)));
+          this.sf[0][i].getDocument().addDocumentListener(this);
+          this.sf[0][i].addFocusListener(this);
+          this.sf[1][i] = new JTextField(Double.toString(s.getParamY(i)));
+          this.sf[1][i].getDocument().addDocumentListener(this);
+          this.sf[1][i].addFocusListener(this);
+        }
+        JLabel lbl;
+        // row 1, labels
+        this.cbSail = new JCheckBox("Use");
+        this.cbSail.setHorizontalAlignment(SwingConstants.LEFT);
+        this.cbSail.setSelected(this.so.use);
+        this.cbSail.addActionListener(this);
+        this.add(this.cbSail);
+        lbl = new JLabel("Tack", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
+        lbl = new JLabel("Luff", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
+        lbl = new JLabel("Foot", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
+        this.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
+        this.cbGaff = new JCheckBox("Gaff");
+        this.cbGaff.setHorizontalAlignment(SwingConstants.CENTER);
+        this.cbGaff.setSelected(this.so.useGaff);
+        this.cbGaff.addActionListener(this);
+        this.add(this.cbGaff);
+        this.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
+        this.cbRoach = new JCheckBox("Roach");
+        this.cbRoach.setHorizontalAlignment(SwingConstants.CENTER);
+        this.cbRoach.setSelected(this.so.useRoach);
+        this.cbRoach.addActionListener(this);
+        this.add(this.cbRoach);
+        // add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new Dimension(2,2)));
+
+        // row 2, data
+        this.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
+        lbl = new JLabel("X: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[0][0]);
+        lbl = new JLabel("Len: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[0][1]);
+        lbl = new JLabel("Len: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[0][2]);
+        lbl = new JLabel("Len: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[0][3]);
+        lbl = new JLabel("Max %: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[0][4]);
+        // add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new Dimension(2,2)));
+
+        // row 3, data
+        this.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
+        lbl = new JLabel("Z: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[1][0]);
+        lbl = new JLabel("Rake: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[1][1]);
+        lbl = new JLabel("Ang: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[1][2]);
+        lbl = new JLabel("Ang: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[1][3]);
+        lbl = new JLabel("Hgt %: ", SwingConstants.RIGHT);
+        lbl.setFont(spFont);
+        this.add(lbl);
+        this.add(this.sf[1][4]);
+        /*
+         * //row 4, spaces add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new
+         * Dimension(2,2))); // add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new
+         * Dimension(2,2)));
+         */
+      }
+
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        this.so.setUse(this.cbSail.isSelected());
+        this.so.setUseGaff(this.cbGaff.isSelected());
+        this.so.setUseRoach(this.cbRoach.isSelected());
+        pnlSailplan.this.rigChange = true;
+        pnlSailplan.this.pDraw.repaint();
+        pnlSailplan.this.pSpec.repaint();
+        pnlSailplan.this.pRpt.setTable();
+      }
+
+      @Override
+      public void changedUpdate(final DocumentEvent e) {
+        pnlSailplan.this.rigChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void focusGained(final FocusEvent e) {
+        final JTextField t = (JTextField) e.getComponent();
+        t.select(0, 100);
+      }
+
+      @Override
+      public void focusLost(final FocusEvent e) {
+        double v, w;
+        try {
+          for (int i = 0; i < 5; i++) {
+            v = Double.parseDouble(this.sf[0][i].getText());
+            w = Double.parseDouble(this.sf[1][i].getText());
+            this.so.setParam(i, v, w);
+          }
+        } catch (final NumberFormatException nfe) {
+          JOptionPane.showMessageDialog(boatCalc.this.f_edit, "Bad number format in data entry.",
+              "Warning!", JOptionPane.ERROR_MESSAGE);
+          return;
+        }
+        pnlSailplan.this.pDraw.repaint();
+        pnlSailplan.this.pSpec.repaint();
+        pnlSailplan.this.pRpt.setTable();
+      }
+
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
+
+      @Override
+      public void insertUpdate(final DocumentEvent e) {
+        pnlSailplan.this.rigChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void itemStateChanged(final ItemEvent e) {
+        pnlSailplan.this.rigChange = true;
+        this.bChanged = true;
+      }
+
+      @Override
+      public void removeUpdate(final DocumentEvent e) {
+        pnlSailplan.this.rigChange = true;
+        this.bChanged = true;
+      }
+
+    }// end editSail
     public class pspTabOrder extends FocusTraversalPolicy {
       sailData p;
 
-      public pspTabOrder(pnlSailplan s) {
-        pnlSailplan psp = s;
-        p = s.pData;
+      public pspTabOrder(final pnlSailplan s) {
+        this.p = s.pData;
       }
 
-      public Component getComponentAfter(Container focusCycleRoot, Component aComponent) {
+      @Override
+      public Component getComponentAfter(final Container focusCycleRoot,
+          final Component aComponent) {
         editSail s;
-        if (aComponent.equals(p.rbL))
-          return p.rbR;
-        else if (aComponent.equals(p.btnInc))
-          return p.btnDec;
-        else if (aComponent.equals(p.btnDec))
-          return p.rbTackX;
-        else if (aComponent.equals(p.rbTackX))
-          return p.rbTackZ;
-        else if (aComponent.equals(p.rbTackZ))
-          return p.rbLuffLen;
-        else if (aComponent.equals(p.rbLuffLen))
-          return p.rbLuffAng;
-        else if (aComponent.equals(p.rbLuffAng))
-          return p.rbBoomLen;
-        else if (aComponent.equals(p.rbBoomLen))
-          return p.rbBoomAng;
-        else if (aComponent.equals(p.rbBoomAng))
-          return p.rbGaffLen;
-        else if (aComponent.equals(p.rbGaffLen))
-          return p.rbGaffAng;
-        else if (aComponent.equals(p.rbGaffAng))
-          return p.rbRoachMax;
-        else if (aComponent.equals(p.rbRoachMax))
-          return p.rbRoachPct;
-        else if (aComponent.equals(p.rbRoachPct))
-          return p.rbAll;
-        else if (aComponent.equals(p.rbAll))
-          return p.cbxInc;
-        else if (aComponent.getParent().equals(p.cbxInc))
-          return p.rbL;
-        else if (p.tp.getSelectedIndex() == 0)
-          s = p.pMain;
-        else if (p.tp.getSelectedIndex() == 1)
-          s = p.pJib;
-        else if (p.tp.getSelectedIndex() == 2)
-          s = p.pMiz;
-        else {
-          return p.rbL;
+        if (aComponent.equals(this.p.rbL)) {
+          return this.p.rbR;
+        } else if (aComponent.equals(this.p.btnInc)) {
+          return this.p.btnDec;
+        } else if (aComponent.equals(this.p.btnDec)) {
+          return this.p.rbTackX;
+        } else if (aComponent.equals(this.p.rbTackX)) {
+          return this.p.rbTackZ;
+        } else if (aComponent.equals(this.p.rbTackZ)) {
+          return this.p.rbLuffLen;
+        } else if (aComponent.equals(this.p.rbLuffLen)) {
+          return this.p.rbLuffAng;
+        } else if (aComponent.equals(this.p.rbLuffAng)) {
+          return this.p.rbBoomLen;
+        } else if (aComponent.equals(this.p.rbBoomLen)) {
+          return this.p.rbBoomAng;
+        } else if (aComponent.equals(this.p.rbBoomAng)) {
+          return this.p.rbGaffLen;
+        } else if (aComponent.equals(this.p.rbGaffLen)) {
+          return this.p.rbGaffAng;
+        } else if (aComponent.equals(this.p.rbGaffAng)) {
+          return this.p.rbRoachMax;
+        } else if (aComponent.equals(this.p.rbRoachMax)) {
+          return this.p.rbRoachPct;
+        } else if (aComponent.equals(this.p.rbRoachPct)) {
+          return this.p.rbAll;
+        } else if (aComponent.equals(this.p.rbAll)) {
+          return this.p.cbxInc;
+        } else if (aComponent.getParent().equals(this.p.cbxInc)) {
+          return this.p.rbL;
+        } else if (this.p.tp.getSelectedIndex() == 0) {
+          s = this.p.pMain;
+        } else if (this.p.tp.getSelectedIndex() == 1) {
+          s = this.p.pJib;
+        } else if (this.p.tp.getSelectedIndex() == 2) {
+          s = this.p.pMiz;
+        } else {
+          return this.p.rbL;
         }
 
-        if (aComponent.equals(p.rbR)) {
+        if (aComponent.equals(this.p.rbR)) {
           return s.cbSail;
         } else if (aComponent.equals(s.cbSail)) {
           return s.cbGaff;
@@ -4477,67 +4476,70 @@ public class boatCalc extends javax.swing.JFrame {
             return s.sf[1][i];
           }
           if (aComponent.equals(s.sf[1][i])) {
-            int j = i + 1;
-            if (j > 4)
-              return p.btnInc;
-            else
+            final int j = i + 1;
+            if (j > 4) {
+              return this.p.btnInc;
+            } else {
               return s.sf[0][j];
+            }
           }
         }
-        return p.rbL;
+        return this.p.rbL;
       }
 
-      public Component getComponentBefore(Container focusCycleRoot, Component aComponent) {
+      @Override
+      public Component getComponentBefore(final Container focusCycleRoot,
+          final Component aComponent) {
         editSail s;
-        if (aComponent.equals(p.rbR)) {
-          return p.rbL;
-        } else if (aComponent.equals(p.rbL))
-          return p.cbxInc;
-        else if (aComponent.getParent().equals(p.cbxInc))
-          return p.rbAll;
-        else if (aComponent.equals(p.rbAll))
-          return p.rbRoachPct;
-        else if (aComponent.equals(p.rbRoachPct))
-          return p.rbRoachMax;
-        else if (aComponent.equals(p.rbRoachMax))
-          return p.rbGaffAng;
-        else if (aComponent.equals(p.rbGaffAng))
-          return p.rbGaffLen;
-        else if (aComponent.equals(p.rbGaffLen))
-          return p.rbBoomAng;
-        else if (aComponent.equals(p.rbBoomAng))
-          return p.rbBoomLen;
-        else if (aComponent.equals(p.rbBoomLen))
-          return p.rbLuffAng;
-        else if (aComponent.equals(p.rbLuffAng))
-          return p.rbLuffLen;
-        else if (aComponent.equals(p.rbLuffLen))
-          return p.rbTackZ;
-        else if (aComponent.equals(p.rbTackZ))
-          return p.rbTackX;
-        else if (aComponent.equals(p.rbTackX))
-          return p.btnDec;
-        else if (aComponent.equals(p.btnDec))
-          return p.btnInc;
-        else if (p.tp.getSelectedIndex() == 0)
-          s = p.pMain;
-        else if (p.tp.getSelectedIndex() == 1)
-          s = p.pJib;
-        else if (p.tp.getSelectedIndex() == 2)
-          s = p.pMiz;
-        else {
-          return p.rbL;
+        if (aComponent.equals(this.p.rbR)) {
+          return this.p.rbL;
+        } else if (aComponent.equals(this.p.rbL)) {
+          return this.p.cbxInc;
+        } else if (aComponent.getParent().equals(this.p.cbxInc)) {
+          return this.p.rbAll;
+        } else if (aComponent.equals(this.p.rbAll)) {
+          return this.p.rbRoachPct;
+        } else if (aComponent.equals(this.p.rbRoachPct)) {
+          return this.p.rbRoachMax;
+        } else if (aComponent.equals(this.p.rbRoachMax)) {
+          return this.p.rbGaffAng;
+        } else if (aComponent.equals(this.p.rbGaffAng)) {
+          return this.p.rbGaffLen;
+        } else if (aComponent.equals(this.p.rbGaffLen)) {
+          return this.p.rbBoomAng;
+        } else if (aComponent.equals(this.p.rbBoomAng)) {
+          return this.p.rbBoomLen;
+        } else if (aComponent.equals(this.p.rbBoomLen)) {
+          return this.p.rbLuffAng;
+        } else if (aComponent.equals(this.p.rbLuffAng)) {
+          return this.p.rbLuffLen;
+        } else if (aComponent.equals(this.p.rbLuffLen)) {
+          return this.p.rbTackZ;
+        } else if (aComponent.equals(this.p.rbTackZ)) {
+          return this.p.rbTackX;
+        } else if (aComponent.equals(this.p.rbTackX)) {
+          return this.p.btnDec;
+        } else if (aComponent.equals(this.p.btnDec)) {
+          return this.p.btnInc;
+        } else if (this.p.tp.getSelectedIndex() == 0) {
+          s = this.p.pMain;
+        } else if (this.p.tp.getSelectedIndex() == 1) {
+          s = this.p.pJib;
+        } else if (this.p.tp.getSelectedIndex() == 2) {
+          s = this.p.pMiz;
+        } else {
+          return this.p.rbL;
         }
 
         if (aComponent.equals(s.cbSail)) {
-          return p.rbR;
+          return this.p.rbR;
         } else if (aComponent.equals(s.cbGaff)) {
           return s.cbSail;
         } else if (aComponent.equals(s.cbRoach)) {
           return s.cbGaff;
         } else if (aComponent.equals(s.sf[0][0])) {
           return s.cbRoach;
-        } else if (aComponent.equals(p.btnInc)) {
+        } else if (aComponent.equals(this.p.btnInc)) {
           return s.sf[1][4];
         }
 
@@ -4546,236 +4548,646 @@ public class boatCalc extends javax.swing.JFrame {
             return s.sf[0][4 - i];
           }
           if (aComponent.equals(s.sf[0][4 - i])) {
-            int j = i + 1;
-            if (j > 4)
+            final int j = i + 1;
+            if (j > 4) {
               return s.cbRoach;
-            else
+            } else {
               return s.sf[1][4 - j];
+            }
           }
         }
 
-        return p.rbL;
+        return this.p.rbL;
       }
 
-      public Component getLastComponent(Container focusCycleRoot) {
-        if (p.tp.getSelectedIndex() == 0)
-          return p.pMain.sf[1][4];
-        else if (p.tp.getSelectedIndex() == 1)
-          return p.pJib.sf[1][4];
-        else if (p.tp.getSelectedIndex() == 2)
-          return p.pMiz.sf[1][4];
-        return p.rbL;
+      @Override
+      public Component getDefaultComponent(final Container focusCycleRoot) {
+        if (this.p.tp.getSelectedIndex() == 0) {
+          return this.p.pMain.sf[0][0];
+        } else if (this.p.tp.getSelectedIndex() == 1) {
+          return this.p.pJib.sf[0][0];
+        } else if (this.p.tp.getSelectedIndex() == 2) {
+          return this.p.pMiz.sf[0][0];
+        }
+        return this.p.rbL;
       }
 
-      public Component getFirstComponent(Container focusCycleRoot) {
-        if (p.tp.getSelectedIndex() == 0)
-          return p.pMain.sf[0][0];
-        else if (p.tp.getSelectedIndex() == 1)
-          return p.pJib.sf[0][0];
-        else if (p.tp.getSelectedIndex() == 2)
-          return p.pMiz.sf[0][0];
-        return p.rbL;
+      @Override
+      public Component getFirstComponent(final Container focusCycleRoot) {
+        if (this.p.tp.getSelectedIndex() == 0) {
+          return this.p.pMain.sf[0][0];
+        } else if (this.p.tp.getSelectedIndex() == 1) {
+          return this.p.pJib.sf[0][0];
+        } else if (this.p.tp.getSelectedIndex() == 2) {
+          return this.p.pMiz.sf[0][0];
+        }
+        return this.p.rbL;
       }
 
-      public Component getDefaultComponent(Container focusCycleRoot) {
-        if (p.tp.getSelectedIndex() == 0)
-          return p.pMain.sf[0][0];
-        else if (p.tp.getSelectedIndex() == 1)
-          return p.pJib.sf[0][0];
-        else if (p.tp.getSelectedIndex() == 2)
-          return p.pMiz.sf[0][0];
-        return p.rbL;
+      @Override
+      public Component getLastComponent(final Container focusCycleRoot) {
+        if (this.p.tp.getSelectedIndex() == 0) {
+          return this.p.pMain.sf[1][4];
+        } else if (this.p.tp.getSelectedIndex() == 1) {
+          return this.p.pJib.sf[1][4];
+        } else if (this.p.tp.getSelectedIndex() == 2) {
+          return this.p.pMiz.sf[1][4];
+        }
+        return this.p.rbL;
       }
     }// end pspTabOrder
-
-    class sailSpec extends JPanel {
+    class sailArea extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       Dimension d;
+      JButton jbApply, jbClose;
+      // bcLabel bclMArea, bclJArea, bclZArea, bclTArea;
+      // bcLabel bclMCoA, bclJCoA, bclZCoA, bclTCoA;
+      JLabel jlMArea, jlJArea, jlZArea, jlTArea;
+      JLabel jlMCoA, jlJCoA, jlZCoA, jlTCoA;
 
-      public sailSpec(int x, int y) {
-        d = new Dimension(x, y);
-      }
+      public sailArea(final int x, final int y) {
+        this.d = new Dimension(x, y);
+        this.setLayout(new GridLayout(0, 2));
+        this.add(new bcLabel("Sail Area", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
-      public Dimension getPreferredSize() {
-        return d;
-      }
+        this.add(new bcLabel("Main - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlMArea = new JLabel("0.0", SwingConstants.LEFT));
 
-      protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlMCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
-        Sail ts;
-        int il = 25;
-        int isp = 20;
-        String s;
-        double d;
+        this.add(new bcLabel("Jib - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlJArea = new JLabel("0.0", SwingConstants.LEFT));
 
-        int ic = 160;
-        int icw = 60;
-        g.drawString("Co-ord", ic, il);
-        ic = ic + 2 * icw;
-        g.drawString("to: Clew", ic - 15, il);
-        ic = ic + icw;
-        g.drawString("Roach", ic, il);
-        ic = ic + icw;
-        g.drawString("Peak", ic, il);
-        ic = ic + icw;
-        g.drawString("Head/Throat", ic - 15, il);
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlJCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
-        il = il + isp + 5;
+        this.add(new bcLabel("Mizzen - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlZArea = new JLabel("0.0", SwingConstants.LEFT));
 
-        for (int is = 0; is < 3; is++) {
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlZCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
 
-          ic = 50;
-          icw = 60;
+        this.add(new bcLabel("Total - Area: ", SwingConstants.RIGHT));
+        this.add(this.jlTArea = new JLabel("0.0", SwingConstants.LEFT));
 
-          if (is == 0) {
-            ts = pRig.main;
-            s = "Main";
-          } else if (is == 1) {
-            ts = pRig.jib;
-            s = "Jib";
-          } else {
-            ts = pRig.mizzen;
-            s = "Mizzen";
+        this.add(new bcLabel("CoA: ", SwingConstants.RIGHT));
+        this.add(this.jlTCoA = new JLabel("0.0,0.0", SwingConstants.LEFT));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        this.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        this.jbApply = new JButton("Apply");
+        this.jbClose = new JButton("Close");
+
+        this.jbApply.addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            pnlSailplan.this.saveRig();
+            pnlSailplan.this.rigChange = false;
           }
+        });
 
-          if (ts.use) {
-
-            g.drawString(s, ic, il);
-            ic = 100;
-            g.drawString("Tack:", ic, il);
-            ic = ic + icw;
-            s = bcf.DF2d.format(ts.getX(ts.TACK)) + ", " + bcf.DF2d.format(ts.getY(ts.TACK));
-            g.drawString(s, ic, il);
-
-            ic = ic + 2 * icw;
-            d = length(ts.getX(ts.TACK), ts.getY(ts.TACK), ts.getX(ts.CLEW), ts.getY(ts.CLEW));
-            g.drawString(bcf.DF2d.format(d), ic, il);
-            ic = ic + icw;
-            d = length(ts.getX(ts.TACK), ts.getY(ts.TACK), ts.getX(ts.ROACH), ts.getY(ts.ROACH));
-            if (ts.useRoach)
-              g.drawString(bcf.DF2d.format(d), ic, il);
-            ic = ic + icw;
-            d = length(ts.getX(ts.TACK), ts.getY(ts.TACK), ts.getX(ts.PEAK), ts.getY(ts.PEAK));
-            if (ts.useGaff)
-              g.drawString(bcf.DF2d.format(d), ic, il);
-            ic = ic + icw;
-            d = length(ts.getX(ts.TACK), ts.getY(ts.TACK), ts.getX(ts.THROAT), ts.getY(ts.THROAT));
-            g.drawString(bcf.DF2d.format(d), ic, il);
-
-            il = il + isp;
-            ic = 100;
-            if (ts.useGaff)
-              g.drawString("Throat:", ic, il);
-            else
-              g.drawString("Head:", ic, il);
-            ic = ic + icw;
-            s = bcf.DF2d.format(ts.getX(ts.THROAT)) + ", " + bcf.DF2d.format(ts.getY(ts.THROAT));
-            g.drawString(s, ic, il);
-
-            ic = ic + 2 * icw;
-            d = length(ts.getX(ts.THROAT), ts.getY(ts.THROAT), ts.getX(ts.CLEW), ts.getY(ts.CLEW));
-            g.drawString(bcf.DF2d.format(d), ic, il);
-            ic = ic + icw;
-            d = length(ts.getX(ts.THROAT), ts.getY(ts.THROAT), ts.getX(ts.ROACH),
-                ts.getY(ts.ROACH));
-            if (ts.useRoach)
-              g.drawString(bcf.DF2d.format(d), ic, il);
-            ic = ic + icw;
-            d = length(ts.getX(ts.THROAT), ts.getY(ts.THROAT), ts.getX(ts.PEAK), ts.getY(ts.PEAK));
-            if (ts.useGaff)
-              g.drawString(bcf.DF2d.format(d), ic, il);
-
-            if (ts.useGaff) {
-              il = il + isp;
-              ic = 100;
-              g.drawString("Peak:", ic, il);
-              ic = ic + icw;
-              s = bcf.DF2d.format(ts.getX(ts.PEAK)) + ", " + bcf.DF2d.format(ts.getY(ts.PEAK));
-              g.drawString(s, ic, il);
-
-              ic = ic + 2 * icw;
-              d = length(ts.getX(ts.PEAK), ts.getY(ts.PEAK), ts.getX(ts.CLEW), ts.getY(ts.CLEW));
-              if (ts.useGaff)
-                g.drawString(bcf.DF2d.format(d), ic, il);
-              ic = ic + icw;
-              d = length(ts.getX(ts.PEAK), ts.getY(ts.PEAK), ts.getX(ts.ROACH), ts.getY(ts.ROACH));
-              if (ts.useRoach)
-                g.drawString(bcf.DF2d.format(d), ic, il);
+        this.jbClose.addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            if (pnlSailplan.this.rigChange) {
+              final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit,
+                  "Data has changed. Do you wish to apply changes?", "Data Edit",
+                  JOptionPane.YES_NO_OPTION);
+              if (n == JOptionPane.YES_OPTION) {
+                pnlSailplan.this.saveRig();
+                pnlSailplan.this.rigChange = false;
+              }
             }
+            boatCalc.this.f_sailplan.setVisible(false);
+          }
+        });
 
-            if (ts.useRoach) {
-              il = il + isp;
-              ic = 100;
-              g.drawString("Roach:", ic, il);
-              ic = ic + icw;
-              s = bcf.DF2d.format(ts.getX(ts.ROACH)) + ", " + bcf.DF2d.format(ts.getY(ts.ROACH));
-              g.drawString(s, ic, il);
+        this.add(this.jbApply);
+        this.add(this.jbClose);
 
-              ic = ic + 2 * icw;
-              d = length(ts.getX(ts.ROACH), ts.getY(ts.ROACH), ts.getX(ts.CLEW), ts.getY(ts.CLEW));
-              g.drawString(bcf.DF2d.format(d), ic, il);
-            }
+      }
 
-            il = il + isp;
-            ic = 100;
-            g.drawString("Clew:", ic, il);
-            ic = ic + icw;
-            s = bcf.DF2d.format(ts.getX(ts.CLEW)) + ", " + bcf.DF2d.format(ts.getY(ts.CLEW));
-            g.drawString(s, ic, il);
-          } // end use
-          il = il + 2 * isp;
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
 
+      protected void setTable() {
+        String s;
+        double wa = 0;
+        double wx = 0;
+        double wy = 0;
+
+        if (pnlSailplan.this.pRig.main.use) {
+          this.jlMArea.setText(boatCalc.this.bcf.DF1d
+              .format(boatCalc.this.hull.units.coefArea() * pnlSailplan.this.pRig.main.getArea())
+              + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(pnlSailplan.this.pRig.main.getAreaX()) + ", "
+              + boatCalc.this.bcf.DF1d.format(pnlSailplan.this.pRig.main.getAreaY());
+          this.jlMCoA.setText(s);
+          wa = wa + pnlSailplan.this.pRig.main.getArea();
+          wx = wx + (pnlSailplan.this.pRig.main.getArea() * pnlSailplan.this.pRig.main.getAreaX());
+          wy = wy + (pnlSailplan.this.pRig.main.getArea() * pnlSailplan.this.pRig.main.getAreaY());
+        } else {
+          this.jlMArea.setText("0.00");
+          this.jlMCoA.setText("-.--, -.--");
+        }
+        if (pnlSailplan.this.pRig.jib.use) {
+          this.jlJArea.setText(boatCalc.this.bcf.DF1d
+              .format(boatCalc.this.hull.units.coefArea() * pnlSailplan.this.pRig.jib.getArea())
+              + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(pnlSailplan.this.pRig.jib.getAreaX()) + ", "
+              + boatCalc.this.bcf.DF1d.format(pnlSailplan.this.pRig.jib.getAreaY());
+          this.jlJCoA.setText(s);
+          wa = wa + pnlSailplan.this.pRig.jib.getArea();
+          wx = wx + (pnlSailplan.this.pRig.jib.getArea() * pnlSailplan.this.pRig.jib.getAreaX());
+          wy = wy + (pnlSailplan.this.pRig.jib.getArea() * pnlSailplan.this.pRig.jib.getAreaY());
+        } else {
+          this.jlJArea.setText("0.00");
+          this.jlJCoA.setText("-.--, -.--");
+        }
+        if (pnlSailplan.this.pRig.mizzen.use) {
+          this.jlZArea.setText(boatCalc.this.bcf.DF1d
+              .format(boatCalc.this.hull.units.coefArea() * pnlSailplan.this.pRig.mizzen.getArea())
+              + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(pnlSailplan.this.pRig.mizzen.getAreaX()) + ", "
+              + boatCalc.this.bcf.DF1d.format(pnlSailplan.this.pRig.mizzen.getAreaY());
+          this.jlZCoA.setText(s);
+          wa = wa + pnlSailplan.this.pRig.mizzen.getArea();
+          wx = wx
+              + (pnlSailplan.this.pRig.mizzen.getArea() * pnlSailplan.this.pRig.mizzen.getAreaX());
+          wy = wy
+              + (pnlSailplan.this.pRig.mizzen.getArea() * pnlSailplan.this.pRig.mizzen.getAreaY());
+        } else {
+          this.jlZArea.setText("0.00");
+          this.jlZCoA.setText("-.--, -.--");
         }
 
+        if (wa > 0) {
+          this.jlTArea.setText(boatCalc.this.bcf.DF1d.format(wa));
+          this.jlTArea
+              .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.units.coefArea() * wa)
+                  + boatCalc.this.hull.units.lblArea());
+          s = boatCalc.this.bcf.DF1d.format(wx / wa) + ", "
+              + boatCalc.this.bcf.DF1d.format(wy / wa);
+          this.jlTCoA.setText(s);
+        } else {
+          this.jlTArea.setText("0.00");
+          this.jlTCoA.setText("-.--, -.--");
+        }
       }
 
-      double length(double x1, double y1, double x2, double y2) {
-        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+    }// end sailArea
+    class sailData extends JPanel implements ActionListener {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      JButton btnInc, btnDec;
+      JComboBox cbxInc;
+      Dimension d;
+      editSail pJib;
+      editSail pMain;
+      editSail pMiz;
+      JRadioButton rbAll;
+      JRadioButton rbBoomLen, rbBoomAng;
+      JRadioButton rbGaffLen, rbGaffAng;
+      JRadioButton rbL, rbR;
+      JRadioButton rbLuffLen, rbLuffAng;
+      JRadioButton rbRoachMax, rbRoachPct;
+      JRadioButton rbTackX, rbTackZ;
+      JTabbedPane tp = new JTabbedPane();
+
+      public sailData(final int x, final int y) {
+        JPanel pRb;
+        JLabel lRb;
+
+        this.d = new Dimension(x, y);
+        this.setLayout(new BorderLayout());
+        final JPanel pDir = new JPanel();
+        pDir.setLayout(new GridLayout(0, 1));
+        this.rbL = new JRadioButton("Left");
+        this.rbL.addActionListener(this);
+        this.rbL.setVerticalAlignment(SwingConstants.BOTTOM);
+        this.rbR = new JRadioButton("Right");
+        this.rbR.addActionListener(this);
+        this.rbL.setVerticalAlignment(SwingConstants.TOP);
+        final ButtonGroup bGrp = new ButtonGroup();
+        bGrp.add(this.rbL);
+        bGrp.add(this.rbR);
+        pDir.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        pDir.add(this.rbL);
+        pDir.add(this.rbR);
+        pDir.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+        if (pnlSailplan.this.pRig.dir < 0) {
+          this.rbL.setSelected(true);
+        }
+        if (pnlSailplan.this.pRig.dir > 0) {
+          this.rbR.setSelected(true);
+        }
+
+        this.add(pDir, BorderLayout.LINE_START);
+
+        this.pMain = new editSail(pnlSailplan.this.pRig.main);
+        this.tp.addTab("Main", this.pMain);
+        this.pJib = new editSail(pnlSailplan.this.pRig.jib);
+        this.pJib.cbGaff.setSelected(false);
+        this.pJib.cbRoach.setSelected(false);
+        this.tp.addTab("Jib", this.pJib);
+        this.pMiz = new editSail(pnlSailplan.this.pRig.mizzen);
+        this.tp.addTab("Mizzen", this.pMiz);
+        this.add(this.tp, BorderLayout.CENTER);
+
+        final JPanel pInc = new JPanel();
+        pInc.setPreferredSize(new Dimension(x - 5, (3 * y) / 10));
+        pInc.setLayout(new GridLayout(0, 8));
+
+        this.btnInc = new JButton("Increase");
+        this.btnInc.addActionListener(this);
+        pInc.add(this.btnInc);
+
+        lRb = new JLabel("Tack:");
+        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
+        pInc.add(lRb);
+        pRb = new JPanel();
+        this.rbTackX = new JRadioButton("X");
+        this.rbTackZ = new JRadioButton("Z");
+        pRb.add(this.rbTackX);
+        pRb.add(this.rbTackZ);
+        pInc.add(pRb);
+
+        lRb = new JLabel("Luff:");
+        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
+        pInc.add(lRb);
+        pRb = new JPanel();
+        this.rbLuffLen = new JRadioButton("L");
+        this.rbLuffAng = new JRadioButton("A");
+        pRb.add(this.rbLuffLen);
+        pRb.add(this.rbLuffAng);
+        pInc.add(pRb);
+
+        lRb = new JLabel("Foot:");
+        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
+        pInc.add(lRb);
+        pRb = new JPanel();
+        this.rbBoomLen = new JRadioButton("L");
+        this.rbBoomAng = new JRadioButton("A");
+        pRb.add(this.rbBoomLen);
+        pRb.add(this.rbBoomAng);
+        pInc.add(pRb);
+        pInc.add(new JLabel("Step", SwingConstants.CENTER));
+
+        this.btnDec = new JButton("Decrease");
+        this.btnDec.addActionListener(this);
+        pInc.add(this.btnDec);
+
+        lRb = new JLabel("Gaff:");
+        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
+        pInc.add(lRb);
+        pRb = new JPanel();
+        this.rbGaffLen = new JRadioButton("L");
+        this.rbGaffAng = new JRadioButton("A");
+        pRb.add(this.rbGaffLen);
+        pRb.add(this.rbGaffAng);
+        pInc.add(pRb);
+
+        lRb = new JLabel("Roach:");
+        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
+        pInc.add(lRb);
+        pRb = new JPanel();
+        this.rbRoachMax = new JRadioButton("M");
+        this.rbRoachPct = new JRadioButton("%");
+        pRb.add(this.rbRoachMax);
+        pRb.add(this.rbRoachPct);
+        pInc.add(pRb);
+
+        lRb = new JLabel("Scale:");
+        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
+        pInc.add(lRb);
+        pRb = new JPanel();
+        this.rbAll = new JRadioButton("%");
+        pRb.add(this.rbAll);
+        pRb.add(
+            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        pInc.add(pRb);
+
+        final ButtonGroup bgInc = new ButtonGroup();
+        bgInc.add(this.rbTackX);
+        bgInc.add(this.rbTackZ);
+        bgInc.add(this.rbLuffLen);
+        bgInc.add(this.rbLuffAng);
+        bgInc.add(this.rbBoomLen);
+        bgInc.add(this.rbBoomAng);
+        bgInc.add(this.rbGaffLen);
+        bgInc.add(this.rbGaffAng);
+        bgInc.add(this.rbRoachMax);
+        bgInc.add(this.rbRoachPct);
+        bgInc.add(this.rbAll);
+
+        final String[] incs =
+            {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
+        this.cbxInc = new JComboBox(incs);
+        this.cbxInc.setEditable(true);
+        this.cbxInc.setSelectedIndex(6);
+        pInc.add(this.cbxInc);
+
+        this.add(pInc, BorderLayout.PAGE_END);
+
+      } // end constructor
+
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+
+        if ((e.getSource() == this.rbL) || (e.getSource() == this.rbR)) {
+          if (this.rbL.isSelected()) {
+            pnlSailplan.this.pRig.dir = -1;
+            pnlSailplan.this.pRig.main.setDir(-1);
+            pnlSailplan.this.pRig.jib.setDir(-1);
+            pnlSailplan.this.pRig.mizzen.setDir(-1);
+          }
+          if (this.rbR.isSelected()) {
+            pnlSailplan.this.pRig.dir = +1;
+            pnlSailplan.this.pRig.main.setDir(1);
+            pnlSailplan.this.pRig.jib.setDir(1);
+            pnlSailplan.this.pRig.mizzen.setDir(1);
+          }
+        }
+
+        if ((e.getSource() == this.btnInc) || (e.getSource() == this.btnDec)) {
+          double sgn, v, d;
+          Sail s = pnlSailplan.this.pRig.main;
+          editSail eS = this.pMain;
+          if (this.tp.getSelectedIndex() == 1) {
+            s = pnlSailplan.this.pRig.jib;
+            eS = this.pJib;
+          } else if (this.tp.getSelectedIndex() == 2) {
+            s = pnlSailplan.this.pRig.mizzen;
+            eS = this.pMiz;
+          }
+          if (e.getSource() == this.btnInc) {
+            sgn = 1.0;
+          } else {
+            sgn = -1.0;
+          }
+
+          try {
+            d = Double.parseDouble((String) this.cbxInc.getSelectedItem());
+          } catch (final NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(null, "Unable to interpret step as number.", "Warning!",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+          }
+
+          if (this.rbTackX.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[0][0].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (sgn * d), 0.0);
+            eS.sf[0][0].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setX(v);
+          }
+
+          if (this.rbTackZ.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[1][0].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (sgn * d), 0.0);
+            eS.sf[1][0].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setY(v);
+          }
+
+          if (this.rbLuffLen.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[0][1].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (sgn * d), 0.0);
+            eS.sf[0][1].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setLuffLen(v);
+          }
+
+          if (this.rbLuffAng.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[1][1].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eS.sf[1][1].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setLuffAng(v);
+          }
+
+          if (this.rbBoomLen.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[0][2].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (sgn * d), 0.0);
+            eS.sf[0][2].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setBoomLen(v);
+          }
+
+          if (this.rbBoomAng.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[1][2].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eS.sf[1][2].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setBoomAng(v);
+          }
+
+          if (this.rbGaffLen.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[0][3].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (sgn * d), 0.0);
+            eS.sf[0][3].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setGaffLen(v);
+          }
+
+          if (this.rbGaffAng.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[1][3].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = v + (sgn * d);
+            eS.sf[1][3].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setGaffAng(v);
+          }
+
+          if (this.rbRoachMax.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[0][4].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (sgn * d), 0.0);
+            eS.sf[0][4].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setRoachMax(v);
+          }
+
+          if (this.rbRoachPct.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[1][4].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (sgn * d), 0.0);
+            eS.sf[1][4].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setRoachPct(v);
+          }
+
+          if (this.rbAll.isSelected()) {
+            try {
+              v = Double.parseDouble(eS.sf[0][1].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (0.01 * sgn * d * v), 0.0);
+            eS.sf[0][1].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setLuffLen(v);
+            try {
+              v = Double.parseDouble(eS.sf[0][2].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (0.01 * sgn * d * v), 0.0);
+            eS.sf[0][2].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setBoomLen(v);
+            try {
+              v = Double.parseDouble(eS.sf[0][3].getText());
+            } catch (final NumberFormatException nfe) {
+              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
+                  "Warning!", JOptionPane.ERROR_MESSAGE);
+              return;
+            }
+            v = Math.max(v + (0.01 * sgn * d * v), 0.0);
+            eS.sf[0][3].setText(boatCalc.this.bcf.DF2d.format(v));
+            s.setGaffLen(v);
+
+          }
+        } // end btn proc
+        pnlSailplan.this.rigChange = true;
+        pnlSailplan.this.pDraw.repaint();
+        pnlSailplan.this.pSpec.repaint();
+        pnlSailplan.this.pRpt.setTable();
       }
 
-    }// ends sailSpec
-
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
+    }// end sailData
     class sailDraw extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       Dimension d;
 
-      public sailDraw(int x, int y) {
-        d = new Dimension(x, y);
+      public sailDraw(final int x, final int y) {
+        this.d = new Dimension(x, y);
       }
 
+      @Override
       public Dimension getPreferredSize() {
-        return d;
+        return this.d;
       }
 
-      protected void paintComponent(Graphics g) {
+      @Override
+      protected void paintComponent(final Graphics g) {
         super.paintComponent(g);
 
-        double mx = getWidth();
-        double my = getHeight();
-        int ix = (int) mx;
-        int iy = (int) my;
-        int xb = (int) 100;
-        int yb = (int) my - 10;
+        final double mx = this.getWidth();
+        final double my = this.getHeight();
+        final int ix = (int) mx;
+        final int iy = (int) my;
+        final int xb = 100;
+        final int yb = (int) my - 10;
 
         g.clearRect(0, 0, ix, iy);
 
-        if (!hull.valid) {
+        if (!boatCalc.this.hull.valid) {
           g.drawString("Hull not defined.", 50, 50);
           return;
         }
 
-        if (pRig.getMaxX() == pRig.getMinX() || pRig.getMaxY() == pRig.getMinY()) {
+        if ((pnlSailplan.this.pRig.getMaxX() == pnlSailplan.this.pRig.getMinX())
+            || (pnlSailplan.this.pRig.getMaxY() == pnlSailplan.this.pRig.getMinY())) {
           g.drawString("Data incomplete.", 50, 50);
           return;
         }
 
-        double max_x = Math.max(pRig.getMaxX(), hull.gx_max);
-        double min_x = Math.min(pRig.getMinX(), hull.gx_min);
-        double max_y = Math.max(pRig.getMaxY(), hull.gz_max);
-        double min_z = Math.min(pRig.getMinY(), hull.gz_min);
+        final double max_x = Math.max(pnlSailplan.this.pRig.getMaxX(), boatCalc.this.hull.gx_max);
+        final double min_x = Math.min(pnlSailplan.this.pRig.getMinX(), boatCalc.this.hull.gx_min);
+        final double max_y = Math.max(pnlSailplan.this.pRig.getMaxY(), boatCalc.this.hull.gz_max);
+        final double min_z = Math.min(pnlSailplan.this.pRig.getMinY(), boatCalc.this.hull.gz_min);
 
-        double rx = (mx - 200.0) / (max_x - min_x);
-        double ry = (my - 25.0) / (max_y - min_z);
-        double r = Math.min(rx, ry);
+        final double rx = (mx - 200.0) / (max_x - min_x);
+        final double ry = (my - 25.0) / (max_y - min_z);
+        final double r = Math.min(rx, ry);
 
         int iu, iv, iw, iz;
         int hx, hy, cx, cy;
@@ -4783,32 +5195,33 @@ public class boatCalc extends javax.swing.JFrame {
 
 
         // draw waterline
-        iu = xb + (int) (r * (hull.gx_min - min_x));
+        iu = xb + (int) (r * (boatCalc.this.hull.gx_min - min_x));
         iv = yb - (int) (r * (0.0 - min_z));
-        iw = xb + (int) (r * (hull.gx_max - min_x));
+        iw = xb + (int) (r * (boatCalc.this.hull.gx_max - min_x));
         iz = yb - (int) (r * (0.0 - min_z));
         g.setColor(Color.blue);
         g.drawLine(iu, iv, iw, iz);
 
         // draw hull profile
         g.setColor(Color.black);
-        double z1Lo = hull.gz_max;
-        double z1Hi = hull.gz_min;
+        double z1Lo = boatCalc.this.hull.gz_max;
+        double z1Hi = boatCalc.this.hull.gz_min;
         double x1 = 0;
         for (double pct = 0.0; pct <= 1.0025; pct = pct + 0.01) {
-          double x = hull.gx_min + pct * (hull.gx_max - hull.gx_min);
-          SortedSet ss = hull.getStnSet(x, 0.0);
-          Iterator si = ss.iterator();
-          double zLo = hull.gz_max;
-          double zHi = hull.gz_min;
+          final double x = boatCalc.this.hull.gx_min
+              + (pct * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+          final SortedSet ss = boatCalc.this.hull.getStnSet(x, 0.0);
+          final Iterator si = ss.iterator();
+          double zLo = boatCalc.this.hull.gz_max;
+          double zHi = boatCalc.this.hull.gz_min;
           boolean bOk = false;
           while (si.hasNext()) {
-            Point p = (Point) si.next();
+            final Point p = (Point) si.next();
             zLo = Math.min(zLo, p.z);
             zHi = Math.max(zHi, p.z);
             bOk = true;
           }
-          if (bOk && pct > 0.0) {
+          if (bOk && (pct > 0.0)) {
             iu = xb + (int) (r * (x1 - min_x));
             iv = yb - (int) (r * (z1Lo - min_z));
             iw = xb + (int) (r * (x - min_x));
@@ -4828,14 +5241,14 @@ public class boatCalc extends javax.swing.JFrame {
         // draw stems
         g.setColor(Color.lightGray);
         for (int iSL = 0; iSL <= 1; iSL++) {
-          if (hull.bStems[iSL] && hull.sLines[iSL].valid) {
-            double x = hull.sLines[iSL].hPoints[0].getX();
-            double y = hull.sLines[iSL].hPoints[0].getZ();
+          if (boatCalc.this.hull.bStems[iSL] && boatCalc.this.hull.sLines[iSL].valid) {
+            double x = boatCalc.this.hull.sLines[iSL].hPoints[0].getX();
+            double y = boatCalc.this.hull.sLines[iSL].hPoints[0].getZ();
             iu = xb + (int) (r * (x - min_x));
             iv = yb - (int) (r * (y - min_z));
-            for (int j = 1; j < hull.sLines[iSL].hPoints.length; j++) {
-              x = hull.sLines[iSL].hPoints[j].getX();
-              y = hull.sLines[iSL].hPoints[j].getZ();
+            for (int j = 1; j < boatCalc.this.hull.sLines[iSL].hPoints.length; j++) {
+              x = boatCalc.this.hull.sLines[iSL].hPoints[j].getX();
+              y = boatCalc.this.hull.sLines[iSL].hPoints[j].getZ();
               iw = xb + (int) (r * (x - min_x));
               iz = yb - (int) (r * (y - min_z));
               g.drawLine(iu, iv, iw, iz);
@@ -4848,15 +5261,16 @@ public class boatCalc extends javax.swing.JFrame {
         // draw sail
         Sail ts;
         g.setColor(Color.black);
-        double min_z_base = min_z - hull.base;
+        final double min_z_base = min_z - boatCalc.this.hull.base;
 
         for (int is = 0; is < 3; is++) {
-          if (is == 0)
-            ts = pRig.main;
-          else if (is == 1)
-            ts = pRig.jib;
-          else
-            ts = pRig.mizzen;
+          if (is == 0) {
+            ts = pnlSailplan.this.pRig.main;
+          } else if (is == 1) {
+            ts = pnlSailplan.this.pRig.jib;
+          } else {
+            ts = pnlSailplan.this.pRig.mizzen;
+          }
 
 
           if (ts.use) {
@@ -4906,10 +5320,10 @@ public class boatCalc extends javax.swing.JFrame {
           }
         }
 
-        double a = pRig.getArea();
+        final double a = pnlSailplan.this.pRig.getArea();
         if (a > 0) {
-          cx = xb + (int) (r * (pRig.getAreaX() - min_x));
-          cy = yb - (int) (r * (pRig.getAreaY() - min_z_base));
+          cx = xb + (int) (r * (pnlSailplan.this.pRig.getAreaX() - min_x));
+          cy = yb - (int) (r * (pnlSailplan.this.pRig.getAreaY() - min_z_base));
 
           g.drawLine(cx + 4, cy + 4, cx - 4, cy + 4);
           g.drawLine(cx + 4, cy - 4, cx - 4, cy - 4);
@@ -4922,1614 +5336,1728 @@ public class boatCalc extends javax.swing.JFrame {
       } // end paintComponent
 
     }// end sailDraw
-
-    class sailArea extends JPanel {
+    class sailSpec extends JPanel {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
       Dimension d;
-      // bcLabel bclMArea, bclJArea, bclZArea, bclTArea;
-      // bcLabel bclMCoA, bclJCoA, bclZCoA, bclTCoA;
-      JLabel jlMArea, jlJArea, jlZArea, jlTArea;
-      JLabel jlMCoA, jlJCoA, jlZCoA, jlTCoA;
-      JButton jbApply, jbClose;
 
-      public sailArea(int x, int y) {
-        d = new Dimension(x, y);
-        setLayout(new GridLayout(0, 2));
-        add(new bcLabel("Sail Area", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      public sailSpec(final int x, final int y) {
+        this.d = new Dimension(x, y);
+      }
 
-        add(new bcLabel("Main - Area: ", JLabel.RIGHT));
-        add(jlMArea = new JLabel("0.0", JLabel.LEFT));
+      @Override
+      public Dimension getPreferredSize() {
+        return this.d;
+      }
 
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlMCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      double length(final double x1, final double y1, final double x2, final double y2) {
+        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+      }
 
-        add(new bcLabel("Jib - Area: ", JLabel.RIGHT));
-        add(jlJArea = new JLabel("0.0", JLabel.LEFT));
+      @Override
+      protected void paintComponent(final Graphics g) {
+        super.paintComponent(g);
 
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlJCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        Sail ts;
+        int il = 25;
+        final int isp = 20;
+        String s;
+        double d;
 
-        add(new bcLabel("Mizzen - Area: ", JLabel.RIGHT));
-        add(jlZArea = new JLabel("0.0", JLabel.LEFT));
+        int ic = 160;
+        int icw = 60;
+        g.drawString("Co-ord", ic, il);
+        ic = ic + (2 * icw);
+        g.drawString("to: Clew", ic - 15, il);
+        ic = ic + icw;
+        g.drawString("Roach", ic, il);
+        ic = ic + icw;
+        g.drawString("Peak", ic, il);
+        ic = ic + icw;
+        g.drawString("Head/Throat", ic - 15, il);
 
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlZCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+        il = il + isp + 5;
 
-        add(new bcLabel("Total - Area: ", JLabel.RIGHT));
-        add(jlTArea = new JLabel("0.0", JLabel.LEFT));
+        for (int is = 0; is < 3; is++) {
 
-        add(new bcLabel("CoA: ", JLabel.RIGHT));
-        add(jlTCoA = new JLabel("0.0,0.0", JLabel.LEFT));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+          ic = 50;
+          icw = 60;
 
-        jbApply = new JButton("Apply");
-        jbClose = new JButton("Close");
-
-        jbApply.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            saveRig();
-            rigChange = false;
+          if (is == 0) {
+            ts = pnlSailplan.this.pRig.main;
+            s = "Main";
+          } else if (is == 1) {
+            ts = pnlSailplan.this.pRig.jib;
+            s = "Jib";
+          } else {
+            ts = pnlSailplan.this.pRig.mizzen;
+            s = "Mizzen";
           }
-        });
 
-        jbClose.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            if (rigChange) {
-              int n = JOptionPane.showConfirmDialog(f_edit,
-                  "Data has changed. Do you wish to apply changes?", "Data Edit",
-                  JOptionPane.YES_NO_OPTION);
-              if (n == JOptionPane.YES_OPTION) {
-                saveRig();
-                rigChange = false;
+          if (ts.use) {
+
+            g.drawString(s, ic, il);
+            ic = 100;
+            g.drawString("Tack:", ic, il);
+            ic = ic + icw;
+            s = boatCalc.this.bcf.DF2d.format(ts.getX(Sail.TACK)) + ", "
+                + boatCalc.this.bcf.DF2d.format(ts.getY(Sail.TACK));
+            g.drawString(s, ic, il);
+
+            ic = ic + (2 * icw);
+            d = this.length(ts.getX(Sail.TACK), ts.getY(Sail.TACK), ts.getX(Sail.CLEW),
+                ts.getY(Sail.CLEW));
+            g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+            ic = ic + icw;
+            d = this.length(ts.getX(Sail.TACK), ts.getY(Sail.TACK), ts.getX(Sail.ROACH),
+                ts.getY(Sail.ROACH));
+            if (ts.useRoach) {
+              g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+            }
+            ic = ic + icw;
+            d = this.length(ts.getX(Sail.TACK), ts.getY(Sail.TACK), ts.getX(Sail.PEAK),
+                ts.getY(Sail.PEAK));
+            if (ts.useGaff) {
+              g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+            }
+            ic = ic + icw;
+            d = this.length(ts.getX(Sail.TACK), ts.getY(Sail.TACK), ts.getX(Sail.THROAT),
+                ts.getY(Sail.THROAT));
+            g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+
+            il = il + isp;
+            ic = 100;
+            if (ts.useGaff) {
+              g.drawString("Throat:", ic, il);
+            } else {
+              g.drawString("Head:", ic, il);
+            }
+            ic = ic + icw;
+            s = boatCalc.this.bcf.DF2d.format(ts.getX(Sail.THROAT)) + ", "
+                + boatCalc.this.bcf.DF2d.format(ts.getY(Sail.THROAT));
+            g.drawString(s, ic, il);
+
+            ic = ic + (2 * icw);
+            d = this.length(ts.getX(Sail.THROAT), ts.getY(Sail.THROAT), ts.getX(Sail.CLEW),
+                ts.getY(Sail.CLEW));
+            g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+            ic = ic + icw;
+            d = this.length(ts.getX(Sail.THROAT), ts.getY(Sail.THROAT), ts.getX(Sail.ROACH),
+                ts.getY(Sail.ROACH));
+            if (ts.useRoach) {
+              g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+            }
+            ic = ic + icw;
+            d = this.length(ts.getX(Sail.THROAT), ts.getY(Sail.THROAT), ts.getX(Sail.PEAK),
+                ts.getY(Sail.PEAK));
+            if (ts.useGaff) {
+              g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+            }
+
+            if (ts.useGaff) {
+              il = il + isp;
+              ic = 100;
+              g.drawString("Peak:", ic, il);
+              ic = ic + icw;
+              s = boatCalc.this.bcf.DF2d.format(ts.getX(Sail.PEAK)) + ", "
+                  + boatCalc.this.bcf.DF2d.format(ts.getY(Sail.PEAK));
+              g.drawString(s, ic, il);
+
+              ic = ic + (2 * icw);
+              d = this.length(ts.getX(Sail.PEAK), ts.getY(Sail.PEAK), ts.getX(Sail.CLEW),
+                  ts.getY(Sail.CLEW));
+              if (ts.useGaff) {
+                g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+              }
+              ic = ic + icw;
+              d = this.length(ts.getX(Sail.PEAK), ts.getY(Sail.PEAK), ts.getX(Sail.ROACH),
+                  ts.getY(Sail.ROACH));
+              if (ts.useRoach) {
+                g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
               }
             }
-            f_sailplan.setVisible(false);
-          }
-        });
 
-        add(jbApply);
-        add(jbClose);
+            if (ts.useRoach) {
+              il = il + isp;
+              ic = 100;
+              g.drawString("Roach:", ic, il);
+              ic = ic + icw;
+              s = boatCalc.this.bcf.DF2d.format(ts.getX(Sail.ROACH)) + ", "
+                  + boatCalc.this.bcf.DF2d.format(ts.getY(Sail.ROACH));
+              g.drawString(s, ic, il);
 
-      }
+              ic = ic + (2 * icw);
+              d = this.length(ts.getX(Sail.ROACH), ts.getY(Sail.ROACH), ts.getX(Sail.CLEW),
+                  ts.getY(Sail.CLEW));
+              g.drawString(boatCalc.this.bcf.DF2d.format(d), ic, il);
+            }
 
-      public Dimension getPreferredSize() {
-        return d;
-      }
+            il = il + isp;
+            ic = 100;
+            g.drawString("Clew:", ic, il);
+            ic = ic + icw;
+            s = boatCalc.this.bcf.DF2d.format(ts.getX(Sail.CLEW)) + ", "
+                + boatCalc.this.bcf.DF2d.format(ts.getY(Sail.CLEW));
+            g.drawString(s, ic, il);
+          } // end use
+          il = il + (2 * isp);
 
-      protected void setTable() {
-        String s;
-        double wa = 0;
-        double wx = 0;
-        double wy = 0;
-
-        if (pRig.main.use) {
-          jlMArea.setText(
-              bcf.DF1d.format(hull.units.coefArea() * pRig.main.getArea()) + hull.units.lblArea());
-          s = bcf.DF1d.format(pRig.main.getAreaX()) + ", " + bcf.DF1d.format(pRig.main.getAreaY());
-          jlMCoA.setText(s);
-          wa = wa + pRig.main.getArea();
-          wx = wx + pRig.main.getArea() * pRig.main.getAreaX();
-          wy = wy + pRig.main.getArea() * pRig.main.getAreaY();
-        } else {
-          jlMArea.setText("0.00");
-          jlMCoA.setText("-.--, -.--");
-        }
-        if (pRig.jib.use) {
-          jlJArea.setText(
-              bcf.DF1d.format(hull.units.coefArea() * pRig.jib.getArea()) + hull.units.lblArea());
-          s = bcf.DF1d.format(pRig.jib.getAreaX()) + ", " + bcf.DF1d.format(pRig.jib.getAreaY());
-          jlJCoA.setText(s);
-          wa = wa + pRig.jib.getArea();
-          wx = wx + pRig.jib.getArea() * pRig.jib.getAreaX();
-          wy = wy + pRig.jib.getArea() * pRig.jib.getAreaY();
-        } else {
-          jlJArea.setText("0.00");
-          jlJCoA.setText("-.--, -.--");
-        }
-        if (pRig.mizzen.use) {
-          jlZArea.setText(bcf.DF1d.format(hull.units.coefArea() * pRig.mizzen.getArea())
-              + hull.units.lblArea());
-          s = bcf.DF1d.format(pRig.mizzen.getAreaX()) + ", "
-              + bcf.DF1d.format(pRig.mizzen.getAreaY());
-          jlZCoA.setText(s);
-          wa = wa + pRig.mizzen.getArea();
-          wx = wx + pRig.mizzen.getArea() * pRig.mizzen.getAreaX();
-          wy = wy + pRig.mizzen.getArea() * pRig.mizzen.getAreaY();
-        } else {
-          jlZArea.setText("0.00");
-          jlZCoA.setText("-.--, -.--");
         }
 
-        if (wa > 0) {
-          jlTArea.setText(bcf.DF1d.format(wa));
-          jlTArea.setText(bcf.DF1d.format(hull.units.coefArea() * wa) + hull.units.lblArea());
-          s = bcf.DF1d.format(wx / wa) + ", " + bcf.DF1d.format(wy / wa);
-          jlTCoA.setText(s);
-        } else {
-          jlTArea.setText("0.00");
-          jlTCoA.setText("-.--, -.--");
+      }
+
+    }// ends sailSpec
+
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Border bSail;
+    sailData pData;
+    JTabbedPane pDisp;
+
+    sailDraw pDraw;
+
+    Rig pRig;
+
+    sailArea pRpt;
+
+    sailSpec pSpec;
+
+    boolean rigChange;
+
+    pspTabOrder to;
+
+    public pnlSailplan() {
+
+      if (boatCalc.this.hull.rig.valid) {
+        this.pRig = (Rig) boatCalc.this.hull.rig.clone();
+      } else {
+        this.pRig = new Rig();
+      }
+      this.rigChange = false;
+
+      this.bSail = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+      this.setLayout(new BorderLayout());
+
+      this.pDisp = new JTabbedPane();
+
+      this.pDraw = new sailDraw(750, 325);
+      this.pDraw.setBackground(Color.white);
+      this.pDraw.setBorder(this.bSail);
+      this.pDisp.add(this.pDraw, "Drawing");
+
+      this.pSpec = new sailSpec(750, 325);
+      this.pSpec.setBackground(Color.white);
+      this.pSpec.setBorder(this.bSail);
+      this.pDisp.add(this.pSpec, "Dimensions");
+
+      this.add(this.pDisp, BorderLayout.CENTER);
+
+      this.pRpt = new sailArea(180, 200);
+      this.add(this.pRpt, BorderLayout.LINE_END);
+
+
+      this.pData = new sailData(750, 185);
+      // pData.setBackground(Color.white) ;
+      this.pData.setBorder(this.bSail);
+      this.add(this.pData, BorderLayout.PAGE_END);
+
+      this.to = new pspTabOrder(this);
+      boatCalc.this.f_sailplan.setFocusTraversalPolicy(this.to);
+
+      boatCalc.this.f_sailplan.addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosing(final WindowEvent e) {
+          if (pnlSailplan.this.rigChange) {
+            final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_sailplan,
+                "Data has changed. Do you wish to apply changes?", "Sailplan Design",
+                JOptionPane.YES_NO_OPTION);
+            if (n == JOptionPane.YES_OPTION) {
+              pnlSailplan.this.saveRig();
+            }
+          }
+          boatCalc.this.f_sailplan.setVisible(false);
         }
-      }
+      });
 
-    }// end sailArea
+      this.pDraw.repaint();
+      this.pSpec.repaint();
+      this.pRpt.setTable();
 
-    class sailData extends JPanel implements ActionListener {
-      Dimension d;
-      JTabbedPane tp = new JTabbedPane();
-      JRadioButton rbL, rbR;
-      JRadioButton rbTackX, rbTackZ;
-      JRadioButton rbLuffLen, rbLuffAng;
-      JRadioButton rbBoomLen, rbBoomAng;
-      JRadioButton rbGaffLen, rbGaffAng;
-      JRadioButton rbRoachMax, rbRoachPct;
-      JRadioButton rbAll;
-      JComboBox cbxInc;
-      editSail pMain;
-      editSail pJib;
-      editSail pMiz;
-      JButton btnInc, btnDec;
 
-      public sailData(int x, int y) {
-        JPanel pRb;
-        JLabel lRb;
+    }// end constructor
 
-        d = new Dimension(x, y);
-        setLayout(new BorderLayout());
-        JPanel pDir = new JPanel();
-        pDir.setLayout(new GridLayout(0, 1));
-        rbL = new JRadioButton("Left");
-        rbL.addActionListener(this);
-        rbL.setVerticalAlignment(SwingConstants.BOTTOM);
-        rbR = new JRadioButton("Right");
-        rbR.addActionListener(this);
-        rbL.setVerticalAlignment(SwingConstants.TOP);
-        ButtonGroup bGrp = new ButtonGroup();
-        bGrp.add(rbL);
-        bGrp.add(rbR);
-        pDir.add(
-            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        pDir.add(rbL);
-        pDir.add(rbR);
-        pDir.add(
-            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        if (pRig.dir < 0)
-          rbL.setSelected(true);
-        if (pRig.dir > 0)
-          rbR.setSelected(true);
-
-        add(pDir, BorderLayout.LINE_START);
-
-        pMain = new editSail(pRig.main);
-        tp.addTab("Main", pMain);
-        pJib = new editSail(pRig.jib);
-        pJib.cbGaff.setSelected(false);
-        pJib.cbRoach.setSelected(false);
-        tp.addTab("Jib", pJib);
-        pMiz = new editSail(pRig.mizzen);
-        tp.addTab("Mizzen", pMiz);
-        add(tp, BorderLayout.CENTER);
-
-        JPanel pInc = new JPanel();
-        pInc.setPreferredSize(new Dimension(x - 5, (3 * y) / 10));
-        pInc.setLayout(new GridLayout(0, 8));
-
-        btnInc = new JButton("Increase");
-        btnInc.addActionListener(this);
-        pInc.add(btnInc);
-
-        lRb = new JLabel("Tack:");
-        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
-        pInc.add(lRb);
-        pRb = new JPanel();
-        rbTackX = new JRadioButton("X");
-        rbTackZ = new JRadioButton("Z");
-        pRb.add(rbTackX);
-        pRb.add(rbTackZ);
-        pInc.add(pRb);
-
-        lRb = new JLabel("Luff:");
-        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
-        pInc.add(lRb);
-        pRb = new JPanel();
-        rbLuffLen = new JRadioButton("L");
-        rbLuffAng = new JRadioButton("A");
-        pRb.add(rbLuffLen);
-        pRb.add(rbLuffAng);
-        pInc.add(pRb);
-
-        lRb = new JLabel("Foot:");
-        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
-        pInc.add(lRb);
-        pRb = new JPanel();
-        rbBoomLen = new JRadioButton("L");
-        rbBoomAng = new JRadioButton("A");
-        pRb.add(rbBoomLen);
-        pRb.add(rbBoomAng);
-        pInc.add(pRb);
-        pInc.add(new JLabel("Step", SwingConstants.CENTER));
-
-        btnDec = new JButton("Decrease");
-        btnDec.addActionListener(this);
-        pInc.add(btnDec);
-
-        lRb = new JLabel("Gaff:");
-        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
-        pInc.add(lRb);
-        pRb = new JPanel();
-        rbGaffLen = new JRadioButton("L");
-        rbGaffAng = new JRadioButton("A");
-        pRb.add(rbGaffLen);
-        pRb.add(rbGaffAng);
-        pInc.add(pRb);
-
-        lRb = new JLabel("Roach:");
-        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
-        pInc.add(lRb);
-        pRb = new JPanel();
-        rbRoachMax = new JRadioButton("M");
-        rbRoachPct = new JRadioButton("%");
-        pRb.add(rbRoachMax);
-        pRb.add(rbRoachPct);
-        pInc.add(pRb);
-
-        lRb = new JLabel("Scale:");
-        lRb.setHorizontalAlignment(SwingConstants.RIGHT);
-        pInc.add(lRb);
-        pRb = new JPanel();
-        rbAll = new JRadioButton("%");
-        pRb.add(rbAll);
-        pRb.add(
-            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        pInc.add(pRb);
-
-        ButtonGroup bgInc = new ButtonGroup();
-        bgInc.add(rbTackX);
-        bgInc.add(rbTackZ);
-        bgInc.add(rbLuffLen);
-        bgInc.add(rbLuffAng);
-        bgInc.add(rbBoomLen);
-        bgInc.add(rbBoomAng);
-        bgInc.add(rbGaffLen);
-        bgInc.add(rbGaffAng);
-        bgInc.add(rbRoachMax);
-        bgInc.add(rbRoachPct);
-        bgInc.add(rbAll);
-
-        String[] incs =
-            {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
-        cbxInc = new JComboBox(incs);
-        cbxInc.setEditable(true);
-        cbxInc.setSelectedIndex(6);
-        pInc.add(cbxInc);
-
-        add(pInc, BorderLayout.PAGE_END);
-
-      } // end constructor
-
-      public Dimension getPreferredSize() {
-        return d;
-      }
-
-      public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() == rbL || e.getSource() == rbR) {
-          if (rbL.isSelected()) {
-            pRig.dir = -1;
-            pRig.main.setDir(-1);
-            pRig.jib.setDir(-1);
-            pRig.mizzen.setDir(-1);
-          }
-          if (rbR.isSelected()) {
-            pRig.dir = +1;
-            pRig.main.setDir(1);
-            pRig.jib.setDir(1);
-            pRig.mizzen.setDir(1);
-          }
-        }
-
-        if (e.getSource() == btnInc || e.getSource() == btnDec) {
-          double sgn, v, d;
-          Sail s = pRig.main;
-          editSail eS = pMain;
-          if (tp.getSelectedIndex() == 1) {
-            s = pRig.jib;
-            eS = pJib;
-          } else if (tp.getSelectedIndex() == 2) {
-            s = pRig.mizzen;
-            eS = pMiz;
-          }
-          if (e.getSource() == btnInc)
-            sgn = 1.0;
-          else
-            sgn = -1.0;
-
-          try {
-            d = Double.parseDouble((String) cbxInc.getSelectedItem());
-          } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(null, "Unable to interpret step as number.", "Warning!",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-          }
-
-          if (rbTackX.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[0][0].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + sgn * d, 0.0);
-            eS.sf[0][0].setText(bcf.DF2d.format(v));
-            s.setX(v);
-          }
-
-          if (rbTackZ.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[1][0].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + sgn * d, 0.0);
-            eS.sf[1][0].setText(bcf.DF2d.format(v));
-            s.setY(v);
-          }
-
-          if (rbLuffLen.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[0][1].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + sgn * d, 0.0);
-            eS.sf[0][1].setText(bcf.DF2d.format(v));
-            s.setLuffLen(v);
-          }
-
-          if (rbLuffAng.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[1][1].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eS.sf[1][1].setText(bcf.DF2d.format(v));
-            s.setLuffAng(v);
-          }
-
-          if (rbBoomLen.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[0][2].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + sgn * d, 0.0);
-            eS.sf[0][2].setText(bcf.DF2d.format(v));
-            s.setBoomLen(v);
-          }
-
-          if (rbBoomAng.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[1][2].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eS.sf[1][2].setText(bcf.DF2d.format(v));
-            s.setBoomAng(v);
-          }
-
-          if (rbGaffLen.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[0][3].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + sgn * d, 0.0);
-            eS.sf[0][3].setText(bcf.DF2d.format(v));
-            s.setGaffLen(v);
-          }
-
-          if (rbGaffAng.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[1][3].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = v + sgn * d;
-            eS.sf[1][3].setText(bcf.DF2d.format(v));
-            s.setGaffAng(v);
-          }
-
-          if (rbRoachMax.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[0][4].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + sgn * d, 0.0);
-            eS.sf[0][4].setText(bcf.DF2d.format(v));
-            s.setRoachMax(v);
-          }
-
-          if (rbRoachPct.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[1][4].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + sgn * d, 0.0);
-            eS.sf[1][4].setText(bcf.DF2d.format(v));
-            s.setRoachPct(v);
-          }
-
-          if (rbAll.isSelected()) {
-            try {
-              v = Double.parseDouble(eS.sf[0][1].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + 0.01 * sgn * d * v, 0.0);
-            eS.sf[0][1].setText(bcf.DF2d.format(v));
-            s.setLuffLen(v);
-            try {
-              v = Double.parseDouble(eS.sf[0][2].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + 0.01 * sgn * d * v, 0.0);
-            eS.sf[0][2].setText(bcf.DF2d.format(v));
-            s.setBoomLen(v);
-            try {
-              v = Double.parseDouble(eS.sf[0][3].getText());
-            } catch (NumberFormatException nfe) {
-              JOptionPane.showMessageDialog(null, "Unable to interpret value as number.",
-                  "Warning!", JOptionPane.ERROR_MESSAGE);
-              return;
-            }
-            v = Math.max(v + 0.01 * sgn * d * v, 0.0);
-            eS.sf[0][3].setText(bcf.DF2d.format(v));
-            s.setGaffLen(v);
-
-          }
-        } // end btn proc
-        rigChange = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
-      }
-    }// end sailData
-
-    class editSail extends JPanel
-        implements DocumentListener, ItemListener, FocusListener, ActionListener {
-      JTextField[][] sf;
-      JCheckBox cbSail, cbGaff, cbRoach;
-      Dimension d;
-      Sail so;
-      boolean bChanged;
-
-      public editSail(Sail s) {
-        super(new GridLayout(0, 11));
-        d = new Dimension(600, 200);
-        Font spFont = new Font("Serif", Font.BOLD, 14);
-        so = s;
-
-        sf = new JTextField[2][5];
-        for (int i = 0; i < 5; i++) {
-          sf[0][i] = new JTextField(Double.toString(s.getParamX(i)));
-          sf[0][i].getDocument().addDocumentListener(this);
-          sf[0][i].addFocusListener(this);
-          sf[1][i] = new JTextField(Double.toString(s.getParamY(i)));
-          sf[1][i].getDocument().addDocumentListener(this);
-          sf[1][i].addFocusListener(this);
-        }
-        JLabel lbl;
-        // row 1, labels
-        cbSail = new JCheckBox("Use");
-        cbSail.setHorizontalAlignment(SwingConstants.LEFT);
-        cbSail.setSelected(so.use);
-        cbSail.addActionListener(this);
-        add(cbSail);
-        lbl = new JLabel("Tack", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
-        lbl = new JLabel("Luff", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
-        lbl = new JLabel("Foot", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
-        add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
-        cbGaff = new JCheckBox("Gaff");
-        cbGaff.setHorizontalAlignment(SwingConstants.CENTER);
-        cbGaff.setSelected(so.useGaff);
-        cbGaff.addActionListener(this);
-        add(cbGaff);
-        add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
-        cbRoach = new JCheckBox("Roach");
-        cbRoach.setHorizontalAlignment(SwingConstants.CENTER);
-        cbRoach.setSelected(so.useRoach);
-        cbRoach.addActionListener(this);
-        add(cbRoach);
-        // add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new Dimension(2,2)));
-
-        // row 2, data
-        add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
-        lbl = new JLabel("X: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[0][0]);
-        lbl = new JLabel("Len: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[0][1]);
-        lbl = new JLabel("Len: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[0][2]);
-        lbl = new JLabel("Len: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[0][3]);
-        lbl = new JLabel("Max %: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[0][4]);
-        // add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new Dimension(2,2)));
-
-        // row 3, data
-        add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 2)));
-        lbl = new JLabel("Z: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[1][0]);
-        lbl = new JLabel("Rake: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[1][1]);
-        lbl = new JLabel("Ang: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[1][2]);
-        lbl = new JLabel("Ang: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[1][3]);
-        lbl = new JLabel("Hgt %: ", JLabel.RIGHT);
-        lbl.setFont(spFont);
-        add(lbl);
-        add(sf[1][4]);
-        /*
-         * //row 4, spaces add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new
-         * Dimension(2,2))); // add(new Box.Filler(new Dimension(2,2),new Dimension(2,2),new
-         * Dimension(2,2)));
-         */
-      }
-
-      public Dimension getPreferredSize() {
-        return d;
-      }
-
-      public void changedUpdate(DocumentEvent e) {
-        rigChange = true;
-        bChanged = true;
-      }
-
-      public void insertUpdate(DocumentEvent e) {
-        rigChange = true;
-        bChanged = true;
-      }
-
-      public void removeUpdate(DocumentEvent e) {
-        rigChange = true;
-        bChanged = true;
-      }
-
-      public void itemStateChanged(ItemEvent e) {
-        rigChange = true;
-        bChanged = true;
-      }
-
-      public void focusGained(FocusEvent e) {
-        JTextField t = (JTextField) e.getComponent();
-        t.select(0, 100);
-      }
-
-      public void focusLost(FocusEvent e) {
-        double v, w;
-        try {
-          for (int i = 0; i < 5; i++) {
-            v = Double.parseDouble(sf[0][i].getText());
-            w = Double.parseDouble(sf[1][i].getText());
-            so.setParam(i, v, w);
-          }
-        } catch (NumberFormatException nfe) {
-          JOptionPane.showMessageDialog(f_edit, "Bad number format in data entry.", "Warning!",
-              JOptionPane.ERROR_MESSAGE);
-          return;
-        }
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
-      }
-
-      public void actionPerformed(ActionEvent e) {
-        so.setUse(cbSail.isSelected());
-        so.setUseGaff(cbGaff.isSelected());
-        so.setUseRoach(cbRoach.isSelected());
-        rigChange = true;
-        pDraw.repaint();
-        pSpec.repaint();
-        pRpt.setTable();
-      }
-
-    }// end editSail
+    public void saveRig() {
+      boatCalc.this.hull.rig = (Rig) this.pRig.clone();
+      boatCalc.this.hull.bChanged = true;
+    }
 
   }// end pnlSailplan
-
-
-  class pnlDataEntry extends JPanel implements DocumentListener, ItemListener, FocusListener {
-    JPanel de = new JPanel();
-    JTabbedPane tp = new JTabbedPane();
-
-    boolean bChanged = false;
-    String DName;
-    String NA;
-    JLabel lblDName;
-    JLabel lblNA;
-    JTextField[] stn = new JTextField[hull.Stations.length];
-    JButton btnHName, btnNA, btnName, btnInsert, btnAdd, btnDele, btnSave, btnClose;
-
-    public pnlDataEntry() {
-      super(new GridLayout(1, 1));
-      JLabel lbl;
-      Font deFont = new Font("Serif", Font.BOLD, 14);
-      de.setLayout(new BorderLayout());
-
-      DName = hull.boatname;
-      NA = hull.designer;
-      lblDName = new JLabel(DName);
-      lblDName.setFont(deFont);
-      lblNA = new JLabel(NA);
-      lblNA.setFont(deFont);
-
-      JPanel ttl = new JPanel();
-      ttl.setLayout(new GridLayout(0, 3));
-      ttl.add(lblDName);
-      ttl.add(lblNA);
-      ttl.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      de.add(ttl, BorderLayout.PAGE_START);
-
-      JPanel pO = new JPanel();
-      pO.setLayout(new GridLayout(0, 6));
-
-      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      lbl = new JLabel("  Station  ", JLabel.CENTER);
-      lbl.setFont(deFont);
-      pO.add(lbl);
-      lbl = new JLabel("  Value  ", JLabel.LEFT);
-      lbl.setFont(deFont);
-      pO.add(lbl);
-      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-
-      for (int i = 0; i < hull.Stations.length; i++) {
-
-        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        lbl = new JLabel(Integer.toString(i), JLabel.CENTER);
-        lbl.setFont(deFont);
-        stn[i] = new JTextField(Double.toString(hull.Stations[i]));
-        stn[i].getDocument().addDocumentListener(this);
-        stn[i].addFocusListener(this);
-
-        lbl.setLabelFor(stn[i]);
-        pO.add(lbl);
-        pO.add(stn[i]);
-        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-        pO.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      }
-      tp.addTab("Stations", pO);
-
-      edLinePanel pL = new edLinePanel(stn.length);
-      int iL = 0;
-      ListIterator l = hull.Offsets.listIterator();
-      while (l.hasNext()) {
-        rawLine rL = (rawLine) l.next();
-        Line ln = (Line) rL.ln;
-
-        pL = new edLinePanel(stn.length);
-
-        for (int i = 0; i < hull.Stations.length; i++) {
-
-          pL.x[i].setText(Double.toString(ln.valX(i)));
-          pL.x[i].getDocument().addDocumentListener(this);
-          pL.x[i].addFocusListener(this);
-
-          pL.y[i].setText(Double.toString(ln.valY(i)));
-          pL.y[i].getDocument().addDocumentListener(this);
-          pL.y[i].addFocusListener(this);
-
-          pL.z[i].setText(Double.toString(ln.valZ(i)));
-          pL.z[i].getDocument().addDocumentListener(this);
-          pL.z[i].addFocusListener(this);
-
-          pL.v[i].setSelected(ln.valid(i));
-          pL.v[i].addItemListener(this);
-
-        }
-        tp.addTab(rL.lnName, pL);
-        iL++;
-      }
-
-      Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-      de.setBorder(BorderFactory.createTitledBorder(bcBorder));
-
-      de.add(tp, BorderLayout.CENTER);
-
-      JPanel bp = new JPanel();
-      bp.setLayout(new FlowLayout());
-
-      btnHName = new JButton("Design Name");
-      btnHName.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          String s = JOptionPane.showInputDialog("Design Name:", DName);
-          if ((s != null) && (s.length() > 0)) {
-            DName = s;
-            lblDName.setText("Design: " + DName);
-            bChanged = true;
-          }
-        }
-      });
-
-      btnNA = new JButton("Designer");
-      btnNA.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          String s = JOptionPane.showInputDialog("Designer:", NA);
-          if ((s != null) && (s.length() > 0)) {
-            NA = s;
-            lblNA.setText("Designer: " + NA);
-            bChanged = true;
-          }
-        }
-      });
-
-      btnName = new JButton("Line Name");
-      btnName.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          int i = tp.getSelectedIndex();
-          if (i == 0) {
-            JOptionPane.showMessageDialog(f_edit, "Name 'Stations' cannot be changed.", "Warning!",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-          }
-
-          String s = JOptionPane.showInputDialog("Name:");
-          if ((s != null) && (s.length() > 0)) {
-            tp.setTitleAt(i, s);
-            bChanged = true;
-          }
-        }
-      });
-
-      btnInsert = new JButton("Insert Line");
-      btnInsert.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          int n = JOptionPane.showConfirmDialog(f_edit, "Insert additional Line?", "Data Edit",
-              JOptionPane.YES_NO_OPTION);
-          if (n == JOptionPane.YES_OPTION) {
-            String s = JOptionPane.showInputDialog(f_edit, "Name:");
-            if ((s != null) && (s.length() > 0)) {
-              addLine(1, s);
-            }
-          }
-        }
-      });
-
-      btnAdd = new JButton("Add Line");
-      btnAdd.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          int n = JOptionPane.showConfirmDialog(f_edit, "Add additional Line?", "Data Edit",
-              JOptionPane.YES_NO_OPTION);
-          if (n == JOptionPane.YES_OPTION) {
-            String s = JOptionPane.showInputDialog(f_edit, "Name:");
-            if ((s != null) && (s.length() > 0)) {
-              addLine(0, s);
-            }
-          }
-        }
-      });
-
-      btnDele = new JButton("Delete Line");
-      btnDele.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          int i = tp.getSelectedIndex();
-          if (i == 0) {
-            JOptionPane.showMessageDialog(f_edit, "Stations pannel cannot be deleted.", "Warning!",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-          }
-
-          int n = JOptionPane.showConfirmDialog(f_edit, "Delete Selected line?", "Data Edit",
-              JOptionPane.YES_NO_OPTION);
-          if (n == JOptionPane.YES_OPTION) {
-            tp.remove(i);
-            bChanged = true;
-          }
-
-        }
-      });
-
-
-      btnSave = new JButton("Apply");
-      btnSave.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          saveEdit();
-        }
-      });
-
-
-      btnClose = new JButton("Close");
-      btnClose.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          if (bChanged) {
-            int n = JOptionPane.showConfirmDialog(f_edit,
-                "Data has changed. Do you wish to apply changes?", "Data Edit",
-                JOptionPane.YES_NO_OPTION);
-            if (n == JOptionPane.YES_OPTION) {
-              saveEdit();
-            }
-          }
-          f_edit.setVisible(false);
-        }
-      });
-
-      bp.add(btnHName);
-      bp.add(btnNA);
-      bp.add(btnName);
-      bp.add(btnInsert);
-      bp.add(btnAdd);
-      bp.add(btnDele);
-      bp.add(btnSave);
-      bp.add(btnClose);
-
-      // de.add(new Box.Filler(new Dimension(20,20),new Dimension(20,20),new
-      // Dimension(20,20)),BorderLayout.PAGE_START);
-
-      de.add(bp, BorderLayout.PAGE_END);
-      f_edit.addWindowListener(new WindowAdapter() {
-        public void windowClosing(WindowEvent e) {
-          if (bChanged) {
-            int n = JOptionPane.showConfirmDialog(f_edit,
-                "Data has changed. Do you wish to apply changes?", "Data Edit",
-                JOptionPane.YES_NO_OPTION);
-            if (n == JOptionPane.YES_OPTION) {
-              saveEdit();
-            }
-          }
-          f_edit.setVisible(false);
-        }
-      });
-
-      add(de);
-
-      f_edit.setFocusTraversalPolicy(new pdeTabOrder(this));
-
-    }// end constructor PnlDataEntry
-
-
-    public void addLine(int it, String name) {
-
-      // add new line
-
-      edLinePanel pL = new edLinePanel(stn.length);
-
-      for (int i = 0; i < hull.Stations.length; i++) {
-
-        pL.x[i].setText("00");
-        pL.x[i].setText(stn[i].getText());
-        pL.x[i].getDocument().addDocumentListener(this);
-        pL.x[i].addFocusListener(this);
-
-        pL.y[i].setText("0.0");
-        pL.y[i].getDocument().addDocumentListener(this);
-        pL.y[i].addFocusListener(this);
-
-        pL.z[i].setText("0.0");
-        pL.z[i].getDocument().addDocumentListener(this);
-        pL.z[i].addFocusListener(this);
-
-        pL.v[i].setSelected(true);
-        pL.v[i].addItemListener(this);
-
-      }
-      if (it < 1)
-        tp.addTab(name, pL);
-      else {
-        it = Math.max(1, tp.getSelectedIndex());
-        tp.insertTab(name, null, pL, "new tab", it);
-      }
-      tp.setSelectedComponent(pL);
-      bChanged = true;
-    } // end addLine
-
-    class edLinePanel extends JPanel implements ActionListener {
-      public JTextField[] x;
-      public JTextField[] y;
-      public JTextField[] z;
-      public JCheckBox[] v;
-      public int nf;
-      public JButton btnWtr, btnButt;
-
-      public edLinePanel(int n) {
-
-        Font lpFont = new Font("Serif", Font.BOLD, 14);
-        JLabel lbl;
-        JCheckBox cb;
-        nf = n;
-        setLayout(new GridLayout(0, 6));
-
-        lbl = new JLabel("   #  ", JLabel.CENTER);
-        lbl.setFont(lpFont);
-        add(lbl);
-
-        lbl = new JLabel("  Station  ", JLabel.CENTER);
-        lbl.setFont(lpFont);
-        add(lbl);
-
-        lbl = new JLabel("  Breadth  ", JLabel.CENTER);
-        lbl.setFont(lpFont);
-        add(lbl);
-
-        lbl = new JLabel("  Height  ", JLabel.CENTER);
-        lbl.setFont(lpFont);
-        add(lbl);
-
-        lbl = new JLabel("  In Use  ", JLabel.LEFT);
-        lbl.setFont(lpFont);
-        add(lbl);
-
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-        x = new JTextField[n];
-        y = new JTextField[n];
-        z = new JTextField[n];
-        v = new JCheckBox[n];
-
-        for (int i = 0; i < n; i++) {
-
-          lbl = new JLabel(Integer.toString(i), JLabel.CENTER);
-          lbl.setFont(lpFont);
-          add(lbl);
-
-          x[i] = new JTextField();
-          add(x[i]);
-
-          y[i] = new JTextField();
-          add(y[i]);
-
-          z[i] = new JTextField();
-          add(z[i]);
-
-          v[i] = new JCheckBox();
-          add(v[i]);
-          if (i == 1) {
-            btnWtr = new JButton("Waterline");
-            btnWtr.addActionListener(this);
-            add(btnWtr);
-          } else if (i == 3) {
-            btnButt = new JButton("Buttock");
-            btnButt.addActionListener(this);
-            add(btnButt);
-          } else {
-            add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20),
-                new Dimension(20, 20)));
-          }
-        }
-
-      }// end constructor
-
-      public void actionPerformed(ActionEvent e) {
-        JButton btn = (JButton) e.getSource();
-        boolean bOpt;
-        String prompt;
-        double val;
-        if (0 == btn.getText().compareTo("Waterline")) {
-          bOpt = true;
-          prompt = "Height from baseline: ";
-        } else {
-          bOpt = false;
-          prompt = "Breadth from centerline: ";
-        }
-
-        String s = JOptionPane.showInputDialog(f_edit, prompt);
-        if (s == null) {
-          return;
-        }
-
-        try {
-          val = Double.parseDouble(s);
-        } catch (NumberFormatException nfe) {
-          JOptionPane.showMessageDialog(f_edit, "Bad number format.", "Warning!",
-              JOptionPane.ERROR_MESSAGE);
-          return;
-        }
-
-        for (int i = 0; i < nf; i++) {
-          if (bOpt)
-            z[i].setText(s);
-          else
-            y[i].setText(s);
-        }
-      }
-    }// end edLinePanel
-
-    // public Dimension getPreferredSize(){return new Dimension(700,200) ; }
-    public void changedUpdate(DocumentEvent e) {
-      bChanged = true;
-    }
-
-    public void insertUpdate(DocumentEvent e) {
-      bChanged = true;
-    }
-
-    public void removeUpdate(DocumentEvent e) {
-      bChanged = true;
-    }
-
-    public void itemStateChanged(ItemEvent e) {
-      bChanged = true;
-    }
-
-    public void focusGained(FocusEvent e) {
-      JTextField t = (JTextField) e.getComponent();
-      t.select(0, 100);
-    }
-
-    public void focusLost(FocusEvent e) {}
-
-    public void saveEdit() {
-      double[] sta = new double[hull.Stations.length];
-      ArrayList o = new ArrayList();
-
-      try {
-        for (int i = 0; i < sta.length; i++) {
-          sta[i] = Double.parseDouble(stn[i].getText());
-        }
-      } catch (NumberFormatException nfe) {
-        JOptionPane.showMessageDialog(f_edit, "Bad number format in Stations entries.", "Warning!",
-            JOptionPane.ERROR_MESSAGE);
-        return;
-      }
-
-      Point[] p;
-      int iLine;
-      double x, y, z;
-
-      for (int j = 1; j < tp.getTabCount(); j++) {
-
-        edLinePanel pL = (edLinePanel) tp.getComponentAt(j);
-
-        try {
-
-          p = new Point[stn.length];
-          for (iLine = 0; iLine < p.length; iLine++)
-            p[iLine] = new Point();
-
-          for (int i = 0; i < stn.length; i++) {
-
-            x = Double.parseDouble(pL.x[i].getText());
-            y = Double.parseDouble(pL.y[i].getText());
-            z = Double.parseDouble(pL.z[i].getText());
-            p[i] = new Point(x, y, z);
-            p[i].valid = pL.v[i].isSelected();
-          }
-          rawLine rL = new rawLine();
-          rL.ln = new Line(p);
-          rL.lnName = tp.getTitleAt(j);
-          o.add(rL);
-        } catch (NumberFormatException nfe) {
-          JOptionPane.showMessageDialog(f_edit, "Bad number format in Line entries" + j + ".",
-              "Warning!", JOptionPane.ERROR_MESSAGE);
-          return;
-        }
-
-      } // end j
-
-      hull.Offsets = o;
-      hull.Stations = sta;
-      hull.setLines();
-      hull.bChanged = true;
-      hull.valid = (o.size() > 0);
-      hull.designer = NA;
-      hull.boatname = DName;
-      bChanged = false;
-      setCtrls();
-      return;
-
-    }// end saveEdit
-
-
-    public class pdeTabOrder extends FocusTraversalPolicy {
-      pnlDataEntry pde;
-
-      public pdeTabOrder(pnlDataEntry de) {
-        pde = de;
-      }
-
-      public Component getComponentAfter(Container focusCycleRoot, Component aComponent) {
-
-        if (aComponent.equals(pde.btnHName)) {
-          return pde.btnNA;
-        }
-        if (aComponent.equals(pde.btnNA)) {
-          return pde.btnName;
-        }
-        if (aComponent.equals(pde.btnName)) {
-          return pde.btnInsert;
-        }
-        if (aComponent.equals(pde.btnInsert)) {
-          return pde.btnAdd;
-        }
-        if (aComponent.equals(pde.btnAdd)) {
-          return pde.btnDele;
-        }
-        if (aComponent.equals(pde.btnDele)) {
-          return pde.btnSave;
-        }
-        if (aComponent.equals(pde.btnSave)) {
-          return pde.btnClose;
-        }
-
-        if (pde.tp.getSelectedIndex() == 0) {
-          if (aComponent.equals(pde.btnClose)) {
-            return pde.stn[0];
-          }
-          for (int i = 1; i < pde.stn.length; i++) {
-            if (aComponent.equals(pde.stn[i - 1])) {
-              return pde.stn[i];
-            }
-          }
-          return pde.btnHName;
-        } else {
-          edLinePanel pL = (edLinePanel) pde.tp.getSelectedComponent();
-
-          if (aComponent.equals(pde.btnClose)) {
-            return pL.x[0];
-          }
-          if (aComponent.equals(pL.btnWtr)) {
-            return pL.btnButt;
-          }
-          if (aComponent.equals(pL.btnButt)) {
-            return pde.btnHName;
-          }
-
-          for (int i = 0; i < pL.x.length; i++) {
-            if (aComponent.equals(pL.x[i])) {
-              return pL.y[i];
-            }
-            if (aComponent.equals(pL.y[i])) {
-              return pL.z[i];
-            }
-            if (aComponent.equals(pL.z[i])) {
-              return pL.v[i];
-            }
-            if (aComponent.equals(pL.v[i])) {
-              int j = i + 1;
-              if (j > pL.x.length - 1)
-                return pL.btnWtr;
-              return pL.x[j];
-            }
-          }
-        }
-        return aComponent;
-      }
-
-      public Component getComponentBefore(Container focusCycleRoot, Component aComponent) {
-
-        if (aComponent.equals(pde.btnNA)) {
-          return pde.btnHName;
-        }
-        if (aComponent.equals(pde.btnName)) {
-          return pde.btnNA;
-        }
-        if (aComponent.equals(pde.btnInsert)) {
-          return pde.btnName;
-        }
-        if (aComponent.equals(pde.btnAdd)) {
-          return pde.btnInsert;
-        }
-        if (aComponent.equals(pde.btnDele)) {
-          return pde.btnAdd;
-        }
-        if (aComponent.equals(pde.btnSave)) {
-          return pde.btnDele;
-        }
-        if (aComponent.equals(pde.btnClose)) {
-          return pde.btnSave;
-        }
-
-        if (pde.tp.getSelectedIndex() == 0) {
-          if (aComponent.equals(pde.btnHName)) {
-            return pde.stn[pde.stn.length - 1];
-          }
-          for (int i = 0; i < pde.stn.length - 1; i++) {
-            if (aComponent.equals(pde.stn[i + 1])) {
-              return pde.stn[i];
-            }
-          }
-          return pde.btnClose;
-        } else {
-          edLinePanel pL = (edLinePanel) pde.tp.getSelectedComponent();
-          if (aComponent.equals(pde.btnHName)) {
-            return pL.btnButt;
-          }
-          if (aComponent.equals(pL.btnButt)) {
-            return pL.btnWtr;
-          }
-          if (aComponent.equals(pL.btnWtr)) {
-            return pL.v[pL.v.length - 1];
-          }
-
-          for (int i = 0; i < pL.x.length; i++) {
-            if (aComponent.equals(pL.v[i])) {
-              return pL.z[i];
-            }
-            if (aComponent.equals(pL.z[i])) {
-              return pL.y[i];
-            }
-            if (aComponent.equals(pL.y[i])) {
-              return pL.x[i];
-            }
-            if (aComponent.equals(pL.x[i])) {
-              int j = i - 1;
-              if (j < 0)
-                return pde.btnClose;
-              return pL.v[j];
-            }
-          }
-        }
-        return aComponent;
-      }
-
-      public Component getLastComponent(Container focusCycleRoot) {
-        return pde.btnClose;
-      }
-
-      public Component getFirstComponent(Container focusCycleRoot) {
-        return pde.btnClose;
-      }
-
-      public Component getDefaultComponent(Container focusCycleRoot) {
-        return pde.btnClose;
-      }
-    }// end pdeTabOrder
-
-  }// end pnlDataEntry
-
-
-  public void wgtEdit() {
-    f_wgts = new JFrame("Weight Entry/Edit");
-    f_wgts.setSize(600, 400);
-    pnlWgtEntry w_wgts = new pnlWgtEntry();
-    f_wgts.getContentPane().add(w_wgts);
-    w_wgts.getWgts();
-    f_wgts.setVisible(true);
-  }
-
   class pnlWgtEntry extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
     edWgtPanel wp;
 
     public pnlWgtEntry() {
-      JPanel p = new JPanel();
+      final JPanel p = new JPanel();
       p.setBorder(BorderFactory.createEtchedBorder());
       p.setLayout(new BorderLayout());
       p.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)),
           BorderLayout.PAGE_START);
 
-      wp = new edWgtPanel();
-      p.add(wp, BorderLayout.CENTER);
+      this.wp = new edWgtPanel();
+      p.add(this.wp, BorderLayout.CENTER);
 
-      JButton btnSave = new JButton("Apply Changes");
+      final JButton btnSave = new JButton("Apply Changes");
       btnSave.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          applyWgts();
-          dispWgt.setWeights();
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          pnlWgtEntry.this.applyWgts();
+          boatCalc.this.dispWgt.setWeights();
         }
       });
 
-      JButton btnClose = new JButton("Close");
+      final JButton btnClose = new JButton("Close");
       btnClose.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          if (wp.bChanged) {
-            int n = JOptionPane.showConfirmDialog(f_wgts,
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+          if (pnlWgtEntry.this.wp.bChanged) {
+            final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_wgts,
                 "Data has changed. Do you wish to apply changes?", "Weight Edit",
                 JOptionPane.YES_NO_OPTION);
             if (n == JOptionPane.YES_OPTION) {
-              applyWgts();
-              dispWgt.setWeights();
+              pnlWgtEntry.this.applyWgts();
+              boatCalc.this.dispWgt.setWeights();
             }
           }
-          f_wgts.setVisible(false);
+          boatCalc.this.f_wgts.setVisible(false);
         }
       });
-      JPanel bp = new JPanel();
+      final JPanel bp = new JPanel();
       bp.add(btnSave);
       bp.add(btnClose);
       p.add(bp, BorderLayout.PAGE_END);
-      add(p);
+      this.add(p);
 
-      f_wgts.addWindowListener(new WindowAdapter() {
-        public void windowClosing(WindowEvent e) {
-          if (wp.bChanged) {
-            int n = JOptionPane.showConfirmDialog(f_edit,
+      boatCalc.this.f_wgts.addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosing(final WindowEvent e) {
+          if (pnlWgtEntry.this.wp.bChanged) {
+            final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit,
                 "Data has changed. Do you wish to apply changes?", "Data Edit",
                 JOptionPane.YES_NO_OPTION);
             if (n == JOptionPane.YES_OPTION) {
-              applyWgts();
-              dispWgt.setWeights();
+              pnlWgtEntry.this.applyWgts();
+              boatCalc.this.dispWgt.setWeights();
             }
           }
-          f_wgts.setVisible(false);
+          boatCalc.this.f_wgts.setVisible(false);
         }
       });
     }
 
     public void applyWgts() {
-      String[] tl = new String[10];
-      double[] tw = new double[10];
-      double[] tx = new double[10];
-      double[] ty = new double[10];
-      double[] tz = new double[10];
+      final String[] tl = new String[10];
+      final double[] tw = new double[10];
+      final double[] tx = new double[10];
+      final double[] ty = new double[10];
+      final double[] tz = new double[10];
       try {
         for (int i = 0; i < 10; i++) {
-          tl[i] = wp.l[i].getText();
-          tw[i] = Double.parseDouble(wp.w[i].getText());
-          tx[i] = Double.parseDouble(wp.x[i].getText());
-          ty[i] = Double.parseDouble(wp.y[i].getText());
-          tz[i] = Double.parseDouble(wp.z[i].getText());
-          hull.wgtLbl = tl;
-          hull.wgtWgt = tw;
-          hull.wgtX = tx;
-          hull.wgtY = ty;
-          hull.wgtZ = tz;
+          tl[i] = this.wp.l[i].getText();
+          tw[i] = Double.parseDouble(this.wp.w[i].getText());
+          tx[i] = Double.parseDouble(this.wp.x[i].getText());
+          ty[i] = Double.parseDouble(this.wp.y[i].getText());
+          tz[i] = Double.parseDouble(this.wp.z[i].getText());
+          boatCalc.this.hull.wgtLbl = tl;
+          boatCalc.this.hull.wgtWgt = tw;
+          boatCalc.this.hull.wgtX = tx;
+          boatCalc.this.hull.wgtY = ty;
+          boatCalc.this.hull.wgtZ = tz;
         }
-      } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(f_wgts, "Bad number format!", "Warning!",
+      } catch (final NumberFormatException e) {
+        JOptionPane.showMessageDialog(boatCalc.this.f_wgts, "Bad number format!", "Warning!",
             JOptionPane.ERROR_MESSAGE);
       }
-      wp.bChanged = false;
+      this.wp.bChanged = false;
     }// end applyWgts
 
     public void getWgts() {
       for (int i = 0; i < 10; i++) {
-        wp.l[i].setText(hull.wgtLbl[i]);
-        wp.w[i].setText(Double.toString(hull.wgtWgt[i]));
-        wp.x[i].setText(Double.toString(hull.wgtX[i]));
-        wp.y[i].setText(Double.toString(hull.wgtY[i]));
-        wp.z[i].setText(Double.toString(hull.wgtZ[i]));
-        wp.bChanged = false;
+        this.wp.l[i].setText(boatCalc.this.hull.wgtLbl[i]);
+        this.wp.w[i].setText(Double.toString(boatCalc.this.hull.wgtWgt[i]));
+        this.wp.x[i].setText(Double.toString(boatCalc.this.hull.wgtX[i]));
+        this.wp.y[i].setText(Double.toString(boatCalc.this.hull.wgtY[i]));
+        this.wp.z[i].setText(Double.toString(boatCalc.this.hull.wgtZ[i]));
+        this.wp.bChanged = false;
       }
     }// end getWgts
 
 
   }// end pnlWgtEntry
+  public class stmPanel extends JPanel implements ActionListener {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    JRadioButton btnLeft;
+    JRadioButton btnRight;
+    Dimension d;
+    JLabel lblStem;
 
-  class edWgtPanel extends JPanel implements DocumentListener, FocusListener {
-    public JTextField[] l;
-    public JTextField[] w;
-    public JTextField[] x;
-    public JTextField[] y;
-    public JTextField[] z;
-    boolean bChanged;
-    JLabel lblTot = new JLabel("CoG:");
-    JLabel lblWgt = new JLabel("n/a");
-    JLabel lblX = new JLabel("n/a");
-    JLabel lblY = new JLabel("n/a");
-    JLabel lblZ = new JLabel("n/a");
+    public stmPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.lblStem = new JLabel("Auto Stem:");
+      this.btnLeft = new JRadioButton("Left");
+      this.btnLeft.setSelected(true);
+      this.btnRight = new JRadioButton("Right");
+      this.btnRight.setSelected(true);
 
-    public edWgtPanel() {
+      this.btnLeft.addActionListener(this);
+      this.btnRight.addActionListener(this);
 
-      JLabel lbl;
-      JCheckBox cb;
+      this.setBorder(BorderFactory.createEtchedBorder());
+      this.setLayout(new FlowLayout());
+      this.add(this.lblStem);
+      this.add(this.btnLeft);
+      this.add(this.btnRight);
+    }
 
-      Font wpFont = new Font("Serif", Font.BOLD, 14);
-      setBorder(BorderFactory.createEtchedBorder());
-      setLayout(new GridLayout(0, 7));
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      lbl = new JLabel(" Type ", JLabel.CENTER);
-      lbl.setFont(wpFont);
-      add(lbl);
-
-      lbl = new JLabel("  Weight  ", JLabel.CENTER);
-      lbl.setFont(wpFont);
-      add(lbl);
-
-      lbl = new JLabel("  Station  ", JLabel.CENTER);
-      lbl.setFont(wpFont);
-      add(lbl);
-
-      lbl = new JLabel("  Breadth  ", JLabel.CENTER);
-      lbl.setFont(wpFont);
-      add(lbl);
-
-      lbl = new JLabel("  Height  ", JLabel.CENTER);
-      lbl.setFont(wpFont);
-      add(lbl);
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-
-
-      l = new JTextField[10];
-      w = new JTextField[10];
-      x = new JTextField[10];
-      y = new JTextField[10];
-      z = new JTextField[10];
-
-      for (int i = 0; i < 10; i++) {
-
-        lbl = new JLabel(Integer.toString(i + 1), JLabel.CENTER);
-        lbl.setFont(wpFont);
-        add(lbl);
-
-        l[i] = new JTextField();
-        l[i].getDocument().addDocumentListener(this);
-        add(l[i]);
-
-        w[i] = new JTextField();
-        w[i].getDocument().addDocumentListener(this);
-        w[i].addFocusListener(this);
-        add(w[i]);
-
-        x[i] = new JTextField();
-        x[i].getDocument().addDocumentListener(this);
-        x[i].addFocusListener(this);
-        add(x[i]);
-
-        y[i] = new JTextField();
-        y[i].getDocument().addDocumentListener(this);
-        y[i].addFocusListener(this);
-        add(y[i]);
-
-        z[i] = new JTextField();
-        z[i].getDocument().addDocumentListener(this);
-        z[i].addFocusListener(this);
-        add(z[i]);
-
-        add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
+    @Override
+    public void actionPerformed(final ActionEvent e) {
+      if (this.btnLeft.isSelected()) {
+        boatCalc.this.hull.bStems[0] = true;
+      } else {
+        boatCalc.this.hull.bStems[0] = false;
       }
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      lblTot.setFont(wpFont);
-      lblWgt.setFont(wpFont);
-      lblX.setFont(wpFont);
-      lblY.setFont(wpFont);
-      lblZ.setFont(wpFont);
-      add(lblTot);
-      add(lblWgt);
-      add(lblX);
-      add(lblY);
-      add(lblZ);
-      add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      if (this.btnRight.isSelected()) {
+        boatCalc.this.hull.bStems[1] = true;
+      } else {
+        boatCalc.this.hull.bStems[1] = false;
+      }
+      boatCalc.this.hull.bChanged = true;
+      boatCalc.this.body.repaint();
+      boatCalc.this.plan.repaint();
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+  }// end stmPanel
+  public class stnBody extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Dimension d;
+    String title = "Station Area";
+
+    public stnBody(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.setBackground(Color.white);
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+    @Override
+    protected void paintComponent(final Graphics g) {
+      super.paintComponent(g);
+      Math.sin(Math.toRadians(boatCalc.this.hull.angHeel));
+      Math.cos(Math.toRadians(boatCalc.this.hull.angHeel));
+
+      final double mx = this.getWidth();
+      final double my = this.getHeight();
+      final int ix = (int) mx;
+      final int iy = (int) my;
+      final int xb = ix / 2;
+      final int yb = iy / 2;
+      Point p1, p2;
+      int u, v, w, z;
+      final double r = (0.60 * xb) / boatCalc.this.hull.gy_max;
+      g.clearRect(0, 0, ix, iy);
+      int il = 15;
+      g.drawString(this.title, il, 10);
+      // draw axes
+      g.setColor(Color.red);
+      g.drawLine(xb, 5, xb, iy - 5);
+      g.drawLine(5, yb, ix - 5, yb);
+      g.setColor(Color.black);
+
+      final double x = boatCalc.this.hull.lwlLeft + ((0.01 * boatCalc.this.dispStn.iPct)
+          * (boatCalc.this.hull.lwlRight - boatCalc.this.hull.lwlLeft));
+      double hsArea = 0;
+      final double ty = 0, tz = 0;
+
+      // draw station
+      final Iterator si = boatCalc.this.hull.getStation(x, boatCalc.this.hull.angHeel);
+      p1 = (Point) si.next();
+      final Point p0 = new Point(p1);
+      while (si.hasNext()) {
+        p2 = (Point) si.next();
+        u = xb + (int) (r * p1.y);
+        v = yb - (int) (r * p1.z);
+        w = xb + (int) (r * p2.y);
+        z = yb - (int) (r * p2.z);
+        g.drawLine(u, v, w, z);
+
+        g.setColor(Color.red);
+        hsArea = hsArea + boatCalc.this.hull.TriArea(ty, tz, p1.y, p1.z, p2.y, p2.z);
+        u = xb + (int) (r * ty);
+        v = yb - (int) (r * tz);
+        w = xb + (int) (r * p1.y);
+        z = yb - (int) (r * p1.z);
+        g.drawLine(u, v, w, z);
+        u = xb + (int) (r * p2.y);
+        v = yb - (int) (r * p2.z);
+        g.drawLine(u, v, w, z);
+        w = xb + (int) (r * ty);
+        z = yb - (int) (r * tz);
+        g.drawLine(u, v, w, z);
+        g.setColor(Color.black);
+
+        p1 = p2;
+      }
+      p2 = p0;
+      hsArea = hsArea + boatCalc.this.hull.TriArea(ty, tz, p1.y, p1.z, p2.y, p2.z);
+      g.setColor(Color.red);
+      u = xb + (int) (r * ty);
+      v = yb - (int) (r * tz);
+      w = xb + (int) (r * p1.y);
+      z = yb - (int) (r * p1.z);
+      g.drawLine(u, v, w, z);
+      u = xb + (int) (r * p2.y);
+      v = yb - (int) (r * p2.z);
+      g.drawLine(u, v, w, z);
+      w = xb + (int) (r * ty);
+      z = yb - (int) (r * tz);
+      g.drawLine(u, v, w, z);
+      g.setColor(Color.black);
+
+
+
+      final double[] rVals = boatCalc.this.hull.getArea(x, boatCalc.this.hull.angHeel, true);
+
+      il += 25;
+      g.drawString("Station (%): " + boatCalc.this.bcf.DF0d.format(boatCalc.this.dispStn.iPct), 10,
+          il);
+      il += 20;
+      g.drawString("          @: " + boatCalc.this.bcf.DF0d.format(x), 10, il);
+      il += 20;
+      g.drawString("Displaced Area: "
+          + boatCalc.this.bcf.DF1d
+              .format(boatCalc.this.hull.units.coefArea() * rVals[boatCalc.this.hull.SAREA])
+          + boatCalc.this.hull.units.lblArea(), 10, il);
+      il += 20;
+      g.drawString("    Total Area: "
+          + boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.units.coefArea() * hsArea)
+          + boatCalc.this.hull.units.lblArea(), 10, il);
+
+      g.setColor(Color.blue);
+      final Iterator di = boatCalc.this.hull.DispTri.iterator();
+      while (di.hasNext()) {
+        final double[] tri = (double[]) di.next();
+        u = xb + (int) (r * tri[0]);
+        v = yb - (int) (r * tri[1]);
+        w = xb + (int) (r * tri[2]);
+        z = yb - (int) (r * tri[3]);
+        g.drawLine(u, v, w, z);
+        u = xb + (int) (r * tri[4]);
+        v = yb - (int) (r * tri[5]);
+        g.drawLine(u, v, w, z);
+        w = xb + (int) (r * tri[0]);
+        z = yb - (int) (r * tri[1]);
+        g.drawLine(u, v, w, z);
+      }
+
+    }// end paint
+
+    public void setTitle(final String s) {
+      this.title = s;
+    }
+  }// end hdBody
+
+  public class stnPanel extends JPanel implements ChangeListener {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Dimension d;
+    int iPct = 50;
+    JPanel pnlSlct;
+    JSlider xSlct;
+
+    public stnPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      final stnBody body = new stnBody(400, 300);
+      this.add(body);
+
+      this.xSlct = new JSlider();
+      this.xSlct.setPreferredSize(new Dimension(250, 42));
+      this.xSlct.setMajorTickSpacing(10);
+      this.xSlct.setMinorTickSpacing(5);
+      this.xSlct.setPaintTicks(true);
+      this.xSlct.setPaintLabels(true);
+
+      this.xSlct.addChangeListener(this);
+
+      this.pnlSlct = new JPanel();
+      final Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+      this.pnlSlct.setBorder(BorderFactory.createTitledBorder(bcBorder, "Station (%LWL)"));
+      this.pnlSlct.add(this.xSlct);
+      this.add(this.pnlSlct);
 
     }// end constructor
 
-    public void addWgts() {
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+    @Override
+    public void stateChanged(final ChangeEvent e) {
+      this.iPct = this.xSlct.getValue();
+      boatCalc.this.dispStn.repaint();
+    }
+
+
+  }// end stnPanel
+  public class unitPanel extends JPanel implements ActionListener {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    ButtonGroup bGrp;
+    JRadioButton btnCmKg;
+    JRadioButton btnFtLbs;
+    JRadioButton btnInLbs;
+    JRadioButton btnMKg;
+    Dimension d;
+    JLabel lblUnit;
+
+    public unitPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.lblUnit = new JLabel("Units:");
+      this.btnInLbs = new JRadioButton("in,lbs");
+      this.btnInLbs.setSelected(true);
+      this.btnFtLbs = new JRadioButton("ft,lbs");
+      this.btnCmKg = new JRadioButton("cm,Kg");
+      this.btnMKg = new JRadioButton("m,Kg");
+
+      this.btnInLbs.addActionListener(this);
+      this.btnFtLbs.addActionListener(this);
+      this.btnCmKg.addActionListener(this);
+      this.btnMKg.addActionListener(this);
+
+      this.bGrp = new ButtonGroup();
+      this.bGrp.add(this.btnInLbs);
+      this.bGrp.add(this.btnFtLbs);
+      this.bGrp.add(this.btnCmKg);
+      this.bGrp.add(this.btnMKg);
+
+      this.setBorder(BorderFactory.createEtchedBorder());
+      this.setLayout(new FlowLayout());
+      this.add(this.lblUnit);
+      this.add(this.btnInLbs);
+      this.add(this.btnFtLbs);
+      this.add(this.btnCmKg);
+      this.add(this.btnMKg);
+    }
+
+    @Override
+    public void actionPerformed(final ActionEvent e) {
+      if (this.btnInLbs.isSelected()) {
+        boatCalc.this.hull.units.UNITS = 0;
+      }
+      if (this.btnFtLbs.isSelected()) {
+        boatCalc.this.hull.units.UNITS = 1;
+      }
+      if (this.btnCmKg.isSelected()) {
+        boatCalc.this.hull.units.UNITS = 2;
+      }
+      if (this.btnMKg.isSelected()) {
+        boatCalc.this.hull.units.UNITS = 3;
+      }
+      boatCalc.this.setCtrls();
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+  }// end unitPanel
+  public class wetPanel extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Dimension d;
+    int[] iComp = new int[boatCalc.this.hull.NDIV + 1];
+    int[] iCur = new int[boatCalc.this.hull.NDIV + 1];
+
+    public wetPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+
+
+    }// end constructor
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+    @Override
+    protected void paintComponent(final Graphics g) {
+      super.paintComponent(g);
+
+      final double mx = this.getWidth();
+      final double my = this.getHeight();
+      final int ix = (int) mx;
+      final int iy = (int) my;
+      final int xb = 100;
+      final int yb = (int) my - 50;
+
+      g.clearRect(0, 0, ix, iy);
+
+      final double rx = (mx - 200.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
+      final double ry = my / (boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min);
+      final double r = Math.min(rx, ry);
+      int iu, iv, iw, iz;
+      iu = xb + (int) (r * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
+      iv = yb + (int) (r * 0);
+      iw = xb + (int) (r * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+      iz = yb + (int) (r * 0);
+
+      // draw axis
+      g.setColor(Color.red);
+      g.drawLine(iu, iv, iw, iz);
+      g.setColor(Color.black);
+
+      if (boatCalc.this.disp.bComp) {
+        g.setColor(Color.blue);
+        iu = xb + (int) (r
+            * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0] - boatCalc.this.hull.gx_min));
+        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+          iv = xb + (int) (r
+              * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i] - boatCalc.this.hull.gx_min));
+          g.drawLine(iu, this.iComp[i - 1], iv, this.iComp[i]);
+          iu = iv;
+        }
+        g.setColor(Color.black);
+      }
+
+      double x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+      double y = boatCalc.this.hull.vWet[0];
+      iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+      iv = yb - (int) (r * y);
+
+      this.iCur[0] = iv;
+      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
+        y = boatCalc.this.hull.vWet[i];
+        iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (r * y);
+        g.drawLine(iu, iv, iw, iz);
+        iu = iw;
+        iv = iz;
+        this.iCur[i] = iv;
+      }
+
+      // compute
+
+      double wetX = boatCalc.this.hull.vWet[0] * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+      double wetSum = boatCalc.this.hull.vWet[0];
+      double wetArea = 0;
+      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+        wetX = wetX
+            + (boatCalc.this.hull.vWet[i] * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]);
+        wetSum = wetSum + boatCalc.this.hull.vWet[i];
+        wetArea = wetArea + ((boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
+            - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]) * 0.5
+            * (boatCalc.this.hull.vWet[i] + boatCalc.this.hull.vWet[i - 1]));
+      }
+
+
+      int il = 25;
+      g.drawString("Wetted Surface", 10, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.units.coefArea() * wetArea)
+          + boatCalc.this.hull.units.lblArea(), 125, il);
+      il += 20;
+      if (wetSum > 0) {
+        wetX = wetX / wetSum;
+        g.drawString("Ctr of Area @ Stn: ", 10, il);
+        g.drawString(boatCalc.this.bcf.DF1d.format(wetX), 125, il);
+      }
+
+
+    } // end paintComponent
+  } // end wetPanel
+  public class wgtPanel extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Dimension d;
+    bcLabel lblHeel;
+    JLabel[] lblMoments;
+    JLabel[][] lblWgtDisp;
+
+    public wgtPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+      this.lblHeel = new bcLabel("Heel:", SwingConstants.CENTER);
+      this.lblWgtDisp = new JLabel[4][3];
+      this.lblMoments = new JLabel[2];
+      // setBackground(Color.lightGray) ;
+      this.setBorder(BorderFactory.createEtchedBorder());
+      this.setLayout(new GridLayout(0, 8));
+
+      this.add(this.lblHeel);
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new bcLabel("CoB", SwingConstants.CENTER));
+      this.add(new bcLabel("CoG", SwingConstants.CENTER));
+      this.add(new bcLabel("Difference", SwingConstants.CENTER));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new bcLabel("Weight", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[0][0] = new JLabel("disp_x", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[0][1] = new JLabel("wgt_x", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[0][2] = new JLabel("diff_x", SwingConstants.RIGHT));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new bcLabel("  Moments  ", SwingConstants.CENTER));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new bcLabel("Station", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[1][0] = new JLabel("disp_x", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[1][1] = new JLabel("wgt_x", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[1][2] = new JLabel("diff_x", SwingConstants.RIGHT));
+      this.add(new bcLabel("Pitch", SwingConstants.RIGHT));
+      this.add(this.lblMoments[0] = new JLabel("moment_p", SwingConstants.RIGHT));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new bcLabel("Breadth", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[2][0] = new JLabel("disp_y", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[2][1] = new JLabel("wgt_y", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[2][2] = new JLabel("diff_y", SwingConstants.RIGHT));
+      this.add(new bcLabel("Heel", SwingConstants.RIGHT));
+      this.add(this.lblMoments[1] = new JLabel("moment_h", SwingConstants.RIGHT));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new bcLabel("Height", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[3][0] = new JLabel("disp_z", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[3][1] = new JLabel("wgt_z", SwingConstants.RIGHT));
+      this.add(this.lblWgtDisp[3][2] = new JLabel("diff_z", SwingConstants.RIGHT));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
+
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
+    }
+
+
+    public void setWeights() {
+      final double sinang = Math.sin(Math.toRadians(boatCalc.this.hull.angHeel));
+      final double cosang = Math.cos(Math.toRadians(boatCalc.this.hull.angHeel));
+
+      final double dWgt =
+          boatCalc.this.hull.units.Vol2Wgt() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP];
+
+      this.lblHeel.setText("Heel: " + boatCalc.this.bcf.DF0d.format(boatCalc.this.hull.angHeel));
+      this.lblWgtDisp[0][0].setText(boatCalc.this.bcf.DF1d.format(dWgt));
+      this.lblWgtDisp[1][0]
+          .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CX]));
+      this.lblWgtDisp[2][0]
+          .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CY]));
+      this.lblWgtDisp[3][0]
+          .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CZ]));
+
       double tw = 0;
       double tx = 0;
       double ty = 0;
       double tz = 0;
-      try {
-        for (int i = 0; i < 10; i++) {
-          tw += Double.parseDouble(w[i].getText());
-          tx += Double.parseDouble(w[i].getText()) * Double.parseDouble(x[i].getText());
-          ty += Double.parseDouble(w[i].getText()) * Double.parseDouble(y[i].getText());
-          tz += Double.parseDouble(w[i].getText()) * Double.parseDouble(z[i].getText());
-        }
-
-        lblWgt.setText(bcf.DF1d.format(tw));
-        if (tw > 0) {
-          lblX.setText(bcf.DF1d.format(tx / tw));
-          lblY.setText(bcf.DF1d.format(ty / tw));
-          lblZ.setText(bcf.DF1d.format(tz / tw));
-        } else {
-          lblX.setText("n/a");
-          lblY.setText("n/a");
-          lblZ.setText("n/a");
-        }
-
-      } catch (NumberFormatException e) {
-        lblWgt.setText("n/a");
-        lblX.setText("n/a");
-        lblY.setText("n/a");
-        lblZ.setText("n/a");
+      for (int i = 0; i < 10; i++) {
+        tw += boatCalc.this.hull.wgtWgt[i];
+        tx += boatCalc.this.hull.wgtWgt[i] * boatCalc.this.hull.wgtX[i];
+        ty += boatCalc.this.hull.wgtWgt[i] * boatCalc.this.hull.wgtY[i];
+        tz += boatCalc.this.hull.wgtWgt[i] * boatCalc.this.hull.wgtZ[i];
       }
 
-    }// end addWgts
+      if (tw > 0) {
+        tx = tx / tw;
+        ty = ty / tw;
+        tz = (tz / tw) + boatCalc.this.hull.base;
+      }
+      final double rty = (cosang * ty) - (sinang * tz);
+      final double rtz = (sinang * ty) + (cosang * tz);
 
-    public void changedUpdate(DocumentEvent e) {
-      addWgts();
-      bChanged = true;
+      this.lblWgtDisp[0][1].setText(boatCalc.this.bcf.DF1d.format(tw));
+      this.lblWgtDisp[1][1].setText(boatCalc.this.bcf.DF1d.format(tx));
+      this.lblWgtDisp[2][1].setText(boatCalc.this.bcf.DF1d.format(rty));
+      this.lblWgtDisp[3][1].setText(boatCalc.this.bcf.DF1d.format(rtz));
+
+      this.lblWgtDisp[0][2].setText(boatCalc.this.bcf.DF1d.format(dWgt - tw));
+      this.lblWgtDisp[1][2].setText(
+          boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CX] - tx));
+      this.lblWgtDisp[2][2].setText(
+          boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CY] - rty));
+      this.lblWgtDisp[3][2].setText(
+          boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CZ] - rtz));
+
+      this.lblMoments[0].setText(boatCalc.this.bcf.DF1d
+          .format(dWgt * (tx - boatCalc.this.hull.hVals[boatCalc.this.hull.CX])));
+      this.lblMoments[1].setText(boatCalc.this.bcf.DF1d
+          .format(dWgt * (rty - boatCalc.this.hull.hVals[boatCalc.this.hull.CY])));
     }
 
-    public void insertUpdate(DocumentEvent e) {
-      addWgts();
-      bChanged = true;
+    // protected void paintComponent(Graphics g) {setWeights();}
+  } // ends wgtPanel
+
+  public class wlPanel extends JPanel {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    Dimension d;
+    int[][] iComp = new int[2][boatCalc.this.hull.NDIV + 1];
+    int[][] iCur = new int[2][boatCalc.this.hull.NDIV + 1];
+
+    public wlPanel(final int x, final int y) {
+      this.d = new Dimension(x, y);
+
+
+    }// end constructor
+
+    @Override
+    public Dimension getPreferredSize() {
+      return this.d;
     }
 
-    public void removeUpdate(DocumentEvent e) {
-      addWgts();
-      bChanged = true;
-    }
+    @Override
+    protected void paintComponent(final Graphics g) {
+      super.paintComponent(g);
+      final double sinone = Math.sin(Math.toRadians(1.0));
 
-    public void focusGained(FocusEvent e) {
-      JTextField t = (JTextField) e.getComponent();
-      t.select(0, 100);
-    }
 
-    public void focusLost(FocusEvent e) {}
-  }// end edWgtPanel
+      final double mx = this.getWidth();
+      final double my = this.getHeight();
+      final int ix = (int) mx;
+      final int iy = (int) my;
+      final int xb = 100;
+      final int yb = (int) my / 2;
 
-  public void insertStation() {
+      g.clearRect(0, 0, ix, iy);
+
+      final double rx = (mx - 200.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
+      final double ry = (0.8 * my) / (boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min);
+      final double r = Math.min(rx, ry);
+      int iu, iv, iw, iz;
+      iu = xb + (int) (r * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
+      iv = yb + (int) (r * 0);
+      iw = xb + (int) (r * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
+      iz = yb + (int) (r * 0);
+
+      // draw axis
+      g.setColor(Color.red);
+      g.drawLine(iu, iv, iw, iz);
+      g.setColor(Color.black);
+
+      if (boatCalc.this.disp.bComp) {
+        g.setColor(Color.blue);
+        iu = xb + (int) (r
+            * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0] - boatCalc.this.hull.gx_min));
+        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+          iv = xb + (int) (r
+              * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i] - boatCalc.this.hull.gx_min));
+          g.drawLine(iu, this.iComp[0][i - 1], iv, this.iComp[0][i]);
+          iu = iv;
+        }
+
+        iu = xb + (int) (r
+            * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0] - boatCalc.this.hull.gx_min));
+        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+          iv = xb + (int) (r
+              * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i] - boatCalc.this.hull.gx_min));
+          g.drawLine(iu, this.iComp[1][i - 1], iv, this.iComp[1][i]);
+          iu = iv;
+        }
+        g.setColor(Color.black);
+      }
+
+      double x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+      double y = boatCalc.this.hull.vWL[0][0];
+      iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+      iv = yb - (int) (r * y);
+
+      this.iCur[0][0] = iv;
+      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
+        y = boatCalc.this.hull.vWL[0][i];
+        iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (r * y);
+        g.drawLine(iu, iv, iw, iz);
+        iu = iw;
+        iv = iz;
+        this.iCur[0][i] = iv;
+      }
+
+      x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+      y = boatCalc.this.hull.vWL[1][0];
+      iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+      iv = yb - (int) (r * y);
+
+      this.iCur[1][0] = iv;
+      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
+        y = boatCalc.this.hull.vWL[1][i];
+        iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (r * y);
+        g.drawLine(iu, iv, iw, iz);
+        iu = iw;
+        iv = iz;
+        this.iCur[1][i] = iv;
+      }
+
+
+      // compute
+
+      double wlCur = boatCalc.this.hull.vWL[1][0] - boatCalc.this.hull.vWL[0][0];
+      double wlX = wlCur * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+      double wlY = wlCur * 0.5 * (boatCalc.this.hull.vWL[1][0] + boatCalc.this.hull.vWL[0][0]);
+      double wlSum = wlCur;
+      double wlArea = 0;
+      double wlLast = wlCur;
+      double wlMax = wlCur;
+      double wlXMax = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
+
+      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+        wlCur = boatCalc.this.hull.vWL[1][i] - boatCalc.this.hull.vWL[0][i];
+        if (wlCur > wlMax) {
+          wlMax = wlCur;
+          wlXMax = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
+        }
+        wlX = wlX + (wlCur * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]);
+        wlY = wlY + (wlCur * 0.5 * (boatCalc.this.hull.vWL[1][i] + boatCalc.this.hull.vWL[0][i]));
+        wlSum = wlSum + wlCur;
+        wlArea = wlArea + ((boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
+            - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]) * 0.5 * (wlCur + wlLast));
+        wlLast = wlCur;
+      }
+
+      int il = 25;
+      g.drawString("Waterplane Area", 10, il);
+      g.drawString(boatCalc.this.bcf.DF2d.format(boatCalc.this.hull.units.coefArea() * wlArea)
+          + boatCalc.this.hull.units.lblArea(), 125, il);
+      il += 20;
+      g.drawString("Max WL Beam:", 10, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(wlMax), 125, il);
+      il += 15;
+      g.drawString("   @Station:", 10, il);
+      g.drawString(boatCalc.this.bcf.DF1d.format(wlXMax), 125, il);
+      il += 20;
+
+      if (wlSum > 0) {
+        wlX = wlX / wlSum;
+        wlY = wlY / wlSum;
+        g.drawString("CoA @ Station:", 10, il);
+        g.drawString(boatCalc.this.bcf.DF1d.format(wlX), 125, il);
+        il += 15;
+        g.drawString("   Breadth:", 10, il);
+        g.drawString(boatCalc.this.bcf.DF1d.format(wlY), 125, il);
+        il += 20;
+        iw = xb + (int) (r * (wlX - boatCalc.this.hull.gx_min));
+        iz = yb - (int) (r * wlY);
+        g.setColor(Color.red);
+        g.drawArc(iw - 5, iz - 5, 10, 10, 0, 360);
+        g.setColor(Color.black);
+
+
+        wlLast = boatCalc.this.hull.vWL[1][0] - boatCalc.this.hull.vWL[0][0];
+        double d, w, h, xm;
+        double mp = 0;
+        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
+          d = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
+              - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]; // delta x
+          wlCur = boatCalc.this.hull.vWL[1][i] - boatCalc.this.hull.vWL[0][i];
+          w = 0.5 * (wlCur + wlLast); // average width
+          xm = 0.5 * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
+              + boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]); // average x
+          h = sinone * (xm - wlX); // height
+          mp = mp + (boatCalc.this.hull.units.Vol2Wgt() * d * w * h * (xm - wlX));
+          wlLast = wlCur;
+        }
+        il += 75;
+
+        final double ppi =
+            wlArea * boatCalc.this.hull.units.coefPPI() * boatCalc.this.hull.units.Vol2Wgt();
+        g.drawString("Imersion:", 10, il);
+        g.drawString(boatCalc.this.bcf.DF1d.format(ppi) + boatCalc.this.hull.units.lblPPI(), 125,
+            il);
+        il += 20;
+
+        g.drawString("Moment to ", 10, il);
+        il += 15;
+        g.drawString("pitch 1 deg:", 10, il);
+        g.drawString(boatCalc.this.bcf.DF1d.format(mp) + " " + boatCalc.this.hull.units.lblMom(),
+            125, il);
+        il += 20;
+        il = 25;
+
+        final int ic = ix - 200;
+        il = 25;
+        g.drawString("Waterplane Coef.:", ic, il);
+        g.drawString(
+            boatCalc.this.bcf.DF2d.format(
+                wlArea / (wlMax * (boatCalc.this.hull.lwlRight - boatCalc.this.hull.lwlLeft))),
+            ic + 150, il);
+
+        // half-angle computation
+        int i1, i2;
+        double a1, a2;
+        il += 20;
+        g.drawString("Half Angles (avg):", ic, il);
+
+        // left
+        if (boatCalc.this.hull.NDIV > 10) {
+          i1 = 1;
+          i2 = 5;
+        } else {
+          i1 = 1;
+          i2 = 2;
+        }
+        a1 = Math.atan2(boatCalc.this.hull.vWL[1][i2] - boatCalc.this.hull.vWL[1][i1],
+            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]
+                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]));
+        a2 = Math.atan2(boatCalc.this.hull.vWL[0][i2] - boatCalc.this.hull.vWL[0][i1],
+            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]
+                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]));
+        il += 15;
+        g.drawString("Left -", ic + 50, il);
+        g.drawString(boatCalc.this.bcf.DF1d.format(Math.toDegrees(a1 - a2)), ic + 150, il);
+
+        // right
+        if (boatCalc.this.hull.NDIV > 10) {
+          i1 = boatCalc.this.hull.NDIV - 1;
+          i2 = boatCalc.this.hull.NDIV - 4;
+        } else {
+          i1 = boatCalc.this.hull.NDIV - 1;
+          i2 = boatCalc.this.hull.NDIV - 2;
+        }
+        a1 = Math.atan2(boatCalc.this.hull.vWL[1][i2] - boatCalc.this.hull.vWL[1][i1],
+            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]
+                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]));
+        a2 = Math.atan2(boatCalc.this.hull.vWL[0][i2] - boatCalc.this.hull.vWL[0][i1],
+            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]
+                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]));
+        il += 15;
+        g.drawString("Right -", ic + 50, il);
+        g.drawString(boatCalc.this.bcf.DF1d.format(Math.toDegrees(a1 - a2)), ic + 150, il);
+        il += 15;
+
+      }
+
+    } // end paintComponent
+  } // end wlPanel
+
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
+
+  public static void main(final String[] args) {
 
     try {
-      if (f_edit.isVisible()) {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (final Exception e) {
+    }
+
+    final boatCalc c = new boatCalc();
+    c.setSize(770, 570);
+    c.setBackground(Color.white);
+    c.setVisible(true);
+  } // end main
+
+  bcFormat bcf;
+  bodyPanel body;
+  boolean bOpen = true;
+  ctrlPanel ctrl;
+  hdPanel disp;
+  hdBody dispAft;
+  hdCtrl dispCtrl;
+  hdBody dispFore;
+
+  JTabbedPane dispPane;
+  stnPanel dispStn;
+  wetPanel dispWet;
+  wgtPanel dispWgt;
+  wlPanel dispWL;
+
+  JFrame f_analysis;
+  JFrame f_board;
+
+  JFrame f_edit;
+  JFrame f_rudder;
+
+  JFrame f_sailplan;
+
+  JFrame f_wgts;
+
+  JFileChooser fc;
+  // bcFileFilter ff;
+
+  Hull hull;
+
+
+  JMenuItem m_about;
+
+  JMenuItem m_board;
+
+
+  JMenuItem m_destn;
+
+
+
+  JMenuItem m_disp;
+
+
+
+  JMenuItem m_edit;
+
+
+
+  JMenuItem m_exit;
+
+  JMenuItem m_instn;
+
+
+  JMenuItem m_new;
+
+  JMenuItem m_open;
+
+  JMenuItem m_print;
+
+
+  JMenuItem m_rudder;
+
+
+  JMenuItem m_sailplan;
+
+  JMenuItem m_save;
+
+
+  JMenuBar mb;
+
+  JMenu menu;
+
+  planPanel plan;
+
+
+
+  bcUnits units;
+
+
+  JPanel w;
+
+
+  JPanel w_analysis;
+
+
+  /** Creates a new instance of boatCalc */
+  public boatCalc() {
+    super("boatCalc");
+
+    try {
+      SaveOutput.start("boatCalc.log");
+    } catch (final Exception e) {
+      e.printStackTrace();
+    }
+
+    this.bcf = new bcFormat();
+
+    this.addWindowListener(new WindowAdapter() {
+      @Override
+      public void windowClosing(final WindowEvent e) {
+        if (boatCalc.this.hull.bChanged) {
+          final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit, "Save Changes?",
+              "Data has been changed.", JOptionPane.YES_NO_OPTION);
+          if (n == JOptionPane.YES_OPTION) {
+
+            try {
+              // bcFileFilter ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls
+              // files");
+              // fc.setFileFilter(ff);
+              final int returnVal = boatCalc.this.fc.showSaveDialog(null);
+              if (returnVal == JFileChooser.APPROVE_OPTION) {
+                final String fn = (boatCalc.this.fc.getSelectedFile().getName()).toLowerCase();
+                if (fn.indexOf(".hul") > 0) {
+                  boatCalc.this.hull.saveHulls(boatCalc.this.fc.getSelectedFile());
+                } else {
+                  boatCalc.this.hull.saveData(boatCalc.this.fc.getSelectedFile());
+                }
+              }
+            } catch (final NullPointerException npe) {
+              System.out.println(npe);
+              return;
+            }
+
+          } else if (n == JOptionPane.CANCEL_OPTION) {
+            return;
+          }
+        }
+
+        SaveOutput.stop();
+        System.exit(0);
+      }
+    });
+
+    this.mb = new JMenuBar();
+    this.menu = new JMenu("File");
+
+
+    this.m_new = new JMenuItem("New");
+    this.m_new.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        if (boatCalc.this.hull.bChanged) {
+          final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit, "Save Changes?",
+              "Data has been changed.", JOptionPane.YES_NO_OPTION);
+          if (n == JOptionPane.YES_OPTION) {
+
+            try {
+              // bcFileFilter ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls
+              // files");
+              // fc.setFileFilter(ff);
+              final int returnVal = boatCalc.this.fc.showSaveDialog(null);
+              if (returnVal == JFileChooser.APPROVE_OPTION) {
+                final String fn = (boatCalc.this.fc.getSelectedFile().getName()).toLowerCase();
+                if (fn.indexOf(".hul") > 0) {
+                  boatCalc.this.hull.saveHulls(boatCalc.this.fc.getSelectedFile());
+                } else {
+                  boatCalc.this.hull.saveData(boatCalc.this.fc.getSelectedFile());
+                }
+              }
+            } catch (final NullPointerException npe) {
+              System.out.println(npe);
+              return;
+            }
+
+          } else if (n == JOptionPane.CANCEL_OPTION) {
+            return;
+          }
+        }
+        final String s = JOptionPane.showInputDialog(boatCalc.this.f_edit, "Number of Stations:");
+        int n_stn = 11;
+        if ((s != null) && (s.length() > 0)) {
+
+          try {
+            n_stn = Integer.parseInt(s);
+          } catch (final NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(boatCalc.this.f_edit, "Bad number format..", "Warning!",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+          }
+        }
+        boatCalc.this.hull = new Hull();
+        boatCalc.this.hull.Stations = new double[n_stn];
+        boatCalc.this.hull.Offsets = new ArrayList();
+        boatCalc.this.hull.valid = false;
+        boatCalc.this.hull.designer = "NA";
+        boatCalc.this.hull.boatname = "new boat";
+        for (int j = 0; j < n_stn; j++) {
+          boatCalc.this.hull.Stations[j] = j;
+        }
+        boatCalc.this.hull.newWgts();
+        boatCalc.this.hull.setLines();
+        boatCalc.this.f_edit = new JFrame("Data Entry/Edit");
+        boatCalc.this.f_edit.setSize(770, 550);
+        final pnlDataEntry w_edit = new pnlDataEntry();
+        boatCalc.this.f_edit.getContentPane().add(w_edit);
+        boatCalc.this.f_edit.setVisible(true);
+      }
+    });
+    this.menu.add(this.m_new);
+
+    this.m_open = new JMenuItem("Open");
+    this.m_open.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.getHull();
+        if (boatCalc.this.hull.valid) {
+          boatCalc.this.hull.calcDisp();
+          boatCalc.this.dispWgt.setWeights();
+        }
+        boatCalc.this.repaint();
+      }
+    });
+    this.menu.add(this.m_open);
+
+    this.m_save = new JMenuItem("Save");
+    this.m_save.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.saveHull();
+        boatCalc.this.repaint();
+      }
+    });
+    this.menu.add(this.m_save);
+
+    this.m_print = new JMenuItem("Print");
+    this.m_print.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        PrinterJob.getPrinterJob();
+      }
+    });
+    this.menu.add(this.m_print);
+
+
+    this.m_exit = new JMenuItem("Exit");
+    this.m_exit.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        if (boatCalc.this.hull.bChanged) {
+          final int n = JOptionPane.showConfirmDialog(boatCalc.this.f_edit, "Save Changes?",
+              "Data has been changed.", JOptionPane.YES_NO_OPTION);
+          if (n == JOptionPane.YES_OPTION) {
+
+            try {
+              // bcFileFilter ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls
+              // files");
+              // fc.setFileFilter(ff);
+              final int returnVal = boatCalc.this.fc.showSaveDialog(null);
+              if (returnVal == JFileChooser.APPROVE_OPTION) {
+                final String fn = (boatCalc.this.fc.getSelectedFile().getName()).toLowerCase();
+                if (fn.indexOf(".hul") > 0) {
+                  boatCalc.this.hull.saveHulls(boatCalc.this.fc.getSelectedFile());
+                } else {
+                  boatCalc.this.hull.saveData(boatCalc.this.fc.getSelectedFile());
+                }
+              }
+            } catch (final NullPointerException npe) {
+              System.out.println(npe);
+              return;
+            }
+
+          } else if (n == JOptionPane.CANCEL_OPTION) {
+            return;
+          }
+        }
+        SaveOutput.stop();
+        System.exit(0);
+      }
+    });
+    this.menu.add(this.m_exit);
+    this.mb.add(this.menu);
+
+    this.menu = new JMenu("Edit");
+    this.m_instn = new JMenuItem("Insert station");
+    this.m_instn.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.insertStation();
+      }
+    });
+    this.m_destn = new JMenuItem("Delete station");
+    this.m_destn.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.deleteStation();
+      }
+    });
+    this.m_edit = new JMenuItem("Edit data");
+    this.m_edit.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.f_edit = new JFrame("Data Entry/Edit");
+        boatCalc.this.f_edit.setSize(770, 550);
+        final pnlDataEntry w_edit = new pnlDataEntry();
+        boatCalc.this.f_edit.getContentPane().add(w_edit);
+        boatCalc.this.f_edit.setVisible(true);
+      }
+    });
+    this.menu.add(this.m_instn);
+    this.menu.add(this.m_destn);
+    this.menu.add(this.m_edit);
+    this.mb.add(this.menu);
+
+    this.menu = new JMenu("Design");
+    this.m_sailplan = new JMenuItem("Sailplan");
+    this.m_sailplan.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.f_sailplan = new JFrame("Sailplan");
+        boatCalc.this.f_sailplan.setSize(770, 550);
+        final pnlSailplan w_sailplan = new pnlSailplan();
+        boatCalc.this.f_sailplan.getContentPane().add(w_sailplan);
+        boatCalc.this.f_sailplan.setVisible(true);
+      }
+    });
+    this.menu.add(this.m_sailplan);
+
+    this.m_rudder = new JMenuItem("Rudder");
+    this.m_rudder.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.f_rudder = new JFrame("Rudder");
+        boatCalc.this.f_rudder.setSize(770, 550);
+        final pnlRudder w_rudder = new pnlRudder();
+        boatCalc.this.f_rudder.getContentPane().add(w_rudder);
+        boatCalc.this.f_rudder.setVisible(true);
+      }
+    });
+    this.menu.add(this.m_rudder);
+
+    this.m_board = new JMenuItem("Centerboard");
+    this.m_board.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.f_board = new JFrame("Centerboard");
+        boatCalc.this.f_board.setSize(770, 550);
+        final pnlCenterboard w_board = new pnlCenterboard();
+        boatCalc.this.f_board.getContentPane().add(w_board);
+        boatCalc.this.f_board.setVisible(true);
+      }
+    });
+    this.menu.add(this.m_board);
+
+    this.mb.add(this.menu);
+
+    this.menu = new JMenu("Analysis");
+    this.m_disp = new JMenuItem("Displacement");
+    this.m_disp.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        boatCalc.this.f_analysis.setVisible(true);
+        if (boatCalc.this.hull.valid) {
+          boatCalc.this.hull.calcDisp();
+          boatCalc.this.dispWgt.setWeights();
+        }
+        boatCalc.this.repaint();
+      }
+    });
+    this.menu.add(this.m_disp);
+    this.mb.add(this.menu);
+
+    this.menu = new JMenu("About");
+    this.m_about = new JMenuItem("About");
+    this.m_about.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(final ActionEvent e) {
+        JOptionPane.showMessageDialog(null, new pnlAbout(), "About",
+            JOptionPane.INFORMATION_MESSAGE);
+      }
+    });
+    this.menu.add(this.m_about);
+    this.mb.add(this.menu);
+
+    this.setJMenuBar(this.mb);
+
+    this.fc = new JFileChooser(".");
+    final bcFileFilter ff =
+        new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls files");
+    this.fc.setFileFilter(ff);
+
+    // getHull();
+    this.hull = new Hull();
+
+    this.ctrl = new ctrlPanel(400, 200);
+    this.body = new bodyPanel(300, 200);
+    this.plan = new planPanel(705, 300);
+    this.w = new JPanel();
+    this.w.setLayout(new FlowLayout());
+    this.w.setBorder(BorderFactory.createEtchedBorder());
+    this.w.add(this.ctrl);
+    this.w.add(this.body);
+    this.w.add(this.plan);
+    this.getContentPane().add(this.w);
+
+    this.f_analysis = new JFrame("Displacement Analysis");
+    this.f_analysis.setSize(770, 550);
+    this.disp = new hdPanel(710, 300);
+    this.w_analysis = new JPanel();
+    this.w_analysis.setLayout(new FlowLayout());
+    this.w_analysis.setBorder(BorderFactory.createEtchedBorder());
+
+    this.dispWgt = new wgtPanel(710, 300);
+    this.dispWL = new wlPanel(710, 300);
+    this.dispWet = new wetPanel(710, 300);
+    this.dispStn = new stnPanel(710, 300);
+
+    this.dispCtrl = new hdCtrl(300, 200);
+    this.dispFore = new hdBody(200, 200);
+    this.dispFore.setTitle("Left");
+    this.dispFore.setType(true);
+    this.dispAft = new hdBody(200, 200);
+    this.dispAft.setTitle("Right");
+    this.dispAft.setType(false);
+    this.w_analysis.add(this.dispFore);
+    this.w_analysis.add(this.dispAft);
+    this.w_analysis.add(this.dispCtrl);
+    this.dispPane = new JTabbedPane();
+    this.dispPane.setTabPlacement(SwingConstants.TOP);
+    this.dispPane.setPreferredSize(new Dimension(710, 300));
+    this.dispPane.add("Displacement", this.disp);
+    this.dispPane.add("Waterplane", this.dispWL);
+    this.dispPane.add("Wetted Surface", this.dispWet);
+    this.dispPane.add("Weights", this.dispWgt);
+    this.dispPane.add("Station Area", this.dispStn);
+    this.w_analysis.add(this.dispPane);
+
+    this.f_analysis.getContentPane().add(this.w_analysis);
+    this.setCtrls();
+    this.bOpen = false;
+
+    this.repaint();
+  }
+
+
+  public void deleteStation() {
+
+    try {
+      if (this.f_edit.isVisible()) {
         JOptionPane.showMessageDialog(null,
             "Data entry windows should be closed before changing the number of stations.",
             "Warning!", JOptionPane.ERROR_MESSAGE);
         return;
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
+      System.out.println(e);
+    }
+    int dStn;
+    try {
+      final String s = JOptionPane.showInputDialog("Delete Station #:");
+      if (s == null) {
+        return;
+      }
+      dStn = Integer.parseInt(s);
+      if ((dStn >= this.hull.Stations.length) || (dStn < 0)) {
+        JOptionPane.showMessageDialog(null, "Station # out of range.", "Warning!",
+            JOptionPane.ERROR_MESSAGE);
+        return;
+      }
+
+    } catch (final NumberFormatException nfe) {
+      JOptionPane.showMessageDialog(null, "Unable to interpret number.", "Warning!",
+          JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+
+    final double[] sta = new double[this.hull.Stations.length - 1];
+    final ArrayList o = new ArrayList();
+
+    int i;
+
+    for (i = 0; i < this.hull.Stations.length; i++) {
+
+      if (i < dStn) {
+        sta[i] = this.hull.Stations[i];
+      }
+      if (i > dStn) {
+        sta[i - 1] = this.hull.Stations[i];
+      }
+    }
+
+    Point[] p;
+    Point q;
+    ListIterator l;
+    l = this.hull.Offsets.listIterator();
+    while (l.hasNext()) {
+      final rawLine rL = (rawLine) l.next();
+      final Line ln = rL.ln;
+      p = new Point[sta.length];
+
+      for (i = 0; i < this.hull.Stations.length; i++) {
+        q = ln.getPoint(i);
+        if (i < dStn) {
+          p[i] = q;
+        }
+        if (i > dStn) {
+          p[i - 1] = q;
+        }
+      }
+
+      final rawLine rLnew = new rawLine();
+      rLnew.ln = new Line(p);
+      rLnew.lnName = rL.lnName;
+      o.add(rLnew);
+
+    }
+    this.hull.Offsets = o;
+    this.hull.Stations = sta;
+    this.hull.setLines();
+    this.hull.bChanged = true;
+    this.body.repaint();
+    this.plan.repaint();
+
+    this.setCtrls();
+
+
+
+  } // end deleteStation
+
+  public void getHull() {
+    String fn;
+    int returnVal;
+
+    try {
+      this.hull = new Hull();
+
+      // ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls files");
+      // fc.setFileFilter(ff);
+      returnVal = this.fc.showOpenDialog(null);
+      if (returnVal == JFileChooser.APPROVE_OPTION) {
+        fn = (this.fc.getSelectedFile().getName()).toLowerCase();
+        if (fn.indexOf(".hul") > 0) {
+          this.hull.getHulls(this.fc.getSelectedFile());
+        } else {
+          this.hull.getData(this.fc.getSelectedFile());
+        }
+        if (!this.bOpen) {
+          this.setCtrls();
+        }
+      }
+    } catch (final NullPointerException npe) {
+      System.out.println(npe);
+    }
+  }// end getHull
+
+  public void insertStation() {
+
+    try {
+      if (this.f_edit.isVisible()) {
+        JOptionPane.showMessageDialog(null,
+            "Data entry windows should be closed before changing the number of stations.",
+            "Warning!", JOptionPane.ERROR_MESSAGE);
+        return;
+      }
+    } catch (final Exception e) {
       System.out.println(e);
     }
     double newStn;
     try {
-      String s = JOptionPane.showInputDialog("New station at:");
-      if (s == null)
+      final String s = JOptionPane.showInputDialog("New station at:");
+      if (s == null) {
         return;
+      }
       newStn = Double.parseDouble(s);
-    } catch (NumberFormatException nfe) {
+    } catch (final NumberFormatException nfe) {
       JOptionPane.showMessageDialog(null, "Unable to interpret number.", "Warning!",
           JOptionPane.ERROR_MESSAGE);
       return;
@@ -6537,50 +7065,48 @@ public class boatCalc extends javax.swing.JFrame {
 
     boolean bDone = false;
 
-    double[] sta = new double[hull.Stations.length + 1];
-    ArrayList o = new ArrayList();
+    final double[] sta = new double[this.hull.Stations.length + 1];
+    final ArrayList o = new ArrayList();
 
     int i, j;
 
     j = 0;
-    for (i = 0; i < hull.Stations.length; i++) {
-      if (newStn == hull.Stations[i]) {
+    for (i = 0; i < this.hull.Stations.length; i++) {
+      if (newStn == this.hull.Stations[i]) {
         JOptionPane.showMessageDialog(null, "New station must not equal old.", "Warning!",
             JOptionPane.ERROR_MESSAGE);
         return;
       }
 
-      if (newStn < hull.Stations[i] && !bDone) {
+      if ((newStn < this.hull.Stations[i]) && !bDone) {
         sta[j] = newStn;
         bDone = true;
         j++;
       }
-      sta[j] = hull.Stations[i];
+      sta[j] = this.hull.Stations[i];
       j++;
     }
 
-    if (!bDone)
+    if (!bDone) {
       sta[j] = newStn;
+    }
 
 
     Point[] p;
     Point q;
-    int iLine;
-
-
     ListIterator l;
-    l = hull.Offsets.listIterator();
+    l = this.hull.Offsets.listIterator();
     while (l.hasNext()) {
-      rawLine rL = (rawLine) l.next();
-      Line ln = rL.ln;
+      final rawLine rL = (rawLine) l.next();
+      final Line ln = rL.ln;
       p = new Point[sta.length];
 
       bDone = false;
       j = 0;
-      for (i = 0; i < hull.Stations.length; i++) {
+      for (i = 0; i < this.hull.Stations.length; i++) {
         q = ln.getPoint(i);
 
-        if (newStn < q.x && !bDone) {
+        if ((newStn < q.x) && !bDone) {
           p[j] = new Point(newStn, 0.0, 0.0);
           bDone = true;
           j++;
@@ -6588,160 +7114,242 @@ public class boatCalc extends javax.swing.JFrame {
         p[j] = q;
         j++;
       }
-      if (!bDone)
+      if (!bDone) {
         p[j] = new Point(newStn, 0.0, 0.0);
-      rawLine rLnew = new rawLine();
+      }
+      final rawLine rLnew = new rawLine();
       rLnew.ln = new Line(p);
       rLnew.lnName = rL.lnName;
       o.add(rLnew);
 
     }
-    hull.Offsets = o;
-    hull.Stations = sta;
-    hull.setLines();
-    hull.bChanged = true;
-    body.repaint();
-    plan.repaint();
-    setCtrls();
+    this.hull.Offsets = o;
+    this.hull.Stations = sta;
+    this.hull.setLines();
+    this.hull.bChanged = true;
+    this.body.repaint();
+    this.plan.repaint();
+    this.setCtrls();
 
 
   } // end insertStation
 
-  public void deleteStation() {
+  public void saveHull() {
+    String fn;
+    int returnVal;
 
     try {
-      if (f_edit.isVisible()) {
-        JOptionPane.showMessageDialog(null,
-            "Data entry windows should be closed before changing the number of stations.",
-            "Warning!", JOptionPane.ERROR_MESSAGE);
-        return;
+      // ff = new bcFileFilter(new String[] {"xml", "hul"}, "boatCalc and Hulls files");
+      // fc.setFileFilter(ff);
+      returnVal = this.fc.showSaveDialog(null);
+      if (returnVal == JFileChooser.APPROVE_OPTION) {
+        fn = (this.fc.getSelectedFile().getName()).toLowerCase();
+        if (fn.indexOf(".hul") > 0) {
+          this.hull.saveHulls(this.fc.getSelectedFile());
+        } else {
+          this.hull.saveData(this.fc.getSelectedFile());
+        }
       }
-    } catch (Exception e) {
-      System.out.println(e);
+    } catch (final NullPointerException npe) {
+      System.out.println(npe);
     }
-    int dStn;
-    try {
-      String s = JOptionPane.showInputDialog("Delete Station #:");
-      if (s == null)
-        return;
-      dStn = Integer.parseInt(s);
-      if (dStn >= hull.Stations.length || dStn < 0) {
-        JOptionPane.showMessageDialog(null, "Station # out of range.", "Warning!",
-            JOptionPane.ERROR_MESSAGE);
-        return;
-      }
 
-    } catch (NumberFormatException nfe) {
-      JOptionPane.showMessageDialog(null, "Unable to interpret number.", "Warning!",
+  }
+
+  public void setCtrls() {
+    final double sl_ctr = -((0.5 * (this.hull.gz_max + this.hull.gz_min)) - this.hull.base);
+    double sl_min = sl_ctr - (0.5 * (this.hull.gz_max - this.hull.gz_min));
+    double sl_max = sl_ctr + (0.5 * (this.hull.gz_max - this.hull.gz_min));
+    int itic, dinc;
+
+    if ((this.hull.base < sl_min) || (this.hull.base > sl_max)) {
+      this.hull.base = sl_ctr;
+      JOptionPane.showMessageDialog(null, "Setting baseline offset.", "Warning!",
           JOptionPane.ERROR_MESSAGE);
-      return;
     }
 
-    double[] sta = new double[hull.Stations.length - 1];
-    ArrayList o = new ArrayList();
+    if (this.hull.units.UNITS == 0) {
+      sl_min = 12.0 * Math.floor(sl_min / 12.0);
+      sl_max = 12.0 * Math.ceil(sl_max / 12.0);
 
-    int i;
-
-    for (i = 0; i < hull.Stations.length; i++) {
-
-      if (i < dStn)
-        sta[i] = hull.Stations[i];
-      if (i > dStn)
-        sta[i - 1] = hull.Stations[i];
-    }
-
-    Point[] p;
-    Point q;
-    int iLine;
-
-
-    ListIterator l;
-    l = hull.Offsets.listIterator();
-    while (l.hasNext()) {
-      rawLine rL = (rawLine) l.next();
-      Line ln = rL.ln;
-      p = new Point[sta.length];
-
-      for (i = 0; i < hull.Stations.length; i++) {
-        q = ln.getPoint(i);
-        if (i < dStn)
-          p[i] = q;
-        if (i > dStn)
-          p[i - 1] = q;
+      itic = 4;
+      dinc = 48;
+      if ((sl_max - sl_min) > 54.0) {
+        itic = 8;
+        dinc = 96;
       }
+      this.dispCtrl.slBase.setModel(new DefaultBoundedRangeModel((int) (4.0 * this.hull.base), 0,
+          4 * (int) sl_min, 4 * (int) sl_max));
+      this.dispCtrl.slBase.setMajorTickSpacing(48);
+      this.dispCtrl.slBase.setMinorTickSpacing(itic);
 
-      rawLine rLnew = new rawLine();
-      rLnew.ln = new Line(p);
-      rLnew.lnName = rL.lnName;
-      o.add(rLnew);
+      // Create the label table
+      final Hashtable labelTable = new Hashtable();
+      for (double d = 4 * sl_min; d <= ((4 * sl_max) + 0.5); d += dinc) {
+        labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 4)));
+      }
+      this.dispCtrl.slBase.setLabelTable(labelTable);
+    }
+
+    else if (this.hull.units.UNITS == 1) {
+      sl_min = Math.floor(sl_min);
+      sl_max = Math.max(Math.ceil(sl_max), sl_min + 1);
+
+      itic = 4;
+      dinc = 48;
+      if ((sl_max - sl_min) > 72) {
+        itic = 128;
+        dinc = 1536;
+      } else if ((sl_max - sl_min) > 36) {
+        itic = 64;
+        dinc = 768;
+      } else if ((sl_max - sl_min) > 18) {
+        itic = 32;
+        dinc = 384;
+      } else if ((sl_max - sl_min) > 9.0) {
+        itic = 16;
+        dinc = 192;
+      } else if ((sl_max - sl_min) > 4.5) {
+        itic = 8;
+        dinc = 96;
+      }
+      this.dispCtrl.slBase.setModel(new DefaultBoundedRangeModel((int) (48.0 * this.hull.base), 0,
+          48 * (int) sl_min, 48 * (int) sl_max));
+      this.dispCtrl.slBase.setMajorTickSpacing(12 * itic);
+      this.dispCtrl.slBase.setMinorTickSpacing(itic);
+
+      // Create the label table
+      final Hashtable labelTable = new Hashtable();
+      for (double d = 48 * sl_min; d <= ((48 * sl_max) + 0.5); d += dinc) {
+        labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 48)));
+      }
+      this.dispCtrl.slBase.setLabelTable(labelTable);
 
     }
-    hull.Offsets = o;
-    hull.Stations = sta;
-    hull.setLines();
-    hull.bChanged = true;
-    body.repaint();
-    plan.repaint();
 
-    setCtrls();
+    else if (this.hull.units.UNITS == 2) {
+      sl_min = 10.0 * Math.floor(sl_min / 10.0);
+      sl_max = 10.0 * Math.ceil(sl_max / 10.0);
 
+      itic = 1;
+      dinc = 50;
 
+      this.dispCtrl.slBase.setModel(
+          new DefaultBoundedRangeModel((int) this.hull.base, 0, (int) sl_min, (int) sl_max));
+      this.dispCtrl.slBase.setMajorTickSpacing(10);
+      this.dispCtrl.slBase.setMinorTickSpacing(itic);
 
-  } // end deleteStation
+      // Create the label table
+      final Hashtable labelTable = new Hashtable();
+      for (double d = sl_min; d <= (sl_max + 0.5); d += dinc) {
+        labelTable.put(new Integer((int) d), new JLabel(Double.toString(d)));
+      }
+      this.dispCtrl.slBase.setLabelTable(labelTable);
 
-  class pnlAbout extends JPanel {
-    public pnlAbout() {
-      JLabel lbl;
-      Font wpFont = new Font("Serif", Font.BOLD, 14);
-      setBorder(BorderFactory.createEtchedBorder());
-      setLayout(new GridLayout(0, 1));
-      lbl = new JLabel("boatCalc");
-      lbl.setFont(wpFont);
-      lbl.setHorizontalAlignment(SwingConstants.CENTER);
-      add(lbl);
-      lbl = new JLabel("Copyright 2004 by Peter H. Vanderwaart");
-      lbl.setFont(wpFont);
-      lbl.setHorizontalAlignment(SwingConstants.CENTER);
-      add(lbl);
-      lbl = new JLabel("Version 0.2e - 03/04/2004");
-      lbl.setFont(wpFont);
-      lbl.setHorizontalAlignment(SwingConstants.CENTER);
-      add(lbl);
     }
-  }// end pnlAbout
+
+    else if (this.hull.units.UNITS == 3) {
+      sl_min = 100 * Math.floor(sl_min);
+      sl_max = Math.max(100 * Math.ceil(sl_max), sl_min + 1.0);
+
+      boolean OK = true;
+
+      while (OK && (sl_min < sl_max)) {
+        try {
+          itic = 10;
+          dinc = 50;
+          if ((sl_max - sl_min) > 12.0) {
+            itic = 200;
+            dinc = 400;
+          } else if ((sl_max - sl_min) > 6.0) {
+            itic = 100;
+            dinc = 200;
+          } else if ((sl_max - sl_min) > 3.0) {
+            itic = 50;
+            dinc = 100;
+          }
+
+          this.dispCtrl.slBase.setModel(new DefaultBoundedRangeModel((int) (100.0 * this.hull.base),
+              0, (int) sl_min, (int) sl_max));
+          this.dispCtrl.slBase.setMajorTickSpacing(10 * itic);
+          this.dispCtrl.slBase.setMinorTickSpacing(itic);
+
+          // Create the label table
+          final Hashtable labelTable = new Hashtable();
+          for (double d = sl_min; d <= (sl_max + 0.5); d += dinc) {
+            labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 100.0)));
+          }
+          this.dispCtrl.slBase.setLabelTable(labelTable);
+          OK = false;
+
+        } catch (final IllegalArgumentException iae) {
+          sl_min = sl_min + 100;
+          sl_max = sl_max - 100;
+          System.out.println("slider limits: " + sl_min + " " + sl_max);
+        }
+      } // end while
+
+    }
+
+    this.dispCtrl.slBase.setPaintTicks(true);
+    this.dispCtrl.slBase.setPaintLabels(true);
+    this.dispCtrl.slBase.revalidate();
+    this.dispCtrl.slBase.repaint();
+
+    this.ctrl.lblName.setText("Design: " + this.hull.boatname);
+    this.ctrl.lblNA.setText("Designer: " + this.hull.designer);
+
+    if (this.hull.units.WATER == 0) {
+      this.ctrl.hP.btnSalt.setSelected(true);
+    }
+    if (this.hull.units.WATER == 1) {
+      this.ctrl.hP.btnFresh.setSelected(true);
+    }
+
+    if (this.hull.units.UNITS == 0) {
+      this.ctrl.uP.btnInLbs.setSelected(true);
+    }
+    if (this.hull.units.UNITS == 1) {
+      this.ctrl.uP.btnFtLbs.setSelected(true);
+    }
+    if (this.hull.units.UNITS == 2) {
+      this.ctrl.uP.btnCmKg.setSelected(true);
+    }
+    if (this.hull.units.UNITS == 3) {
+      this.ctrl.uP.btnMKg.setSelected(true);
+    }
+
+    this.ctrl.sP.btnLeft.setSelected(this.hull.bStems[0]);
+    this.ctrl.sP.btnRight.setSelected(this.hull.bStems[1]);
+
+  }// end setCtrls
+
+  public void wgtEdit() {
+    this.f_wgts = new JFrame("Weight Entry/Edit");
+    this.f_wgts.setSize(600, 400);
+    final pnlWgtEntry w_wgts = new pnlWgtEntry();
+    this.f_wgts.getContentPane().add(w_wgts);
+    w_wgts.getWgts();
+    this.f_wgts.setVisible(true);
+  }
 
 } // end CLASS boatCalc
-
-/* Programming Utilities */
-
-
-class bcLabel extends JLabel {
-  public bcLabel(String s, int l) {
-    setText(s);
-    setHorizontalAlignment(l);
-    setFont(new Font("Serif", Font.BOLD, 12));
-  }
-}
 
 
 class SaveOutput extends PrintStream {
   static OutputStream logfile;
-  static PrintStream oldStdout;
   static PrintStream oldStderr;
-
-  SaveOutput(PrintStream ps) {
-    super(ps);
-  }
+  static PrintStream oldStdout;
 
   // Starts copying stdout and
   // stderr to the file f.
-  public static void start(String f) throws IOException {
+  public static void start(final String f) throws IOException {
     // Save old settings.
-    oldStdout = System.out;
-    oldStderr = System.err;
+    SaveOutput.oldStdout = System.out;
+    SaveOutput.oldStderr = System.err;
 
     // Create/Open logfile.
-    logfile = new PrintStream(new BufferedOutputStream(new FileOutputStream(f)));
+    SaveOutput.logfile = new PrintStream(new BufferedOutputStream(new FileOutputStream(f)));
 
     // Start redirecting the output.
     System.setOut(new SaveOutput(System.out));
@@ -6750,56 +7358,42 @@ class SaveOutput extends PrintStream {
 
   // Restores the original settings.
   public static void stop() {
-    System.setOut(oldStdout);
-    System.setErr(oldStderr);
+    System.setOut(SaveOutput.oldStdout);
+    System.setErr(SaveOutput.oldStderr);
     try {
-      logfile.close();
-    } catch (Exception e) {
+      SaveOutput.logfile.close();
+    } catch (final Exception e) {
       e.printStackTrace();
     }
   }
 
-  // PrintStream override.
-  public void write(int b) {
-    try {
-      logfile.write(b);
-    } catch (Exception e) {
-      e.printStackTrace();
-      setError();
-    }
-    super.write(b);
+  SaveOutput(final PrintStream ps) {
+    super(ps);
   }
 
   // PrintStream override.
-  public void write(byte buf[], int off, int len) {
+  @Override
+  public void write(final byte buf[], final int off, final int len) {
     try {
-      logfile.write(buf, off, len);
-    } catch (Exception e) {
+      SaveOutput.logfile.write(buf, off, len);
+    } catch (final Exception e) {
       e.printStackTrace();
-      setError();
+      this.setError();
     }
     super.write(buf, off, len);
   }
+
+  // PrintStream override.
+  @Override
+  public void write(final int b) {
+    try {
+      SaveOutput.logfile.write(b);
+    } catch (final Exception e) {
+      e.printStackTrace();
+      this.setError();
+    }
+    super.write(b);
+  }
 } // end CLASS SaveOutput
-
-
-class bcFormat {
-  DecimalFormat DF0d;
-  DecimalFormat DF1d;
-  DecimalFormat DF2d;
-  DecimalFormat DF3d;
-  DecimalFormat DF4d;
-
-  public bcFormat() {
-    Locale l = new Locale("en", "US");
-    // Locale l = new Locale("fr","FR");
-    DecimalFormatSymbols dfs = new DecimalFormatSymbols(l);
-    DF0d = new DecimalFormat("###,###,###", dfs);
-    DF1d = new DecimalFormat("###,###,###.0", dfs);
-    DF2d = new DecimalFormat("###,###,###.00", dfs);
-    DF3d = new DecimalFormat("###,###,###.000", dfs);
-    DF4d = new DecimalFormat("###,###,###.0000", dfs);
-  }// end constructor
-}// enc bcFormat
 
 

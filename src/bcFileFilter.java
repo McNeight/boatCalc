@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2003 Sun Microsystems, Inc. All Rights Reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 
+ *
  * -Redistributions of source code must retain the above copyright notice, this list of conditions
  * and the following disclaimer.
- * 
+ *
  * -Redistribution in binary form must reproduct the above copyright notice, this list of conditions
  * and the following disclaimer in the documentation and/or other materials provided with the
  * distribution.
- * 
+ *
  * Neither the name of Sun Microsystems, Inc. or the names of contributors may be used to endorse or
  * promote products derived from this software without specific prior written permission.
- * 
+ *
  * This software is provided "AS IS," without a warranty of any kind. ALL EXPRESS OR IMPLIED
  * CONDITIONS, REPRESENTATIONS AND WARRANTIES, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY EXCLUDED. SUN AND ITS LICENSORS
@@ -23,7 +23,7 @@
  * INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS
  * OF THE THEORY OF LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE SOFTWARE, EVEN IF SUN
  * HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
- * 
+ *
  * You acknowledge that Software is not designed, licensed or intended for use in the design,
  * construction, operation or maintenance of any nuclear facility.
  */
@@ -34,10 +34,9 @@
 
 
 import java.io.File;
-import java.util.Hashtable;
 import java.util.Enumeration;
-import javax.swing.*;
-import javax.swing.filechooser.*;
+import java.util.Hashtable;
+import javax.swing.filechooser.FileFilter;
 
 /**
  * A convenience implementation of FileFilter that filters out all files except for those type
@@ -57,11 +56,8 @@ import javax.swing.filechooser.*;
  */
 public class bcFileFilter extends FileFilter {
 
-  private static String TYPE_UNKNOWN = "Type Unknown";
-  private static String HIDDEN_FILE = "Hidden File";
-
-  private Hashtable filters = null;
   private String description = null;
+  private Hashtable filters = null;
   private String fullDescription = null;
   private boolean useExtensionsInDescription = true;
 
@@ -80,7 +76,7 @@ public class bcFileFilter extends FileFilter {
    *
    * @see #addExtension
    */
-  public bcFileFilter(String extension) {
+  public bcFileFilter(final String extension) {
     this(extension, null);
   }
 
@@ -92,12 +88,14 @@ public class bcFileFilter extends FileFilter {
    *
    * @see #addExtension
    */
-  public bcFileFilter(String extension, String description) {
+  public bcFileFilter(final String extension, final String description) {
     this();
-    if (extension != null)
-      addExtension(extension);
-    if (description != null)
-      setDescription(description);
+    if (extension != null) {
+      this.addExtension(extension);
+    }
+    if (description != null) {
+      this.setDescription(description);
+    }
   }
 
   /**
@@ -108,7 +106,7 @@ public class bcFileFilter extends FileFilter {
    *
    * @see #addExtension
    */
-  public bcFileFilter(String[] filters) {
+  public bcFileFilter(final String[] filters) {
     this(filters, null);
   }
 
@@ -120,14 +118,15 @@ public class bcFileFilter extends FileFilter {
    *
    * @see #addExtension
    */
-  public bcFileFilter(String[] filters, String description) {
+  public bcFileFilter(final String[] filters, final String description) {
     this();
     for (int i = 0; i < filters.length; i++) {
       // add filters one by one
-      addExtension(filters[i]);
+      this.addExtension(filters[i]);
     }
-    if (description != null)
-      setDescription(description);
+    if (description != null) {
+      this.setDescription(description);
+    }
   }
 
   /**
@@ -138,34 +137,18 @@ public class bcFileFilter extends FileFilter {
    * @see #getExtension
    * @see FileFilter#accepts
    */
-  public boolean accept(File f) {
+  @Override
+  public boolean accept(final File f) {
     if (f != null) {
       if (f.isDirectory()) {
         return true;
       }
-      String extension = getExtension(f);
-      if (extension != null && filters.get(getExtension(f)) != null) {
+      final String extension = this.getExtension(f);
+      if ((extension != null) && (this.filters.get(this.getExtension(f)) != null)) {
         return true;
-      } ;
+      }
     }
     return false;
-  }
-
-  /**
-   * Return the extension portion of the file's name .
-   *
-   * @see #getExtension
-   * @see FileFilter#accept
-   */
-  public String getExtension(File f) {
-    if (f != null) {
-      String filename = f.getName();
-      int i = filename.lastIndexOf('.');
-      if (i > 0 && i < filename.length() - 1) {
-        return filename.substring(i + 1).toLowerCase();
-      } ;
-    }
-    return null;
   }
 
   /**
@@ -179,14 +162,13 @@ public class bcFileFilter extends FileFilter {
    *
    * Note that the "." before the extension is not needed and will be ignored.
    */
-  public void addExtension(String extension) {
-    if (filters == null) {
-      filters = new Hashtable(5);
+  public void addExtension(final String extension) {
+    if (this.filters == null) {
+      this.filters = new Hashtable(5);
     }
-    filters.put(extension.toLowerCase(), this);
-    fullDescription = null;
+    this.filters.put(extension.toLowerCase(), this);
+    this.fullDescription = null;
   }
-
 
   /**
    * Returns the human readable description of this filter. For example: "JPEG and GIF Image Files
@@ -197,52 +179,43 @@ public class bcFileFilter extends FileFilter {
    * @see isExtensionListInDescription
    * @see FileFilter#getDescription
    */
+  @Override
   public String getDescription() {
-    if (fullDescription == null) {
-      if (description == null || isExtensionListInDescription()) {
-        fullDescription = description == null ? "(" : description + " (";
+    if (this.fullDescription == null) {
+      if ((this.description == null) || this.isExtensionListInDescription()) {
+        this.fullDescription = this.description == null ? "(" : this.description + " (";
         // build the description from the extension list
-        Enumeration extensions = filters.keys();
+        final Enumeration extensions = this.filters.keys();
         if (extensions != null) {
-          fullDescription += "." + (String) extensions.nextElement();
+          this.fullDescription += "." + (String) extensions.nextElement();
           while (extensions.hasMoreElements()) {
-            fullDescription += ", ." + (String) extensions.nextElement();
+            this.fullDescription += ", ." + (String) extensions.nextElement();
           }
         }
-        fullDescription += ")";
+        this.fullDescription += ")";
       } else {
-        fullDescription = description;
+        this.fullDescription = this.description;
       }
     }
-    return fullDescription;
+    return this.fullDescription;
   }
 
-  /**
-   * Sets the human readable description of this filter. For example: filter.setDescription("Gif and
-   * JPG Images");
-   *
-   * @see setDescription
-   * @see setExtensionListInDescription
-   * @see isExtensionListInDescription
-   */
-  public void setDescription(String description) {
-    this.description = description;
-    fullDescription = null;
-  }
 
   /**
-   * Determines whether the extension list (.jpg, .gif, etc) should show up in the human readable
-   * description.
+   * Return the extension portion of the file's name .
    *
-   * Only relevent if a description was provided in the constructor or using setDescription();
-   *
-   * @see getDescription
-   * @see setDescription
-   * @see isExtensionListInDescription
+   * @see #getExtension
+   * @see FileFilter#accept
    */
-  public void setExtensionListInDescription(boolean b) {
-    useExtensionsInDescription = b;
-    fullDescription = null;
+  public String getExtension(final File f) {
+    if (f != null) {
+      final String filename = f.getName();
+      final int i = filename.lastIndexOf('.');
+      if ((i > 0) && (i < (filename.length() - 1))) {
+        return filename.substring(i + 1).toLowerCase();
+      }
+    }
+    return null;
   }
 
   /**
@@ -256,6 +229,34 @@ public class bcFileFilter extends FileFilter {
    * @see setExtensionListInDescription
    */
   public boolean isExtensionListInDescription() {
-    return useExtensionsInDescription;
+    return this.useExtensionsInDescription;
+  }
+
+  /**
+   * Sets the human readable description of this filter. For example: filter.setDescription("Gif and
+   * JPG Images");
+   *
+   * @see setDescription
+   * @see setExtensionListInDescription
+   * @see isExtensionListInDescription
+   */
+  public void setDescription(final String description) {
+    this.description = description;
+    this.fullDescription = null;
+  }
+
+  /**
+   * Determines whether the extension list (.jpg, .gif, etc) should show up in the human readable
+   * description.
+   *
+   * Only relevent if a description was provided in the constructor or using setDescription();
+   *
+   * @see getDescription
+   * @see setDescription
+   * @see isExtensionListInDescription
+   */
+  public void setExtensionListInDescription(final boolean b) {
+    this.useExtensionsInDescription = b;
+    this.fullDescription = null;
   }
 }
