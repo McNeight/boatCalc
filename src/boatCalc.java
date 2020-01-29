@@ -30,14 +30,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -69,25 +66,21 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import boat.Centerboard;
+import boat.Hull;
+import boat.Rig;
+import boat.Rudder;
+import boat.Sail;
+import boat.rscFoil;
+import geom.Line;
+import geom.Point;
+import geom.YZCompare;
+import geom.rawLine;
+import util.bcFileFilter;
+import util.bcFormat;
+import util.bcUnits;
 
-class bcFormat {
-  DecimalFormat DF0d;
-  DecimalFormat DF1d;
-  DecimalFormat DF2d;
-  DecimalFormat DF3d;
-  DecimalFormat DF4d;
 
-  public bcFormat() {
-    final Locale l = new Locale("en", "US");
-    // Locale l = new Locale("fr","FR");
-    final DecimalFormatSymbols dfs = new DecimalFormatSymbols(l);
-    this.DF0d = new DecimalFormat("###,###,###", dfs);
-    this.DF1d = new DecimalFormat("###,###,###.0", dfs);
-    this.DF2d = new DecimalFormat("###,###,###.00", dfs);
-    this.DF3d = new DecimalFormat("###,###,###.000", dfs);
-    this.DF4d = new DecimalFormat("###,###,###.0000", dfs);
-  }// end constructor
-}// enc bcFormat
 
 /* Programming Utilities */
 
@@ -656,8 +649,6 @@ public class boatCalc extends javax.swing.JFrame {
 
       final Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
 
-      final double sl_ctr = -((0.5 * (boatCalc.this.hull.gz_max + boatCalc.this.hull.gz_min))
-          - boatCalc.this.hull.base);
       this.slBase = new JSlider();
       this.slBase.setPreferredSize(new Dimension(250, 42));
 
