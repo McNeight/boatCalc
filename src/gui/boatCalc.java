@@ -1,3 +1,4 @@
+package gui;
 /*
  * boatCalc.java
  */
@@ -31,13 +32,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
@@ -74,7 +72,6 @@ import boat.Sail;
 import boat.rscFoil;
 import geom.Line;
 import geom.Point;
-import geom.YZCompare;
 import geom.rawLine;
 import util.bcFileFilter;
 import util.bcFormat;
@@ -85,545 +82,7 @@ import util.bcUnits;
 /* Programming Utilities */
 
 
-class bcLabel extends JLabel {
-  /**
-   *
-   */
-  private static final long serialVersionUID = 1L;
-
-  public bcLabel(final String s, final int l) {
-    this.setText(s);
-    this.setHorizontalAlignment(l);
-    this.setFont(new Font("Serif", Font.BOLD, 12));
-  }
-}
-
-
 public class boatCalc extends javax.swing.JFrame {
-  public class bodyPanel extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-
-    public bodyPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.setBackground(Color.white);
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    protected void paintComponent(final Graphics g) {
-      super.paintComponent(g);
-      final Font bigFont = new Font("Serif", Font.PLAIN, 12);
-      new Font("SansSerif", Font.PLAIN, 10);
-      g.setFont(bigFont);
-
-      final double my = this.getWidth();
-      final double mz = this.getHeight();
-      int ix = (int) my;
-      int iy = (int) mz;
-      g.clearRect(0, 0, ix, iy);
-      g.drawString("Body", 10, 10);
-      if (!boatCalc.this.hull.valid) {
-        return;
-      }
-
-      Set s;
-      Iterator si;
-      Point p1, p2;
-      YZCompare yzComp;
-      final double[] stn = boatCalc.this.hull.Stations;
-
-      int iw, iz;
-
-      final int py = 2;
-      final int pz = 2;
-      final int pw = (int) my;
-      final int ph = (int) mz - 4;
-
-      int iy_min = py + 5;
-      final int iy_max = (py + pw) - 25;
-      final int iz_min = (pz + ph) - 5;
-      final int iz_max = pz + 5;
-
-      g.clearRect(py, pz, pw, ph);
-      g.drawString("Body", 10, 12);
-
-      // note: what would usually be gy_min is replaced by -gy_max
-
-      double ry, rz, r;
-      ry = (iy_max - iy_min) / (2 * boatCalc.this.hull.gy_max);
-      rz = (iz_max - iz_min) / (boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min);
-      r = Math.min(Math.abs(ry), Math.abs(rz));
-
-      iy_min = (int) ((((my)) / 2.0) - (r * boatCalc.this.hull.gy_max));
-
-      g.setColor(Color.red);
-      ix = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
-      iy = iz_min - (int) (r * (boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min));
-      iw = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
-      iz = iz_min - (int) (r * (boatCalc.this.hull.gz_min - boatCalc.this.hull.gz_min));
-      g.drawLine(ix, iy, iw, iz);
-
-      g.setColor(Color.blue);
-      ix = iy_min + (int) (r * (2 * boatCalc.this.hull.gy_max));
-      iy = iz_min - (int) (r * (0 - boatCalc.this.hull.gz_min));
-      iw = iy_min + (int) (r * (boatCalc.this.hull.gy_min - boatCalc.this.hull.gy_min));
-      iz = iz_min - (int) (r * (0 - boatCalc.this.hull.gz_min));
-      g.drawLine(ix, iy, iw, iz);
-      g.setColor(Color.black);
-
-      int j;
-      final int jm = stn.length / 2;
-      for (j = 0; j < stn.length; j++) {
-
-        s = new HashSet();
-
-        double zmin = +1000000.0;
-        double zmax = -1000000.0;
-
-        for (int iHL = 0; iHL < boatCalc.this.hull.hLines.length; iHL++) {
-          final double tx = stn[j];
-          final double x_min = boatCalc.this.hull.hLines[iHL].min("X");
-          final double x_max = boatCalc.this.hull.hLines[iHL].max("X");
-          if ((x_min <= tx) && (tx <= x_max)) {
-            final double ty = boatCalc.this.hull.hLines[iHL].hXY.interp4P(tx);
-            final double tz = boatCalc.this.hull.hLines[iHL].hXZ.interp4P(tx);
-            if (j <= jm) {
-              s.add(new Point(tx, ty, tz));
-            }
-            if (j >= jm) {
-              s.add(new Point(tx, -ty, tz));
-            }
-            zmin = Math.min(zmin, tz);
-            zmax = Math.max(zmax, tz);
-          }
-        }
-
-
-        yzComp = new YZCompare();
-        yzComp.setAdj(0, zmax - (0.3 * (zmax - zmin)));
-        final SortedSet ts = new TreeSet(yzComp);
-        si = s.iterator();
-        while (si.hasNext()) {
-          ts.add(si.next());
-        }
-        si = ts.iterator();
-        p1 = (Point) si.next();
-
-        if (p1.z <= 0) {
-          ix = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
-          iy = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
-          iw = iy_min + (int) (r * (p1.y + boatCalc.this.hull.gy_max));
-          iz = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
-          g.drawLine(ix, iy, iw, iz);
-        }
-
-        while (si.hasNext()) {
-          p2 = (Point) si.next();
-          ix = iy_min + (int) (r * (p1.y + boatCalc.this.hull.gy_max));
-          iy = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
-          iw = iy_min + (int) (r * (p2.y + boatCalc.this.hull.gy_max));
-          iz = iz_min - (int) (r * (p2.z - boatCalc.this.hull.gz_min));
-          g.drawLine(ix, iy, iw, iz);
-          p1 = p2;
-        }
-        if (p1.z <= 0) {
-          ix = iy_min + (int) (r * (p1.y + boatCalc.this.hull.gy_max));
-          iy = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
-          iw = iy_min + (int) (r * (0 + boatCalc.this.hull.gy_max));
-          iz = iz_min - (int) (r * (p1.z - boatCalc.this.hull.gz_min));
-          g.drawLine(ix, iy, iw, iz);
-        }
-      }
-
-
-
-    }// end paint
-  }// end bodyPanel
-  public class ctrlPanel extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-    h2oPanel hP;
-    JLabel lblNA;
-    JLabel lblName;
-    stmPanel sP;
-    unitPanel uP;
-
-    public ctrlPanel(final int x, final int y) {
-      final Font cpFont = new Font("Serif", Font.BOLD, 14);
-      this.d = new Dimension(x, y);
-      this.setBorder(BorderFactory.createEtchedBorder());
-      this.setLayout(new FlowLayout());
-      this.lblName = new JLabel("name here");
-      this.lblName.setFont(cpFont);
-      this.lblName.setHorizontalAlignment(SwingConstants.LEFT);
-
-      this.lblNA = new JLabel("n/a");
-      this.lblNA.setFont(cpFont);
-      this.lblNA.setHorizontalAlignment(SwingConstants.RIGHT);
-
-      this.hP = new h2oPanel(170, 35);
-      this.sP = new stmPanel(210, 35);
-      this.uP = new unitPanel(380, 35);
-      this.add(this.lblName);
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      this.add(this.lblNA);
-      this.add(this.hP);
-      this.add(this.sP);
-      this.add(this.uP);
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-  }// end ctrlPanel
-  class edWgtPanel extends JPanel implements DocumentListener, FocusListener {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    boolean bChanged;
-    public JTextField[] l;
-    JLabel lblTot = new JLabel("CoG:");
-    JLabel lblWgt = new JLabel("n/a");
-    JLabel lblX = new JLabel("n/a");
-    JLabel lblY = new JLabel("n/a");
-    JLabel lblZ = new JLabel("n/a");
-    public JTextField[] w;
-    public JTextField[] x;
-    public JTextField[] y;
-    public JTextField[] z;
-
-    public edWgtPanel() {
-
-      JLabel lbl;
-      final Font wpFont = new Font("Serif", Font.BOLD, 14);
-      this.setBorder(BorderFactory.createEtchedBorder());
-      this.setLayout(new GridLayout(0, 7));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      lbl = new JLabel(" Type ", SwingConstants.CENTER);
-      lbl.setFont(wpFont);
-      this.add(lbl);
-
-      lbl = new JLabel("  Weight  ", SwingConstants.CENTER);
-      lbl.setFont(wpFont);
-      this.add(lbl);
-
-      lbl = new JLabel("  Station  ", SwingConstants.CENTER);
-      lbl.setFont(wpFont);
-      this.add(lbl);
-
-      lbl = new JLabel("  Breadth  ", SwingConstants.CENTER);
-      lbl.setFont(wpFont);
-      this.add(lbl);
-
-      lbl = new JLabel("  Height  ", SwingConstants.CENTER);
-      lbl.setFont(wpFont);
-      this.add(lbl);
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-
-
-      this.l = new JTextField[10];
-      this.w = new JTextField[10];
-      this.x = new JTextField[10];
-      this.y = new JTextField[10];
-      this.z = new JTextField[10];
-
-      for (int i = 0; i < 10; i++) {
-
-        lbl = new JLabel(Integer.toString(i + 1), SwingConstants.CENTER);
-        lbl.setFont(wpFont);
-        this.add(lbl);
-
-        this.l[i] = new JTextField();
-        this.l[i].getDocument().addDocumentListener(this);
-        this.add(this.l[i]);
-
-        this.w[i] = new JTextField();
-        this.w[i].getDocument().addDocumentListener(this);
-        this.w[i].addFocusListener(this);
-        this.add(this.w[i]);
-
-        this.x[i] = new JTextField();
-        this.x[i].getDocument().addDocumentListener(this);
-        this.x[i].addFocusListener(this);
-        this.add(this.x[i]);
-
-        this.y[i] = new JTextField();
-        this.y[i].getDocument().addDocumentListener(this);
-        this.y[i].addFocusListener(this);
-        this.add(this.y[i]);
-
-        this.z[i] = new JTextField();
-        this.z[i].getDocument().addDocumentListener(this);
-        this.z[i].addFocusListener(this);
-        this.add(this.z[i]);
-
-        this.add(
-            new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      }
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.lblTot.setFont(wpFont);
-      this.lblWgt.setFont(wpFont);
-      this.lblX.setFont(wpFont);
-      this.lblY.setFont(wpFont);
-      this.lblZ.setFont(wpFont);
-      this.add(this.lblTot);
-      this.add(this.lblWgt);
-      this.add(this.lblX);
-      this.add(this.lblY);
-      this.add(this.lblZ);
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-    }// end constructor
-
-    public void addWgts() {
-      double tw = 0;
-      double tx = 0;
-      double ty = 0;
-      double tz = 0;
-      try {
-        for (int i = 0; i < 10; i++) {
-          tw += Double.parseDouble(this.w[i].getText());
-          tx += Double.parseDouble(this.w[i].getText()) * Double.parseDouble(this.x[i].getText());
-          ty += Double.parseDouble(this.w[i].getText()) * Double.parseDouble(this.y[i].getText());
-          tz += Double.parseDouble(this.w[i].getText()) * Double.parseDouble(this.z[i].getText());
-        }
-
-        this.lblWgt.setText(boatCalc.this.bcf.DF1d.format(tw));
-        if (tw > 0) {
-          this.lblX.setText(boatCalc.this.bcf.DF1d.format(tx / tw));
-          this.lblY.setText(boatCalc.this.bcf.DF1d.format(ty / tw));
-          this.lblZ.setText(boatCalc.this.bcf.DF1d.format(tz / tw));
-        } else {
-          this.lblX.setText("n/a");
-          this.lblY.setText("n/a");
-          this.lblZ.setText("n/a");
-        }
-
-      } catch (final NumberFormatException e) {
-        this.lblWgt.setText("n/a");
-        this.lblX.setText("n/a");
-        this.lblY.setText("n/a");
-        this.lblZ.setText("n/a");
-      }
-
-    }// end addWgts
-
-    @Override
-    public void changedUpdate(final DocumentEvent e) {
-      this.addWgts();
-      this.bChanged = true;
-    }
-
-    @Override
-    public void focusGained(final FocusEvent e) {
-      final JTextField t = (JTextField) e.getComponent();
-      t.select(0, 100);
-    }
-
-    @Override
-    public void focusLost(final FocusEvent e) {}
-
-    @Override
-    public void insertUpdate(final DocumentEvent e) {
-      this.addWgts();
-      this.bChanged = true;
-    }
-
-    @Override
-    public void removeUpdate(final DocumentEvent e) {
-      this.addWgts();
-      this.bChanged = true;
-    }
-  }// end edWgtPanel
-  public class h2oPanel extends JPanel implements ActionListener {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    ButtonGroup bGrp;
-    JRadioButton btnFresh;
-    JRadioButton btnSalt;
-    Dimension d;
-    JLabel lblH2O;
-
-    public h2oPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.lblH2O = new JLabel("Water:");
-      this.btnSalt = new JRadioButton("salt");
-      this.btnSalt.setSelected(true);
-      this.btnFresh = new JRadioButton("fresh");
-
-      this.btnSalt.addActionListener(this);
-      this.btnFresh.addActionListener(this);
-
-      this.bGrp = new ButtonGroup();
-      this.bGrp.add(this.btnSalt);
-      this.bGrp.add(this.btnFresh);
-
-      this.setBorder(BorderFactory.createEtchedBorder());
-      this.setLayout(new FlowLayout());
-      this.add(this.lblH2O);
-      this.add(this.btnSalt);
-      this.add(this.btnFresh);
-    }
-
-    @Override
-    public void actionPerformed(final ActionEvent e) {
-      if (this.btnSalt.isSelected()) {
-        boatCalc.this.hull.units.WATER = 0;
-      }
-      if (this.btnFresh.isSelected()) {
-        boatCalc.this.hull.units.WATER = 1;
-      }
-      boatCalc.this.hull.bChanged = true;
-      boatCalc.this.body.repaint();
-      boatCalc.this.plan.repaint();
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-  }// end h2oPanel
-  public class hdBody extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-    String title;
-    boolean type;
-
-    public hdBody(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.setBackground(Color.white);
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    protected void paintComponent(final Graphics g) {
-      super.paintComponent(g);
-      final double sinang = Math.sin(Math.toRadians(boatCalc.this.hull.angHeel));
-      final double cosang = Math.cos(Math.toRadians(boatCalc.this.hull.angHeel));
-
-      final double mx = this.getWidth();
-      final double my = this.getHeight();
-      final int ix = (int) mx;
-      final int iy = (int) my;
-      final int xb = ix / 2;
-      final int yb = iy / 2;
-      Point p1, p2;
-      int u, v, w, z;
-      final double r = (0.85 * xb) / boatCalc.this.hull.gy_max;
-      g.clearRect(0, 0, ix, iy);
-      g.drawString(this.title, 10, 10);
-
-      // draw axes
-      g.setColor(Color.red);
-      g.drawLine(xb, 5, xb, iy - 5);
-      g.drawLine(5, yb, ix - 5, yb);
-      g.setColor(Color.black);
-
-      int jLow, jHigh;
-      if (this.type) {
-        jLow = 0;
-        jHigh = boatCalc.this.hull.Stations.length / 2;
-      } else {
-        jLow = boatCalc.this.hull.Stations.length / 2;
-        jHigh = boatCalc.this.hull.Stations.length - 1;
-      }
-      for (int j = jLow; j <= jHigh; j++) {
-        // draw station
-        final Iterator si = boatCalc.this.hull.getStation(j, boatCalc.this.hull.angHeel);
-        p1 = (Point) si.next();
-        while (si.hasNext()) {
-          p2 = (Point) si.next();
-          u = xb + (int) (r * p1.y);
-          v = yb - (int) (r * p1.z);
-          w = xb + (int) (r * p2.y);
-          z = yb - (int) (r * p2.z);
-          g.drawLine(u, v, w, z);
-          p1 = p2;
-        }
-      }
-
-      final int jm = boatCalc.this.hull.Stations.length / 2;
-      final boolean bDraw =
-          (this.type && (boatCalc.this.hull.CX <= boatCalc.this.hull.Stations[jm]))
-              || (!this.type && (boatCalc.this.hull.CX >= boatCalc.this.hull.Stations[jm]));
-      // put circle on computed CoG
-      g.setColor(Color.red);
-      u = xb + (int) (r * boatCalc.this.hull.hVals[boatCalc.this.hull.CY]);
-      v = yb - (int) (r * boatCalc.this.hull.hVals[boatCalc.this.hull.CZ]);
-      if (bDraw) {
-        g.drawArc(u - 5, v - 5, 10, 10, 0, 360);
-      }
-
-      g.setColor(Color.blue);
-      double rtw = 0;
-      double rty = 0;
-      double rtz = 0;
-      for (int j = 0; j < 10; j++) {
-        if (boatCalc.this.hull.wgtWgt[j] > 0) {
-          final double ry = (cosang * boatCalc.this.hull.wgtY[j])
-              - (sinang * (boatCalc.this.hull.wgtZ[j] + boatCalc.this.hull.base));
-          final double rz = (sinang * boatCalc.this.hull.wgtY[j])
-              + (cosang * (boatCalc.this.hull.wgtZ[j] + boatCalc.this.hull.base));
-          if ((this.type && (boatCalc.this.hull.wgtX[j] <= boatCalc.this.hull.Stations[jm]))
-              || (!this.type && (boatCalc.this.hull.wgtX[j] >= boatCalc.this.hull.Stations[jm]))) {
-            w = xb + (int) (r * ry);
-            z = yb - (int) (r * rz);
-            g.fillRect(w - 3, z - 3, 6, 6);
-          }
-          rtw = rtw + boatCalc.this.hull.wgtWgt[j];
-          rty = rty + (boatCalc.this.hull.wgtWgt[j] * ry);
-          rtz = rtz + (boatCalc.this.hull.wgtWgt[j] * rz);
-        }
-      }
-      if (bDraw && (rtw > 0)) {
-        rty = rty / rtw;
-        rtz = rtz / rtw;
-        w = xb + (int) (r * rty);
-        z = yb - (int) (r * rtz);
-        g.drawArc(w - 5, z - 5, 10, 10, 0, 360);
-
-        g.drawLine(w, z, w, v);
-        g.setColor(Color.red);
-        g.drawLine(u, v, w, v);
-      }
-
-    }// end paint
-
-    public void setTitle(final String s) {
-      this.title = s;
-    }
-
-    public void setType(final boolean b) {
-      this.type = b;
-    }
-  }// end hdBody
   public class hdCtrl extends JPanel {
     /**
      *
@@ -768,480 +227,6 @@ public class boatCalc extends javax.swing.JFrame {
 
 
   }// end hdCtrl
-  public class hdPanel extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-
-    boolean bComp = false;
-
-    Dimension d;
-    int[][] iComp = new int[2][boatCalc.this.hull.NDIV + 1];
-    int[][] iCur = new int[2][boatCalc.this.hull.NDIV + 1];
-    double xComp = 0;
-    double xCur = 0;
-    double yComp = 0;
-    double yCur = 0;
-
-    public hdPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      // setBackground(Color.lightGray) ;
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    protected void paintComponent(final Graphics g) {
-      super.paintComponent(g);
-
-      final double mx = this.getWidth();
-      final double my = this.getHeight();
-      final int ix = (int) mx;
-      final int iy = (int) my;
-      final int xb = 100;
-      final int yb = (int) my - 50;
-
-      g.clearRect(0, 0, ix, iy);
-
-      final double rx = (mx - 200.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
-      final double ry = (0.8 * my) / (boatCalc.this.hull.gy_max * boatCalc.this.hull.gy_max);
-      int iu, iv, iw, iz;
-      iu = xb + (int) (rx * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
-      iv = yb + (int) (ry * 0);
-      iw = xb + (int) (rx * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
-      iz = yb + (int) (ry * 0);
-
-      // draw horicontal axis
-      g.setColor(Color.red);
-      g.drawLine(iu, iv, iw, iz);
-      g.setColor(Color.black);
-
-      // draw basic area curve
-
-      double maxArea = 0;
-      double maxStn = 0;
-      final double leftLWL = boatCalc.this.hull.lwlLeft;
-      final double rightLWL = boatCalc.this.hull.lwlRight;
-
-      double x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-      double y = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][0];
-
-      iu = xb + (int) (rx * (x - boatCalc.this.hull.gx_min));
-      iv = yb - (int) (ry * y);
-
-      if (this.bComp) {
-        g.setColor(Color.blue);
-        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-          g.drawLine(this.iComp[0][i - 1], this.iComp[1][i - 1], this.iComp[0][i],
-              this.iComp[1][i]);
-        }
-        g.setColor(Color.cyan);
-        iu = xb + (int) (rx * (this.xComp - boatCalc.this.hull.gx_min));
-        iv = yb - (int) (ry * 0);
-        iw = xb + (int) (rx * (this.xComp - boatCalc.this.hull.gx_min));
-        iz = yb - (int) (ry * this.yComp);
-        g.drawLine(iu, iv, iw, iz);
-        g.setColor(Color.black);
-      }
-
-      x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-      y = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][0];
-      iu = xb + (int) (rx * (x - boatCalc.this.hull.gx_min));
-      iv = yb - (int) (ry * y);
-
-      this.iCur[0][0] = iu;
-      this.iCur[1][0] = iv;
-      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
-        y = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][i];
-        iw = xb + (int) (rx * (x - boatCalc.this.hull.gx_min));
-        iz = yb - (int) (ry * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        this.iCur[0][i] = iu;
-        this.iCur[1][i] = iv;
-
-        if (boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][i] > maxArea) {
-          maxArea = boatCalc.this.hull.vDisp[boatCalc.this.hull.SAREA][i];
-          maxStn = x;
-        }
-      }
-      this.xCur = maxStn;
-      this.yCur = maxArea;
-
-      g.setColor(Color.red);
-      iu = xb + (int) (rx * (maxStn - boatCalc.this.hull.gx_min));
-      iv = yb - (int) (ry * 0);
-      iw = xb + (int) (rx * (maxStn - boatCalc.this.hull.gx_min));
-      iz = yb - (int) (ry * maxArea);
-      g.drawLine(iu, iv, iw, iz);
-
-      final double Cp =
-          boatCalc.this.hull.hVals[boatCalc.this.hull.DISP] / ((rightLWL - leftLWL) * maxArea);
-
-      g.setColor(Color.black);
-
-      int il = 25;
-      g.drawString("Baseline Offset", 10, il);
-      g.drawString(boatCalc.this.bcf.DF2d.format(boatCalc.this.hull.base), 125, il);
-      il += 15;
-      g.drawString("Angle of Heel", 10, il);
-      g.drawString(boatCalc.this.bcf.DF0d.format(boatCalc.this.hull.angHeel), 125, il);
-      il += 20;
-
-      g.drawString("LWL - minimum", 10, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(leftLWL), 125, il);
-      il += 15;
-      g.drawString("    - maximum", 10, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(rightLWL), 125, il);
-      il += 15;
-      g.drawString("    - length", 10, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(rightLWL - leftLWL), 125, il);
-      il += 20;
-      g.drawString("Max Section - Area", 10, il);
-      g.drawString(boatCalc.this.bcf.DF2d.format(boatCalc.this.hull.units.coefArea() * maxArea)
-          + boatCalc.this.hull.units.lblArea(), 125, il);
-      il += 15;
-      g.drawString("            @ Station", 10, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(maxStn), 125, il);
-
-      il = 25;
-      final int ic = ix - 200;
-      g.drawString("Displacement", ic, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(
-          boatCalc.this.hull.units.Vol2Wgt() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP])
-          + boatCalc.this.hull.units.lblWgt(), ic + 115, il);
-      il += 15;
-      g.drawString("CoB - Station", ic, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CX]),
-          ic + 115, il);
-      il += 15;
-      g.drawString("    - Lateral", ic, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CY]),
-          ic + 115, il);
-      il += 15;
-      g.drawString("    - Height", ic, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CZ]),
-          ic + 115, il);
-
-      il += 20;
-      g.drawString("Prismatic Coeff", ic, il);
-      g.drawString(boatCalc.this.bcf.DF3d.format(Cp), ic + 115, il);
-
-      double num, denom;
-      String dlVal, dlLbl;
-
-      if (boatCalc.this.hull.units.UNITS == 0) {
-        num =
-            boatCalc.this.hull.units.Vol2Ton() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP];
-        denom = Math.pow((0.01 * (rightLWL - leftLWL)) / 12.0, 3.0);
-        dlVal = boatCalc.this.bcf.DF0d.format(num / denom);
-        dlLbl = "Disp/Length Ratio:";
-      } else if (boatCalc.this.hull.units.UNITS == 1) {
-        num =
-            boatCalc.this.hull.units.Vol2Ton() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP];
-        denom = Math.pow(0.01 * (rightLWL - leftLWL), 3.0);
-        dlVal = boatCalc.this.bcf.DF0d.format(num / denom);
-        dlLbl = "Disp/Length Ratio:";
-      } else {
-        num = rightLWL - leftLWL;
-        denom = Math.pow(boatCalc.this.hull.hVals[boatCalc.this.hull.DISP], 0.33333);
-        dlVal = boatCalc.this.bcf.DF2d.format(num / denom);
-        dlLbl = "Length/Disp ratio:";
-      }
-      il += 20;
-      g.drawString(dlLbl, ic, il);
-      g.drawString(dlVal, ic + 115, il);
-
-
-
-    }// end paint
-
-  }// end hdPanel
-  public class planPanel extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-
-    public planPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.setBackground(Color.white);
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    protected void paintComponent(final Graphics g) {
-      super.paintComponent(g);
-      final Font bigFont = new Font("Serif", Font.PLAIN, 12);
-      final Font lilFont = new Font("SansSerif", Font.PLAIN, 10);
-      g.setFont(bigFont);
-
-      final double mx = this.getWidth();
-      final double my = this.getHeight();
-      int px = 0;
-      int py = 2;
-      int pw = (int) mx;
-      int ph = ((int) my / 2) - 4;
-
-      g.clearRect(px, py, pw, ph);
-      g.drawString("Plan", px + 10, py + 15);
-
-      g.drawString("Length: "
-          + boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min),
-          pw - 100, py + 15);
-      g.drawString("Beam: " + boatCalc.this.bcf.DF1d.format(2.0 * boatCalc.this.hull.gy_max),
-          pw - 100, py + 30);
-      g.drawString("Depth: "
-          + boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min),
-          pw - 100, py + 45);
-
-      g.clearRect(0, ((int) my / 2) + 4, (int) mx, ((int) my / 2) - 4);
-      g.drawString("Profile", 10, ((int) my / 2) + 15);
-
-      if (!boatCalc.this.hull.valid) {
-        return;
-      }
-
-      int ix, iy, iw, iz;
-      int iHL;
-      double x, y, x_min, x_max;
-      // Line ch;
-      // Iterator listLine;
-
-      final double[] stn = boatCalc.this.hull.Stations;
-
-      g.setFont(lilFont);
-
-      // draw plan view
-      int ix_min = px + 100;
-      int ix_max = (px + pw) - 25;
-      int iy_min = (py + ph) - 15;
-      int iy_max = py + 5;
-      final int n = stn.length;
-      final int n1 = n - 1;
-
-      double rx, ry, r;
-      rx = (ix_max - ix_min) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
-      ry = Math.abs(iy_max - iy_min)
-          / Math.max((boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min),
-              (boatCalc.this.hull.gz_max - boatCalc.this.hull.gz_min));
-      r = Math.min(Math.abs(rx), Math.abs(ry));
-
-      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
-      iy = iy_min;
-      iw = ix_min + (int) (r * (stn[n1] - boatCalc.this.hull.gx_min));
-      iz = iy_min;
-      g.setColor(Color.blue);
-      g.drawLine(ix, iy, iw, iz);
-      g.drawString("0.0", ix - 25, iy);
-      for (int ic = 0; ic < stn.length; ic++) {
-        ix = ix_min + (int) (r * (stn[ic] - boatCalc.this.hull.gx_min));
-        g.drawLine(ix, iy - 5, ix, iy + 5);
-        g.drawString(boatCalc.this.bcf.DF2d.format(stn[ic]), ix + 1, iy + 12);
-      }
-
-      // draw vertical axis
-      double vmin, vmax;
-      double vinc = 12.0;
-      if (boatCalc.this.hull.units.UNITS == 1) {
-        vinc = 1.0;
-      } else if (boatCalc.this.hull.units.UNITS == 2) {
-        vinc = 10.0;
-      } else if (boatCalc.this.hull.units.UNITS == 3) {
-        vinc = 0.1;
-      }
-      vmax = vinc * Math.ceil(boatCalc.this.hull.gy_max / vinc);
-      while ((vmax / vinc) > 4.0) {
-        vinc = 2.0 * vinc;
-      }
-      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
-      iy = iy_min - (int) (r * (0));
-      iw = ix;
-      iz = iy_min - (int) (r * (vmax - 0));
-      g.drawLine(ix, iy, iw, iz);
-      ix = ix - 5;
-      for (double vidx = vinc; vidx <= vmax; vidx += vinc) {
-        iy = iy_min - (int) (r * (vidx - 0));
-        iz = iy;
-        g.drawLine(ix, iy, iw, iz);
-        g.drawString(Double.toString(vidx), ix - 25, iy);
-      }
-
-      g.setColor(Color.black);
-
-      for (iHL = 0; iHL < boatCalc.this.hull.hLines.length; iHL++) {
-        x_min = boatCalc.this.hull.hLines[iHL].min("X");
-        x_max = boatCalc.this.hull.hLines[iHL].max("X");
-
-        x = x_min;
-        y = boatCalc.this.hull.hLines[iHL].hXY.interp4P(x);
-        ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-        iy = iy_min - (int) (r * (y - 0));
-        for (double pct = 0.05; pct < 1.005; pct += 0.05) {
-          x = x_min + (pct * (x_max - x_min));
-          y = boatCalc.this.hull.hLines[iHL].hXY.interp4P(x);
-          iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-          iz = iy_min - (int) (r * (y - 0));
-          g.drawLine(ix, iy, iw, iz);
-          ix = iw;
-          iy = iz;
-        }
-      }
-
-      // draw stems
-      g.setColor(Color.lightGray);
-      for (int iSL = 0; iSL <= 1; iSL++) {
-        if (boatCalc.this.hull.bStems[iSL] && boatCalc.this.hull.sLines[iSL].valid) {
-          x = boatCalc.this.hull.sLines[iSL].hPoints[0].getX();
-          y = boatCalc.this.hull.sLines[iSL].hPoints[0].getY();
-          ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-          iy = iy_min - (int) (r * (y - 0));
-          for (int j = 1; j < boatCalc.this.hull.sLines[iSL].hPoints.length; j++) {
-            x = boatCalc.this.hull.sLines[iSL].hPoints[j].getX();
-            y = boatCalc.this.hull.sLines[iSL].hPoints[j].getY();
-            iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-            iz = iy_min - (int) (r * (y - 0));
-            g.drawLine(ix, iy, iw, iz);
-            ix = iw;
-            iy = iz;
-          }
-        }
-      }
-      g.setColor(Color.black);
-
-      // draw profile view
-
-      px = 0;
-      py = ((int) my / 2) + 4;
-      pw = (int) mx;
-      ph = ((int) my / 2) - 4;
-
-      ix_min = px + 100;
-      ix_max = (px + pw) - 25;
-      iy_min = (py + ph) - 15;
-      iy_max = py + 5;
-
-      // x-axis
-      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
-      iy = iy_min - (int) (r * (0 - boatCalc.this.hull.gz_min));
-      iw = ix_min + (int) (r * (stn[n1] - boatCalc.this.hull.gx_min));
-      iz = iy;
-
-      g.setColor(Color.blue);
-      g.drawLine(ix, iy, iw, iz);
-      for (int ic = 0; ic < stn.length; ic++) {
-        ix = ix_min + (int) (r * (stn[ic] - boatCalc.this.hull.gx_min));
-        g.drawLine(ix, iy - 5, ix, iy + 5);
-      }
-
-      // y-axis
-      vinc = 12.0;
-      if (boatCalc.this.hull.units.UNITS == 1) {
-        vinc = 1.0;
-      } else if (boatCalc.this.hull.units.UNITS == 2) {
-        vinc = 10.0;
-      } else if (boatCalc.this.hull.units.UNITS == 3) {
-        vinc = 0.1;
-      }
-      vmax = vinc * Math.ceil(boatCalc.this.hull.gz_max / vinc);
-      vmin = vinc * Math.floor(boatCalc.this.hull.gz_min / vinc);
-      while (((vmax - vmin) / vinc) > 4.0) {
-        vinc = 2.0 * vinc;
-      }
-      ix = ix_min + (int) (r * (stn[0] - boatCalc.this.hull.gx_min));
-      // iy = iy_min - (int) (r * (vmin - hull.gz_min)) ;
-      iy = iy_min;
-      iw = ix;
-      iz = iy_min - (int) (r * (vmax - boatCalc.this.hull.gz_min));
-      g.drawLine(ix, iy, iw, iz);
-      ix = ix - 5;
-      for (double vidx = vmin; vidx <= vmax; vidx += vinc) {
-        iy = iy_min - (int) (r * (vidx - boatCalc.this.hull.gz_min));
-        iz = iy;
-        if (iy <= iy_min) {
-          g.drawLine(ix, iy, iw, iz);
-          g.drawString(Double.toString(vidx), ix - 25, iy);
-        }
-      }
-
-      g.setColor(Color.black);
-
-      for (iHL = 0; iHL < boatCalc.this.hull.hLines.length; iHL++) {
-        x_min = boatCalc.this.hull.hLines[iHL].min("X");
-        x_max = boatCalc.this.hull.hLines[iHL].max("X");
-        x = x_min;
-        y = boatCalc.this.hull.hLines[iHL].hXZ.interp4P(x);
-        ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-        iy = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
-        for (double pct = 0.05; pct < 1.005; pct += 0.05) {
-          x = x_min + (pct * (x_max - x_min));
-          y = boatCalc.this.hull.hLines[iHL].hXZ.interp4P(x);
-          iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-          iz = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
-          g.drawLine(ix, iy, iw, iz);
-          ix = iw;
-          iy = iz;
-        }
-      }
-      // draw stems
-      g.setColor(Color.lightGray);
-      for (int iSL = 0; iSL <= 1; iSL++) {
-        if (boatCalc.this.hull.bStems[iSL] && boatCalc.this.hull.sLines[iSL].valid) {
-          x = boatCalc.this.hull.sLines[iSL].hPoints[0].getX();
-          y = boatCalc.this.hull.sLines[iSL].hPoints[0].getZ();
-          ix = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-          iy = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
-          for (int j = 1; j < boatCalc.this.hull.sLines[iSL].hPoints.length; j++) {
-            x = boatCalc.this.hull.sLines[iSL].hPoints[j].getX();
-            y = boatCalc.this.hull.sLines[iSL].hPoints[j].getZ();
-            iw = ix_min + (int) (r * (x - boatCalc.this.hull.gx_min));
-            iz = iy_min - (int) (r * (y - boatCalc.this.hull.gz_min));
-            g.drawLine(ix, iy, iw, iz);
-            ix = iw;
-            iy = iz;
-          }
-        }
-      }
-      g.setColor(Color.black);
-
-    }// end paint
-  }// end planPanel
-  class pnlAbout extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-
-    public pnlAbout() {
-      JLabel lbl;
-      final Font wpFont = new Font("Serif", Font.BOLD, 14);
-      this.setBorder(BorderFactory.createEtchedBorder());
-      this.setLayout(new GridLayout(0, 1));
-      lbl = new JLabel("boatCalc");
-      lbl.setFont(wpFont);
-      lbl.setHorizontalAlignment(SwingConstants.CENTER);
-      this.add(lbl);
-      lbl = new JLabel("Copyright 2004 by Peter H. Vanderwaart");
-      lbl.setFont(wpFont);
-      lbl.setHorizontalAlignment(SwingConstants.CENTER);
-      this.add(lbl);
-      lbl = new JLabel("Version 0.2e - 03/04/2004");
-      lbl.setFont(wpFont);
-      lbl.setHorizontalAlignment(SwingConstants.CENTER);
-      this.add(lbl);
-    }
-  }// end pnlAbout
   class pnlCenterboard extends JPanel {
     class cbArea extends JPanel {
       /**
@@ -1376,7 +361,7 @@ public class boatCalc extends javax.swing.JFrame {
        */
       private static final long serialVersionUID = 1L;
       JButton btnInc, btnDec;
-      JComboBox cbxInc;
+      JComboBox<?> cbxInc;
       Dimension d;
       editFoil pCenterboard;
       editPivot pPivot;
@@ -1490,7 +475,7 @@ public class boatCalc extends javax.swing.JFrame {
 
         final String[] incs =
             {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
-        this.cbxInc = new JComboBox(incs);
+        this.cbxInc = new JComboBox<Object>(incs);
         this.cbxInc.setEditable(true);
         this.cbxInc.setSelectedIndex(6);
         pCB.add(this.cbxInc);
@@ -1749,8 +734,8 @@ public class boatCalc extends javax.swing.JFrame {
         for (double pct = 0.0; pct <= 1.0025; pct = pct + 0.01) {
           final double x = boatCalc.this.hull.gx_min
               + (pct * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
-          final SortedSet ss = boatCalc.this.hull.getStnSet(x, 0.0);
-          final Iterator si = ss.iterator();
+          final SortedSet<?> ss = boatCalc.this.hull.getStnSet(x, 0.0);
+          final Iterator<?> si = ss.iterator();
           double zLo = boatCalc.this.hull.gz_max;
           double zHi = boatCalc.this.hull.gz_min;
           boolean bOk = false;
@@ -1846,8 +831,8 @@ public class boatCalc extends javax.swing.JFrame {
             // System.out.println("in");
 
             g.setColor(Color.red);
-            final SortedSet wp = pnlCenterboard.this.pCb.board.getWetPts();
-            final Iterator pi = wp.iterator();
+            final SortedSet<?> wp = pnlCenterboard.this.pCb.board.getWetPts();
+            final Iterator<?> pi = wp.iterator();
             if (pi.hasNext()) {
               final Point p0 = (Point) pi.next();
               Point p1 = new Point(p0);
@@ -1963,8 +948,8 @@ public class boatCalc extends javax.swing.JFrame {
           jL = jL + 20;
           g.drawString("Points: ", iC3, iL + jL);
 
-          final SortedSet wp = pnlCenterboard.this.pCb.board.getWetPts();
-          final Iterator pi = wp.iterator();
+          final SortedSet<?> wp = pnlCenterboard.this.pCb.board.getWetPts();
+          final Iterator<?> pi = wp.iterator();
           while (pi.hasNext()) {
             final Point p = (Point) pi.next();
             g.drawString(
@@ -2758,7 +1743,7 @@ public class boatCalc extends javax.swing.JFrame {
       this.tp.addTab("Stations", pO);
 
       edLinePanel pL = new edLinePanel(this.stn.length);
-      final ListIterator l = boatCalc.this.hull.Offsets.listIterator();
+      final ListIterator<?> l = boatCalc.this.hull.Offsets.listIterator();
       while (l.hasNext()) {
         final rawLine rL = (rawLine) l.next();
         final Line ln = rL.ln;
@@ -3018,7 +2003,7 @@ public class boatCalc extends javax.swing.JFrame {
 
     public void saveEdit() {
       final double[] sta = new double[boatCalc.this.hull.Stations.length];
-      final ArrayList o = new ArrayList();
+      final ArrayList<rawLine> o = new ArrayList<>();
 
       try {
         for (int i = 0; i < sta.length; i++) {
@@ -3413,7 +2398,7 @@ public class boatCalc extends javax.swing.JFrame {
        */
       private static final long serialVersionUID = 1L;
       JButton btnInc, btnDec;
-      JComboBox cbxInc;
+      JComboBox<?> cbxInc;
       Dimension d;
       editFoil pRudder;
       editFoil pSkeg;
@@ -3519,7 +2504,7 @@ public class boatCalc extends javax.swing.JFrame {
 
         final String[] incs =
             {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
-        this.cbxInc = new JComboBox(incs);
+        this.cbxInc = new JComboBox<Object>(incs);
         this.cbxInc.setEditable(true);
         this.cbxInc.setSelectedIndex(6);
         pCB.add(this.cbxInc);
@@ -3758,8 +2743,8 @@ public class boatCalc extends javax.swing.JFrame {
         for (double pct = 0.0; pct <= 1.0025; pct = pct + 0.01) {
           final double x = boatCalc.this.hull.gx_min
               + (pct * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
-          final SortedSet ss = boatCalc.this.hull.getStnSet(x, 0.0);
-          final Iterator si = ss.iterator();
+          final SortedSet<?> ss = boatCalc.this.hull.getStnSet(x, 0.0);
+          final Iterator<?> si = ss.iterator();
           double zLo = boatCalc.this.hull.gz_max;
           double zHi = boatCalc.this.hull.gz_min;
           boolean bOk = false;
@@ -3841,8 +2826,8 @@ public class boatCalc extends javax.swing.JFrame {
           // draw wet rudder
           if (pnlRudder.this.pRdr.rudder.getWetArea() > 0) {
             g.setColor(Color.blue);
-            final SortedSet wp = pnlRudder.this.pRdr.rudder.getWetPts();
-            final Iterator pi = wp.iterator();
+            final SortedSet<?> wp = pnlRudder.this.pRdr.rudder.getWetPts();
+            final Iterator<?> pi = wp.iterator();
             if (pi.hasNext()) {
               final Point p0 = (Point) pi.next();
               Point p1 = new Point(p0);
@@ -3906,8 +2891,8 @@ public class boatCalc extends javax.swing.JFrame {
           // draw wet skeg
           if (pnlRudder.this.pRdr.skeg.getWetArea() > 0) {
             g.setColor(Color.green);
-            final SortedSet wp = pnlRudder.this.pRdr.skeg.getWetPts();
-            final Iterator pi = wp.iterator();
+            final SortedSet<?> wp = pnlRudder.this.pRdr.skeg.getWetPts();
+            final Iterator<?> pi = wp.iterator();
             if (pi.hasNext()) {
               final Point p0 = (Point) pi.next();
               Point p1 = new Point(p0);
@@ -4034,8 +3019,8 @@ public class boatCalc extends javax.swing.JFrame {
           jL = jL + 20;
           g.drawString("Points: ", iC3, iL + jL);
 
-          final SortedSet wp = pnlRudder.this.pRdr.rudder.getWetPts();
-          final Iterator pi = wp.iterator();
+          final SortedSet<?> wp = pnlRudder.this.pRdr.rudder.getWetPts();
+          final Iterator<?> pi = wp.iterator();
           while (pi.hasNext()) {
             final Point p = (Point) pi.next();
             g.drawString(
@@ -4086,8 +3071,8 @@ public class boatCalc extends javax.swing.JFrame {
           jL = jL + 20;
           g.drawString("Points: ", iC3, iL + jL);
 
-          final SortedSet wp = pnlRudder.this.pRdr.skeg.getWetPts();
-          final Iterator pi = wp.iterator();
+          final SortedSet<?> wp = pnlRudder.this.pRdr.skeg.getWetPts();
+          final Iterator<?> pi = wp.iterator();
           while (pi.hasNext()) {
             final Point p = (Point) pi.next();
             g.drawString(
@@ -4759,7 +3744,7 @@ public class boatCalc extends javax.swing.JFrame {
        */
       private static final long serialVersionUID = 1L;
       JButton btnInc, btnDec;
-      JComboBox cbxInc;
+      JComboBox<?> cbxInc;
       Dimension d;
       editSail pJib;
       editSail pMain;
@@ -4904,7 +3889,7 @@ public class boatCalc extends javax.swing.JFrame {
 
         final String[] incs =
             {"0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1", "2", "5", "10", "20", "50", "100"};
-        this.cbxInc = new JComboBox(incs);
+        this.cbxInc = new JComboBox<Object>(incs);
         this.cbxInc.setEditable(true);
         this.cbxInc.setSelectedIndex(6);
         pInc.add(this.cbxInc);
@@ -5201,8 +4186,8 @@ public class boatCalc extends javax.swing.JFrame {
         for (double pct = 0.0; pct <= 1.0025; pct = pct + 0.01) {
           final double x = boatCalc.this.hull.gx_min
               + (pct * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
-          final SortedSet ss = boatCalc.this.hull.getStnSet(x, 0.0);
-          final Iterator si = ss.iterator();
+          final SortedSet<?> ss = boatCalc.this.hull.getStnSet(x, 0.0);
+          final Iterator<?> si = ss.iterator();
           double zLo = boatCalc.this.hull.gz_max;
           double zHi = boatCalc.this.hull.gz_min;
           boolean bOk = false;
@@ -5601,7 +4586,7 @@ public class boatCalc extends javax.swing.JFrame {
       p.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)),
           BorderLayout.PAGE_START);
 
-      this.wp = new edWgtPanel();
+      this.wp = new edWgtPanel(boatCalc.this);
       p.add(this.wp, BorderLayout.CENTER);
 
       final JButton btnSave = new JButton("Apply Changes");
@@ -5691,781 +4676,6 @@ public class boatCalc extends javax.swing.JFrame {
 
 
   }// end pnlWgtEntry
-  public class stmPanel extends JPanel implements ActionListener {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    JRadioButton btnLeft;
-    JRadioButton btnRight;
-    Dimension d;
-    JLabel lblStem;
-
-    public stmPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.lblStem = new JLabel("Auto Stem:");
-      this.btnLeft = new JRadioButton("Left");
-      this.btnLeft.setSelected(true);
-      this.btnRight = new JRadioButton("Right");
-      this.btnRight.setSelected(true);
-
-      this.btnLeft.addActionListener(this);
-      this.btnRight.addActionListener(this);
-
-      this.setBorder(BorderFactory.createEtchedBorder());
-      this.setLayout(new FlowLayout());
-      this.add(this.lblStem);
-      this.add(this.btnLeft);
-      this.add(this.btnRight);
-    }
-
-    @Override
-    public void actionPerformed(final ActionEvent e) {
-      if (this.btnLeft.isSelected()) {
-        boatCalc.this.hull.bStems[0] = true;
-      } else {
-        boatCalc.this.hull.bStems[0] = false;
-      }
-      if (this.btnRight.isSelected()) {
-        boatCalc.this.hull.bStems[1] = true;
-      } else {
-        boatCalc.this.hull.bStems[1] = false;
-      }
-      boatCalc.this.hull.bChanged = true;
-      boatCalc.this.body.repaint();
-      boatCalc.this.plan.repaint();
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-  }// end stmPanel
-  public class stnBody extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-    String title = "Station Area";
-
-    public stnBody(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.setBackground(Color.white);
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    protected void paintComponent(final Graphics g) {
-      super.paintComponent(g);
-      Math.sin(Math.toRadians(boatCalc.this.hull.angHeel));
-      Math.cos(Math.toRadians(boatCalc.this.hull.angHeel));
-
-      final double mx = this.getWidth();
-      final double my = this.getHeight();
-      final int ix = (int) mx;
-      final int iy = (int) my;
-      final int xb = ix / 2;
-      final int yb = iy / 2;
-      Point p1, p2;
-      int u, v, w, z;
-      final double r = (0.60 * xb) / boatCalc.this.hull.gy_max;
-      g.clearRect(0, 0, ix, iy);
-      int il = 15;
-      g.drawString(this.title, il, 10);
-      // draw axes
-      g.setColor(Color.red);
-      g.drawLine(xb, 5, xb, iy - 5);
-      g.drawLine(5, yb, ix - 5, yb);
-      g.setColor(Color.black);
-
-      final double x = boatCalc.this.hull.lwlLeft + ((0.01 * boatCalc.this.dispStn.iPct)
-          * (boatCalc.this.hull.lwlRight - boatCalc.this.hull.lwlLeft));
-      double hsArea = 0;
-      final double ty = 0, tz = 0;
-
-      // draw station
-      final Iterator si = boatCalc.this.hull.getStation(x, boatCalc.this.hull.angHeel);
-      p1 = (Point) si.next();
-      final Point p0 = new Point(p1);
-      while (si.hasNext()) {
-        p2 = (Point) si.next();
-        u = xb + (int) (r * p1.y);
-        v = yb - (int) (r * p1.z);
-        w = xb + (int) (r * p2.y);
-        z = yb - (int) (r * p2.z);
-        g.drawLine(u, v, w, z);
-
-        g.setColor(Color.red);
-        hsArea = hsArea + boatCalc.this.hull.TriArea(ty, tz, p1.y, p1.z, p2.y, p2.z);
-        u = xb + (int) (r * ty);
-        v = yb - (int) (r * tz);
-        w = xb + (int) (r * p1.y);
-        z = yb - (int) (r * p1.z);
-        g.drawLine(u, v, w, z);
-        u = xb + (int) (r * p2.y);
-        v = yb - (int) (r * p2.z);
-        g.drawLine(u, v, w, z);
-        w = xb + (int) (r * ty);
-        z = yb - (int) (r * tz);
-        g.drawLine(u, v, w, z);
-        g.setColor(Color.black);
-
-        p1 = p2;
-      }
-      p2 = p0;
-      hsArea = hsArea + boatCalc.this.hull.TriArea(ty, tz, p1.y, p1.z, p2.y, p2.z);
-      g.setColor(Color.red);
-      u = xb + (int) (r * ty);
-      v = yb - (int) (r * tz);
-      w = xb + (int) (r * p1.y);
-      z = yb - (int) (r * p1.z);
-      g.drawLine(u, v, w, z);
-      u = xb + (int) (r * p2.y);
-      v = yb - (int) (r * p2.z);
-      g.drawLine(u, v, w, z);
-      w = xb + (int) (r * ty);
-      z = yb - (int) (r * tz);
-      g.drawLine(u, v, w, z);
-      g.setColor(Color.black);
-
-
-
-      final double[] rVals = boatCalc.this.hull.getArea(x, boatCalc.this.hull.angHeel, true);
-
-      il += 25;
-      g.drawString("Station (%): " + boatCalc.this.bcf.DF0d.format(boatCalc.this.dispStn.iPct), 10,
-          il);
-      il += 20;
-      g.drawString("          @: " + boatCalc.this.bcf.DF0d.format(x), 10, il);
-      il += 20;
-      g.drawString("Displaced Area: "
-          + boatCalc.this.bcf.DF1d
-              .format(boatCalc.this.hull.units.coefArea() * rVals[boatCalc.this.hull.SAREA])
-          + boatCalc.this.hull.units.lblArea(), 10, il);
-      il += 20;
-      g.drawString("    Total Area: "
-          + boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.units.coefArea() * hsArea)
-          + boatCalc.this.hull.units.lblArea(), 10, il);
-
-      g.setColor(Color.blue);
-      final Iterator di = boatCalc.this.hull.DispTri.iterator();
-      while (di.hasNext()) {
-        final double[] tri = (double[]) di.next();
-        u = xb + (int) (r * tri[0]);
-        v = yb - (int) (r * tri[1]);
-        w = xb + (int) (r * tri[2]);
-        z = yb - (int) (r * tri[3]);
-        g.drawLine(u, v, w, z);
-        u = xb + (int) (r * tri[4]);
-        v = yb - (int) (r * tri[5]);
-        g.drawLine(u, v, w, z);
-        w = xb + (int) (r * tri[0]);
-        z = yb - (int) (r * tri[1]);
-        g.drawLine(u, v, w, z);
-      }
-
-    }// end paint
-
-    public void setTitle(final String s) {
-      this.title = s;
-    }
-  }// end hdBody
-
-  public class stnPanel extends JPanel implements ChangeListener {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-    int iPct = 50;
-    JPanel pnlSlct;
-    JSlider xSlct;
-
-    public stnPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      final stnBody body = new stnBody(400, 300);
-      this.add(body);
-
-      this.xSlct = new JSlider();
-      this.xSlct.setPreferredSize(new Dimension(250, 42));
-      this.xSlct.setMajorTickSpacing(10);
-      this.xSlct.setMinorTickSpacing(5);
-      this.xSlct.setPaintTicks(true);
-      this.xSlct.setPaintLabels(true);
-
-      this.xSlct.addChangeListener(this);
-
-      this.pnlSlct = new JPanel();
-      final Border bcBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-      this.pnlSlct.setBorder(BorderFactory.createTitledBorder(bcBorder, "Station (%LWL)"));
-      this.pnlSlct.add(this.xSlct);
-      this.add(this.pnlSlct);
-
-    }// end constructor
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    public void stateChanged(final ChangeEvent e) {
-      this.iPct = this.xSlct.getValue();
-      boatCalc.this.dispStn.repaint();
-    }
-
-
-  }// end stnPanel
-  public class unitPanel extends JPanel implements ActionListener {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    ButtonGroup bGrp;
-    JRadioButton btnCmKg;
-    JRadioButton btnFtLbs;
-    JRadioButton btnInLbs;
-    JRadioButton btnMKg;
-    Dimension d;
-    JLabel lblUnit;
-
-    public unitPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.lblUnit = new JLabel("Units:");
-      this.btnInLbs = new JRadioButton("in,lbs");
-      this.btnInLbs.setSelected(true);
-      this.btnFtLbs = new JRadioButton("ft,lbs");
-      this.btnCmKg = new JRadioButton("cm,Kg");
-      this.btnMKg = new JRadioButton("m,Kg");
-
-      this.btnInLbs.addActionListener(this);
-      this.btnFtLbs.addActionListener(this);
-      this.btnCmKg.addActionListener(this);
-      this.btnMKg.addActionListener(this);
-
-      this.bGrp = new ButtonGroup();
-      this.bGrp.add(this.btnInLbs);
-      this.bGrp.add(this.btnFtLbs);
-      this.bGrp.add(this.btnCmKg);
-      this.bGrp.add(this.btnMKg);
-
-      this.setBorder(BorderFactory.createEtchedBorder());
-      this.setLayout(new FlowLayout());
-      this.add(this.lblUnit);
-      this.add(this.btnInLbs);
-      this.add(this.btnFtLbs);
-      this.add(this.btnCmKg);
-      this.add(this.btnMKg);
-    }
-
-    @Override
-    public void actionPerformed(final ActionEvent e) {
-      if (this.btnInLbs.isSelected()) {
-        boatCalc.this.hull.units.UNITS = 0;
-      }
-      if (this.btnFtLbs.isSelected()) {
-        boatCalc.this.hull.units.UNITS = 1;
-      }
-      if (this.btnCmKg.isSelected()) {
-        boatCalc.this.hull.units.UNITS = 2;
-      }
-      if (this.btnMKg.isSelected()) {
-        boatCalc.this.hull.units.UNITS = 3;
-      }
-      boatCalc.this.setCtrls();
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-  }// end unitPanel
-  public class wetPanel extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-    int[] iComp = new int[boatCalc.this.hull.NDIV + 1];
-    int[] iCur = new int[boatCalc.this.hull.NDIV + 1];
-
-    public wetPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-
-
-    }// end constructor
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    protected void paintComponent(final Graphics g) {
-      super.paintComponent(g);
-
-      final double mx = this.getWidth();
-      final double my = this.getHeight();
-      final int ix = (int) mx;
-      final int iy = (int) my;
-      final int xb = 100;
-      final int yb = (int) my - 50;
-
-      g.clearRect(0, 0, ix, iy);
-
-      final double rx = (mx - 200.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
-      final double ry = my / (boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min);
-      final double r = Math.min(rx, ry);
-      int iu, iv, iw, iz;
-      iu = xb + (int) (r * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
-      iv = yb + (int) (r * 0);
-      iw = xb + (int) (r * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
-      iz = yb + (int) (r * 0);
-
-      // draw axis
-      g.setColor(Color.red);
-      g.drawLine(iu, iv, iw, iz);
-      g.setColor(Color.black);
-
-      if (boatCalc.this.disp.bComp) {
-        g.setColor(Color.blue);
-        iu = xb + (int) (r
-            * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0] - boatCalc.this.hull.gx_min));
-        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-          iv = xb + (int) (r
-              * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i] - boatCalc.this.hull.gx_min));
-          g.drawLine(iu, this.iComp[i - 1], iv, this.iComp[i]);
-          iu = iv;
-        }
-        g.setColor(Color.black);
-      }
-
-      double x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-      double y = boatCalc.this.hull.vWet[0];
-      iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
-      iv = yb - (int) (r * y);
-
-      this.iCur[0] = iv;
-      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
-        y = boatCalc.this.hull.vWet[i];
-        iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
-        iz = yb - (int) (r * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        this.iCur[i] = iv;
-      }
-
-      // compute
-
-      double wetX = boatCalc.this.hull.vWet[0] * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-      double wetSum = boatCalc.this.hull.vWet[0];
-      double wetArea = 0;
-      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-        wetX = wetX
-            + (boatCalc.this.hull.vWet[i] * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]);
-        wetSum = wetSum + boatCalc.this.hull.vWet[i];
-        wetArea = wetArea + ((boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
-            - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]) * 0.5
-            * (boatCalc.this.hull.vWet[i] + boatCalc.this.hull.vWet[i - 1]));
-      }
-
-
-      int il = 25;
-      g.drawString("Wetted Surface", 10, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.units.coefArea() * wetArea)
-          + boatCalc.this.hull.units.lblArea(), 125, il);
-      il += 20;
-      if (wetSum > 0) {
-        wetX = wetX / wetSum;
-        g.drawString("Ctr of Area @ Stn: ", 10, il);
-        g.drawString(boatCalc.this.bcf.DF1d.format(wetX), 125, il);
-      }
-
-
-    } // end paintComponent
-  } // end wetPanel
-  public class wgtPanel extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-    bcLabel lblHeel;
-    JLabel[] lblMoments;
-    JLabel[][] lblWgtDisp;
-
-    public wgtPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-      this.lblHeel = new bcLabel("Heel:", SwingConstants.CENTER);
-      this.lblWgtDisp = new JLabel[4][3];
-      this.lblMoments = new JLabel[2];
-      // setBackground(Color.lightGray) ;
-      this.setBorder(BorderFactory.createEtchedBorder());
-      this.setLayout(new GridLayout(0, 8));
-
-      this.add(this.lblHeel);
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new bcLabel("CoB", SwingConstants.CENTER));
-      this.add(new bcLabel("CoG", SwingConstants.CENTER));
-      this.add(new bcLabel("Difference", SwingConstants.CENTER));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new bcLabel("Weight", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[0][0] = new JLabel("disp_x", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[0][1] = new JLabel("wgt_x", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[0][2] = new JLabel("diff_x", SwingConstants.RIGHT));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new bcLabel("  Moments  ", SwingConstants.CENTER));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new bcLabel("Station", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[1][0] = new JLabel("disp_x", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[1][1] = new JLabel("wgt_x", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[1][2] = new JLabel("diff_x", SwingConstants.RIGHT));
-      this.add(new bcLabel("Pitch", SwingConstants.RIGHT));
-      this.add(this.lblMoments[0] = new JLabel("moment_p", SwingConstants.RIGHT));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new bcLabel("Breadth", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[2][0] = new JLabel("disp_y", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[2][1] = new JLabel("wgt_y", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[2][2] = new JLabel("diff_y", SwingConstants.RIGHT));
-      this.add(new bcLabel("Heel", SwingConstants.RIGHT));
-      this.add(this.lblMoments[1] = new JLabel("moment_h", SwingConstants.RIGHT));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new bcLabel("Height", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[3][0] = new JLabel("disp_z", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[3][1] = new JLabel("wgt_z", SwingConstants.RIGHT));
-      this.add(this.lblWgtDisp[3][2] = new JLabel("diff_z", SwingConstants.RIGHT));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-      this.add(new Box.Filler(new Dimension(20, 20), new Dimension(20, 20), new Dimension(20, 20)));
-
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-
-    public void setWeights() {
-      final double sinang = Math.sin(Math.toRadians(boatCalc.this.hull.angHeel));
-      final double cosang = Math.cos(Math.toRadians(boatCalc.this.hull.angHeel));
-
-      final double dWgt =
-          boatCalc.this.hull.units.Vol2Wgt() * boatCalc.this.hull.hVals[boatCalc.this.hull.DISP];
-
-      this.lblHeel.setText("Heel: " + boatCalc.this.bcf.DF0d.format(boatCalc.this.hull.angHeel));
-      this.lblWgtDisp[0][0].setText(boatCalc.this.bcf.DF1d.format(dWgt));
-      this.lblWgtDisp[1][0]
-          .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CX]));
-      this.lblWgtDisp[2][0]
-          .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CY]));
-      this.lblWgtDisp[3][0]
-          .setText(boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CZ]));
-
-      double tw = 0;
-      double tx = 0;
-      double ty = 0;
-      double tz = 0;
-      for (int i = 0; i < 10; i++) {
-        tw += boatCalc.this.hull.wgtWgt[i];
-        tx += boatCalc.this.hull.wgtWgt[i] * boatCalc.this.hull.wgtX[i];
-        ty += boatCalc.this.hull.wgtWgt[i] * boatCalc.this.hull.wgtY[i];
-        tz += boatCalc.this.hull.wgtWgt[i] * boatCalc.this.hull.wgtZ[i];
-      }
-
-      if (tw > 0) {
-        tx = tx / tw;
-        ty = ty / tw;
-        tz = (tz / tw) + boatCalc.this.hull.base;
-      }
-      final double rty = (cosang * ty) - (sinang * tz);
-      final double rtz = (sinang * ty) + (cosang * tz);
-
-      this.lblWgtDisp[0][1].setText(boatCalc.this.bcf.DF1d.format(tw));
-      this.lblWgtDisp[1][1].setText(boatCalc.this.bcf.DF1d.format(tx));
-      this.lblWgtDisp[2][1].setText(boatCalc.this.bcf.DF1d.format(rty));
-      this.lblWgtDisp[3][1].setText(boatCalc.this.bcf.DF1d.format(rtz));
-
-      this.lblWgtDisp[0][2].setText(boatCalc.this.bcf.DF1d.format(dWgt - tw));
-      this.lblWgtDisp[1][2].setText(
-          boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CX] - tx));
-      this.lblWgtDisp[2][2].setText(
-          boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CY] - rty));
-      this.lblWgtDisp[3][2].setText(
-          boatCalc.this.bcf.DF1d.format(boatCalc.this.hull.hVals[boatCalc.this.hull.CZ] - rtz));
-
-      this.lblMoments[0].setText(boatCalc.this.bcf.DF1d
-          .format(dWgt * (tx - boatCalc.this.hull.hVals[boatCalc.this.hull.CX])));
-      this.lblMoments[1].setText(boatCalc.this.bcf.DF1d
-          .format(dWgt * (rty - boatCalc.this.hull.hVals[boatCalc.this.hull.CY])));
-    }
-
-    // protected void paintComponent(Graphics g) {setWeights();}
-  } // ends wgtPanel
-
-  public class wlPanel extends JPanel {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    Dimension d;
-    int[][] iComp = new int[2][boatCalc.this.hull.NDIV + 1];
-    int[][] iCur = new int[2][boatCalc.this.hull.NDIV + 1];
-
-    public wlPanel(final int x, final int y) {
-      this.d = new Dimension(x, y);
-
-
-    }// end constructor
-
-    @Override
-    public Dimension getPreferredSize() {
-      return this.d;
-    }
-
-    @Override
-    protected void paintComponent(final Graphics g) {
-      super.paintComponent(g);
-      final double sinone = Math.sin(Math.toRadians(1.0));
-
-
-      final double mx = this.getWidth();
-      final double my = this.getHeight();
-      final int ix = (int) mx;
-      final int iy = (int) my;
-      final int xb = 100;
-      final int yb = (int) my / 2;
-
-      g.clearRect(0, 0, ix, iy);
-
-      final double rx = (mx - 200.0) / (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min);
-      final double ry = (0.8 * my) / (boatCalc.this.hull.gy_max - boatCalc.this.hull.gy_min);
-      final double r = Math.min(rx, ry);
-      int iu, iv, iw, iz;
-      iu = xb + (int) (r * (boatCalc.this.hull.gx_min - boatCalc.this.hull.gx_min));
-      iv = yb + (int) (r * 0);
-      iw = xb + (int) (r * (boatCalc.this.hull.gx_max - boatCalc.this.hull.gx_min));
-      iz = yb + (int) (r * 0);
-
-      // draw axis
-      g.setColor(Color.red);
-      g.drawLine(iu, iv, iw, iz);
-      g.setColor(Color.black);
-
-      if (boatCalc.this.disp.bComp) {
-        g.setColor(Color.blue);
-        iu = xb + (int) (r
-            * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0] - boatCalc.this.hull.gx_min));
-        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-          iv = xb + (int) (r
-              * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i] - boatCalc.this.hull.gx_min));
-          g.drawLine(iu, this.iComp[0][i - 1], iv, this.iComp[0][i]);
-          iu = iv;
-        }
-
-        iu = xb + (int) (r
-            * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0] - boatCalc.this.hull.gx_min));
-        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-          iv = xb + (int) (r
-              * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i] - boatCalc.this.hull.gx_min));
-          g.drawLine(iu, this.iComp[1][i - 1], iv, this.iComp[1][i]);
-          iu = iv;
-        }
-        g.setColor(Color.black);
-      }
-
-      double x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-      double y = boatCalc.this.hull.vWL[0][0];
-      iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
-      iv = yb - (int) (r * y);
-
-      this.iCur[0][0] = iv;
-      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
-        y = boatCalc.this.hull.vWL[0][i];
-        iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
-        iz = yb - (int) (r * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        this.iCur[0][i] = iv;
-      }
-
-      x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-      y = boatCalc.this.hull.vWL[1][0];
-      iu = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
-      iv = yb - (int) (r * y);
-
-      this.iCur[1][0] = iv;
-      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-        x = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
-        y = boatCalc.this.hull.vWL[1][i];
-        iw = xb + (int) (r * (x - boatCalc.this.hull.gx_min));
-        iz = yb - (int) (r * y);
-        g.drawLine(iu, iv, iw, iz);
-        iu = iw;
-        iv = iz;
-        this.iCur[1][i] = iv;
-      }
-
-
-      // compute
-
-      double wlCur = boatCalc.this.hull.vWL[1][0] - boatCalc.this.hull.vWL[0][0];
-      double wlX = wlCur * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-      double wlY = wlCur * 0.5 * (boatCalc.this.hull.vWL[1][0] + boatCalc.this.hull.vWL[0][0]);
-      double wlSum = wlCur;
-      double wlArea = 0;
-      double wlLast = wlCur;
-      double wlMax = wlCur;
-      double wlXMax = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][0];
-
-      for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-        wlCur = boatCalc.this.hull.vWL[1][i] - boatCalc.this.hull.vWL[0][i];
-        if (wlCur > wlMax) {
-          wlMax = wlCur;
-          wlXMax = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i];
-        }
-        wlX = wlX + (wlCur * boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]);
-        wlY = wlY + (wlCur * 0.5 * (boatCalc.this.hull.vWL[1][i] + boatCalc.this.hull.vWL[0][i]));
-        wlSum = wlSum + wlCur;
-        wlArea = wlArea + ((boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
-            - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]) * 0.5 * (wlCur + wlLast));
-        wlLast = wlCur;
-      }
-
-      int il = 25;
-      g.drawString("Waterplane Area", 10, il);
-      g.drawString(boatCalc.this.bcf.DF2d.format(boatCalc.this.hull.units.coefArea() * wlArea)
-          + boatCalc.this.hull.units.lblArea(), 125, il);
-      il += 20;
-      g.drawString("Max WL Beam:", 10, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(wlMax), 125, il);
-      il += 15;
-      g.drawString("   @Station:", 10, il);
-      g.drawString(boatCalc.this.bcf.DF1d.format(wlXMax), 125, il);
-      il += 20;
-
-      if (wlSum > 0) {
-        wlX = wlX / wlSum;
-        wlY = wlY / wlSum;
-        g.drawString("CoA @ Station:", 10, il);
-        g.drawString(boatCalc.this.bcf.DF1d.format(wlX), 125, il);
-        il += 15;
-        g.drawString("   Breadth:", 10, il);
-        g.drawString(boatCalc.this.bcf.DF1d.format(wlY), 125, il);
-        il += 20;
-        iw = xb + (int) (r * (wlX - boatCalc.this.hull.gx_min));
-        iz = yb - (int) (r * wlY);
-        g.setColor(Color.red);
-        g.drawArc(iw - 5, iz - 5, 10, 10, 0, 360);
-        g.setColor(Color.black);
-
-
-        wlLast = boatCalc.this.hull.vWL[1][0] - boatCalc.this.hull.vWL[0][0];
-        double d, w, h, xm;
-        double mp = 0;
-        for (int i = 1; i <= boatCalc.this.hull.NDIV; i++) {
-          d = boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
-              - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]; // delta x
-          wlCur = boatCalc.this.hull.vWL[1][i] - boatCalc.this.hull.vWL[0][i];
-          w = 0.5 * (wlCur + wlLast); // average width
-          xm = 0.5 * (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i]
-              + boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i - 1]); // average x
-          h = sinone * (xm - wlX); // height
-          mp = mp + (boatCalc.this.hull.units.Vol2Wgt() * d * w * h * (xm - wlX));
-          wlLast = wlCur;
-        }
-        il += 75;
-
-        final double ppi =
-            wlArea * boatCalc.this.hull.units.coefPPI() * boatCalc.this.hull.units.Vol2Wgt();
-        g.drawString("Imersion:", 10, il);
-        g.drawString(boatCalc.this.bcf.DF1d.format(ppi) + boatCalc.this.hull.units.lblPPI(), 125,
-            il);
-        il += 20;
-
-        g.drawString("Moment to ", 10, il);
-        il += 15;
-        g.drawString("pitch 1 deg:", 10, il);
-        g.drawString(boatCalc.this.bcf.DF1d.format(mp) + " " + boatCalc.this.hull.units.lblMom(),
-            125, il);
-        il += 20;
-        il = 25;
-
-        final int ic = ix - 200;
-        il = 25;
-        g.drawString("Waterplane Coef.:", ic, il);
-        g.drawString(
-            boatCalc.this.bcf.DF2d.format(
-                wlArea / (wlMax * (boatCalc.this.hull.lwlRight - boatCalc.this.hull.lwlLeft))),
-            ic + 150, il);
-
-        // half-angle computation
-        int i1, i2;
-        double a1, a2;
-        il += 20;
-        g.drawString("Half Angles (avg):", ic, il);
-
-        // left
-        if (boatCalc.this.hull.NDIV > 10) {
-          i1 = 1;
-          i2 = 5;
-        } else {
-          i1 = 1;
-          i2 = 2;
-        }
-        a1 = Math.atan2(boatCalc.this.hull.vWL[1][i2] - boatCalc.this.hull.vWL[1][i1],
-            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]
-                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]));
-        a2 = Math.atan2(boatCalc.this.hull.vWL[0][i2] - boatCalc.this.hull.vWL[0][i1],
-            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]
-                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]));
-        il += 15;
-        g.drawString("Left -", ic + 50, il);
-        g.drawString(boatCalc.this.bcf.DF1d.format(Math.toDegrees(a1 - a2)), ic + 150, il);
-
-        // right
-        if (boatCalc.this.hull.NDIV > 10) {
-          i1 = boatCalc.this.hull.NDIV - 1;
-          i2 = boatCalc.this.hull.NDIV - 4;
-        } else {
-          i1 = boatCalc.this.hull.NDIV - 1;
-          i2 = boatCalc.this.hull.NDIV - 2;
-        }
-        a1 = Math.atan2(boatCalc.this.hull.vWL[1][i2] - boatCalc.this.hull.vWL[1][i1],
-            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]
-                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]));
-        a2 = Math.atan2(boatCalc.this.hull.vWL[0][i2] - boatCalc.this.hull.vWL[0][i1],
-            (boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i1]
-                - boatCalc.this.hull.vDisp[boatCalc.this.hull.CX][i2]));
-        il += 15;
-        g.drawString("Right -", ic + 50, il);
-        g.drawString(boatCalc.this.bcf.DF1d.format(Math.toDegrees(a1 - a2)), ic + 150, il);
-        il += 15;
-
-      }
-
-    } // end paintComponent
-  } // end wlPanel
 
   /**
    *
@@ -6667,7 +4877,7 @@ public class boatCalc extends javax.swing.JFrame {
         }
         boatCalc.this.hull = new Hull();
         boatCalc.this.hull.Stations = new double[n_stn];
-        boatCalc.this.hull.Offsets = new ArrayList();
+        boatCalc.this.hull.Offsets = new ArrayList<>();
         boatCalc.this.hull.valid = false;
         boatCalc.this.hull.designer = "NA";
         boatCalc.this.hull.boatname = "new boat";
@@ -6868,9 +5078,9 @@ public class boatCalc extends javax.swing.JFrame {
     // getHull();
     this.hull = new Hull();
 
-    this.ctrl = new ctrlPanel(400, 200);
-    this.body = new bodyPanel(300, 200);
-    this.plan = new planPanel(705, 300);
+    this.ctrl = new ctrlPanel(this, 400, 200);
+    this.body = new bodyPanel(this, 300, 200);
+    this.plan = new planPanel(this, 705, 300);
     this.w = new JPanel();
     this.w.setLayout(new FlowLayout());
     this.w.setBorder(BorderFactory.createEtchedBorder());
@@ -6881,21 +5091,21 @@ public class boatCalc extends javax.swing.JFrame {
 
     this.f_analysis = new JFrame("Displacement Analysis");
     this.f_analysis.setSize(770, 550);
-    this.disp = new hdPanel(710, 300);
+    this.disp = new hdPanel(this, 710, 300);
     this.w_analysis = new JPanel();
     this.w_analysis.setLayout(new FlowLayout());
     this.w_analysis.setBorder(BorderFactory.createEtchedBorder());
 
-    this.dispWgt = new wgtPanel(710, 300);
-    this.dispWL = new wlPanel(710, 300);
-    this.dispWet = new wetPanel(710, 300);
-    this.dispStn = new stnPanel(710, 300);
+    this.dispWgt = new wgtPanel(this, 710, 300);
+    this.dispWL = new wlPanel(this, 710, 300);
+    this.dispWet = new wetPanel(this, 710, 300);
+    this.dispStn = new stnPanel(this, 710, 300);
 
     this.dispCtrl = new hdCtrl(300, 200);
-    this.dispFore = new hdBody(200, 200);
+    this.dispFore = new hdBody(this, 200, 200);
     this.dispFore.setTitle("Left");
     this.dispFore.setType(true);
-    this.dispAft = new hdBody(200, 200);
+    this.dispAft = new hdBody(this, 200, 200);
     this.dispAft.setTitle("Right");
     this.dispAft.setType(false);
     this.w_analysis.add(this.dispFore);
@@ -6951,7 +5161,7 @@ public class boatCalc extends javax.swing.JFrame {
     }
 
     final double[] sta = new double[this.hull.Stations.length - 1];
-    final ArrayList o = new ArrayList();
+    final ArrayList<rawLine> o = new ArrayList<>();
 
     int i;
 
@@ -6967,7 +5177,7 @@ public class boatCalc extends javax.swing.JFrame {
 
     Point[] p;
     Point q;
-    ListIterator l;
+    ListIterator<?> l;
     l = this.hull.Offsets.listIterator();
     while (l.hasNext()) {
       final rawLine rL = (rawLine) l.next();
@@ -7057,7 +5267,7 @@ public class boatCalc extends javax.swing.JFrame {
     boolean bDone = false;
 
     final double[] sta = new double[this.hull.Stations.length + 1];
-    final ArrayList o = new ArrayList();
+    final ArrayList<rawLine> o = new ArrayList<>();
 
     int i, j;
 
@@ -7085,7 +5295,7 @@ public class boatCalc extends javax.swing.JFrame {
 
     Point[] p;
     Point q;
-    ListIterator l;
+    ListIterator<?> l;
     l = this.hull.Offsets.listIterator();
     while (l.hasNext()) {
       final rawLine rL = (rawLine) l.next();
@@ -7175,7 +5385,7 @@ public class boatCalc extends javax.swing.JFrame {
       this.dispCtrl.slBase.setMinorTickSpacing(itic);
 
       // Create the label table
-      final Hashtable labelTable = new Hashtable();
+      final Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
       for (double d = 4 * sl_min; d <= ((4 * sl_max) + 0.5); d += dinc) {
         labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 4)));
       }
@@ -7210,7 +5420,7 @@ public class boatCalc extends javax.swing.JFrame {
       this.dispCtrl.slBase.setMinorTickSpacing(itic);
 
       // Create the label table
-      final Hashtable labelTable = new Hashtable();
+      final Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
       for (double d = 48 * sl_min; d <= ((48 * sl_max) + 0.5); d += dinc) {
         labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 48)));
       }
@@ -7231,7 +5441,7 @@ public class boatCalc extends javax.swing.JFrame {
       this.dispCtrl.slBase.setMinorTickSpacing(itic);
 
       // Create the label table
-      final Hashtable labelTable = new Hashtable();
+      final Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
       for (double d = sl_min; d <= (sl_max + 0.5); d += dinc) {
         labelTable.put(new Integer((int) d), new JLabel(Double.toString(d)));
       }
@@ -7266,7 +5476,7 @@ public class boatCalc extends javax.swing.JFrame {
           this.dispCtrl.slBase.setMinorTickSpacing(itic);
 
           // Create the label table
-          final Hashtable labelTable = new Hashtable();
+          final Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
           for (double d = sl_min; d <= (sl_max + 0.5); d += dinc) {
             labelTable.put(new Integer((int) d), new JLabel(Double.toString(d / 100.0)));
           }

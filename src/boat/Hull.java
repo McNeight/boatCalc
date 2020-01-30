@@ -220,7 +220,7 @@ public class Hull {
       this.tags = new String[10];
       this.itag = -1;
 
-      Hull.this.Offsets = new ArrayList();
+      Hull.this.Offsets = new ArrayList<>();
       Hull.this.bChanged = false;
 
     }
@@ -351,7 +351,7 @@ public class Hull {
 
   public String designer;
   public int DISP = 4;
-  public Set DispTri;
+  public Set<double[]> DispTri;
   double dx;
   public double gx_max;
 
@@ -373,7 +373,7 @@ public class Hull {
   int NAREA = 8;
   // displacement curve data
   public int NDIV = 100;
-  public java.util.List Offsets;
+  public java.util.List<rawLine> Offsets;
   public Rig rig;
   public Rudder rudder;
   // Constants
@@ -483,8 +483,8 @@ public class Hull {
   }
 
   public double[] getArea(final double x, final double ang, final boolean trisave) {
-    final SortedSet ss = this.getStnSet(x, ang);
-    final Iterator si = ss.iterator();
+    final SortedSet<Point> ss = this.getStnSet(x, ang);
+    final Iterator<Point> si = ss.iterator();
     Point p1, p2;
     double t1y, t1z, t2y, t2z, t3y, t3z;
     double area, cy, cz;
@@ -495,7 +495,7 @@ public class Hull {
     t3z = 0;
 
     if (trisave) {
-      this.DispTri = new HashSet();
+      this.DispTri = new HashSet<>();
     }
 
     final double[] rArea = new double[this.NAREA];
@@ -510,11 +510,11 @@ public class Hull {
       return rArea;
     }
 
-    p1 = (Point) ss.last();
+    p1 = ss.last();
 
     while (si.hasNext()) {
 
-      p2 = (Point) si.next();
+      p2 = si.next();
 
       t1y = p1.y;
       t1z = p1.z;
@@ -591,7 +591,7 @@ public class Hull {
 
   // read "Hulls" data file
   public void getHulls(final File hullfile) {
-    this.Offsets = new ArrayList();
+    this.Offsets = new ArrayList<>();
     BufferedReader r;
     String l;
     // initialization
@@ -712,23 +712,23 @@ public class Hull {
 
   }// end get hulls
 
-  public Iterator getStation(final double tx, final double ang) {
-    final SortedSet ts = this.getStnSet(tx, ang);
+  public Iterator<Point> getStation(final double tx, final double ang) {
+    final SortedSet<Point> ts = this.getStnSet(tx, ang);
     return ts.iterator();
   }
 
-  public Iterator getStation(final int i, final double ang) {
+  public Iterator<Point> getStation(final int i, final double ang) {
     final double tx = this.Stations[i];
     return this.getStation(tx, ang);
   }
 
 
-  public SortedSet getStnSet(final double tx, final double ang) {
+  public SortedSet<Point> getStnSet(final double tx, final double ang) {
     final double sinang = Math.sin(Math.toRadians(ang));
     final double cosang = Math.cos(Math.toRadians(ang));
     double ty, tz;
 
-    final Set s = new HashSet();
+    final Set<Point> s = new HashSet<>();
 
     double z_min = +1000000.0;
     double z_max = -1000000.0;
@@ -796,8 +796,8 @@ public class Hull {
     tz = cosang * (z_min + (0.8 * (z_max - z_min)));
     yzComp2.setAdj(ty, tz);
 
-    final Iterator si = s.iterator();
-    final SortedSet ts = new TreeSet(yzComp2);
+    final Iterator<Point> si = s.iterator();
+    final SortedSet<Point> ts = new TreeSet<>(yzComp2);
     while (si.hasNext()) {
       ts.add(si.next());
     }
@@ -873,10 +873,10 @@ public class Hull {
       }
       this.emitln(w, "   </stations>");
 
-      ListIterator l;
+      ListIterator<rawLine> l;
       l = this.Offsets.listIterator();
       while (l.hasNext()) {
-        final rawLine rL = (rawLine) l.next();
+        final rawLine rL = l.next();
         final Line ln = rL.ln;
         this.emitln(w, "   <line>");
         this.emitln(w, "      <linename>" + rL.lnName + "</linename>");
@@ -1091,7 +1091,7 @@ public class Hull {
   }// end saveHulls
 
   public void setLines() {
-    ListIterator l;
+    ListIterator<rawLine> l;
     final int n = this.Offsets.size();
     int i = 0;
 
@@ -1099,7 +1099,7 @@ public class Hull {
 
     l = this.Offsets.listIterator();
     while (l.hasNext()) {
-      final rawLine rL = (rawLine) l.next();
+      final rawLine rL = l.next();
       final Line ln = rL.ln;
       this.hLines[i] = new hLine(ln.points, this.base);
       if (i == 0) {
@@ -1122,15 +1122,15 @@ public class Hull {
 
     // build stem/stern lines
     final ZCompare zComp = new ZCompare();
-    final SortedSet sLow = new TreeSet(zComp);
-    final SortedSet sHigh = new TreeSet(zComp);
-    Iterator si;
+    final SortedSet<Point> sLow = new TreeSet<>(zComp);
+    final SortedSet<Point> sHigh = new TreeSet<>(zComp);
+    Iterator<Point> si;
     Line ln;
     Point p;
     final int m = this.Stations.length - 1;
     l = this.Offsets.listIterator();
     while (l.hasNext()) {
-      final rawLine rL = (rawLine) l.next();
+      final rawLine rL = l.next();
       ln = rL.ln;
       p = ln.getPoint(0);
       if (p.valid) {
@@ -1147,7 +1147,7 @@ public class Hull {
     i = 0;
     si = sLow.iterator();
     while (si.hasNext()) {
-      ln.setPoint((Point) si.next(), i);
+      ln.setPoint(si.next(), i);
       i++;
     }
     this.sLines[0] = new hLine(ln.points, this.base);
@@ -1156,7 +1156,7 @@ public class Hull {
     i = 0;
     si = sHigh.iterator();
     while (si.hasNext()) {
-      ln.setPoint((Point) si.next(), i);
+      ln.setPoint(si.next(), i);
       i++;
     }
     this.sLines[1] = new hLine(ln.points, this.base);
@@ -1164,8 +1164,6 @@ public class Hull {
   } // end setLines
 
   public void setLWL() {
-    new ArrayList();
-    new ArrayList();
     double[] rVals;
     double x, y;
 

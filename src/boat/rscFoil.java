@@ -30,7 +30,7 @@ public class rscFoil implements Cloneable {
   private double minY;
 
   private double[][] p;
-  private SortedSet sp;
+  private SortedSet<Point> sp;
 
   public boolean use;
   private double wetArea;
@@ -43,7 +43,7 @@ public class rscFoil implements Cloneable {
     this.changed = true;
   }
 
-  public void addWetPt(final Object p) {
+  public void addWetPt(final Point p) {
     this.sp.add(p);
   }
 
@@ -135,7 +135,7 @@ public class rscFoil implements Cloneable {
     return this.wetArea;
   }
 
-  public SortedSet getWetPts() {
+  public SortedSet<Point> getWetPts() {
     if (this.changed) {
       this.setFoil();
     }
@@ -182,7 +182,7 @@ public class rscFoil implements Cloneable {
 
   public void setFoil() {
 
-    final ArrayList al = new ArrayList();
+    final ArrayList<Point> al = new ArrayList<>();
     for (int i = 0; i < 4; i++) {
       al.add(new Point(this.p[0][i], 0, this.p[1][i]));
     }
@@ -196,7 +196,7 @@ public class rscFoil implements Cloneable {
     this.maxY = xzA.getMidZ();
     this.minY = xzA.getMidZ();
 
-    final ArrayList wp = new ArrayList();
+    final ArrayList<Point> wp = new ArrayList<>();
 
     for (int i = 0; i < 4; i++) {
       this.maxX = Math.max(this.maxX, this.p[0][i]);
@@ -238,7 +238,7 @@ public class rscFoil implements Cloneable {
     double tx = 0;
     double tz = 0;
     for (int i = 0; i < wp.size(); i++) {
-      final Point p = (Point) wp.get(i);
+      final Point p = wp.get(i);
       tx = tx + p.x;
       tz = tz + p.z;
     }
@@ -247,7 +247,7 @@ public class rscFoil implements Cloneable {
 
     final XZCompare xzComp = new XZCompare();
     xzComp.setAdj(tx, tz);
-    this.sp = new TreeSet(xzComp);
+    this.sp = new TreeSet<>(xzComp);
     for (int i = 0; i < wp.size(); i++) {
       this.sp.add(wp.get(i));
     }
@@ -284,7 +284,7 @@ public class rscFoil implements Cloneable {
   }
 
   public void setWetPts(final XZCompare xzComp) {
-    this.sp = new TreeSet(xzComp);
+    this.sp = new TreeSet<>(xzComp);
   }
 
   public void setX(final double x) {

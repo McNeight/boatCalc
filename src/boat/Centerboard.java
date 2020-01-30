@@ -150,7 +150,7 @@ public class Centerboard implements Cloneable {
     // save points below keel or at keel
     // note max and min of points at keel
 
-    final ArrayList wp = new ArrayList();
+    final ArrayList<Point> wp = new ArrayList<>();
     // set up "prior" point
     final double ox = this.rCB[0][3];
     double tt = (100.0 * (ox - this.hx_min)) / (this.hx_max - this.hx_min);
@@ -179,7 +179,7 @@ public class Centerboard implements Cloneable {
     double tx = 0;
     double tz = 0;
     for (int i = 0; i < wp.size(); i++) {
-      final Point p = (Point) wp.get(i);
+      final Point p = wp.get(i);
       tx = tx + p.x;
       tz = tz + p.z;
     }

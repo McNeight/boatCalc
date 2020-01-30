@@ -2,11 +2,9 @@ package geom;
 
 import java.util.Comparator;
 
-class XCompare implements Comparator {
+class XCompare implements Comparator<Point> {
   @Override
-  public int compare(final Object o1, final Object o2) {
-    final Point p1 = (Point) o1;
-    final Point p2 = (Point) o2;
+  public int compare(final Point p1, final Point p2) {
     return this.sgn(p1.getX() - p2.getX());
   }
 

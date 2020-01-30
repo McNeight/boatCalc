@@ -10,7 +10,7 @@ public class xzArea {
   private double cx, cz;
   private double tx, tz;
 
-  public xzArea(final ArrayList a) {
+  public xzArea(final ArrayList<Point> a) {
     double ta;
     this.tx = 0;
     this.tz = 0;
@@ -23,7 +23,7 @@ public class xzArea {
     }
 
     for (int i = 0; i < a.size(); i++) {
-      final Point p = (Point) a.get(i);
+      final Point p = a.get(i);
       this.tx = this.tx + p.x;
       this.tz = this.tz + p.z;
     }
@@ -32,11 +32,11 @@ public class xzArea {
 
     final XZCompare xzComp = new XZCompare();
     xzComp.setAdj(this.tx, this.tz);
-    final SortedSet ss = new TreeSet(xzComp);
+    final SortedSet<Point> ss = new TreeSet<>(xzComp);
     for (int i = 0; i < a.size(); i++) {
       ss.add(a.get(i));
     }
-    final Iterator si = ss.iterator();
+    final Iterator<?> si = ss.iterator();
     final Point p0 = (Point) si.next();
     Point p1 = new Point(p0);
     while (si.hasNext()) {

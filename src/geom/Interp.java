@@ -6,13 +6,13 @@ public class Interp {
   double[] x;
   double[] y;
 
-  public Interp(final ArrayList ax, final ArrayList ay) {
+  public Interp(final ArrayList<Double> ax, final ArrayList<Double> ay) {
     this.x = new double[ax.size()];
     this.y = new double[ay.size()];
     int i;
     for (i = 0; i < ax.size(); i++) {
-      this.x[i] = ((Double) ax.get(i));
-      this.y[i] = ((Double) ay.get(i));
+      this.x[i] = (ax.get(i));
+      this.y[i] = (ay.get(i));
     }
   }
 

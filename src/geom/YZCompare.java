@@ -2,14 +2,12 @@ package geom;
 
 import java.util.Comparator;
 
-public class YZCompare implements Comparator {
+public class YZCompare implements Comparator<Point> {
   double yAdj = 0;
   double zAdj = 0;
 
   @Override
-  public int compare(final Object o1, final Object o2) {
-    final Point p1 = (Point) o1;
-    final Point p2 = (Point) o2;
+  public int compare(final Point p1, final Point p2) {
     return this.sgn(p1.angleYZ(this.yAdj, this.zAdj) - p2.angleYZ(this.yAdj, this.zAdj));
   }
 
