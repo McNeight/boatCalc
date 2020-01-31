@@ -1,37 +1,107 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package boat;
 
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Sail.
+ */
 public class Sail implements Cloneable {
 
+  /** The boom. */
   public static int BOOM = 2;
+
+  /** The clew. */
   public static int CLEW = 4;
+
+  /** The gaff. */
   public static int GAFF = 3;
+
+  /** The leech. */
   public static int LEECH = 3;
+
+  /** The luff. */
   public static int LUFF = 1;
 
+  /** The peak. */
   public static int PEAK = 2;
+
+  /** The roach. */
   public static int ROACH = 4;
+
+  /** The tack. */
   public static int TACK = 0;
+
+  /** The throat. */
   public static int THROAT = 1;
 
-  private double area;
-  private double[][] c;
-  private boolean changed;
-  private double cX;
-
-  private double cY;
-
-  private int dir = 1;
-  private double maxX;
-  private double maxY;
-  private double minX;
-  private double minY;
-
-  private double[][] p;
+  /** The use. */
   public boolean use;
+
+  /** The use gaff. */
   public boolean useGaff;
+
+  /** The use roach. */
   public boolean useRoach;
 
+  /** The area. */
+  private double area;
+
+  /** The c. */
+  private double[][] c;
+
+  /** The changed. */
+  private boolean changed;
+
+  /** The c X. */
+  private double cX;
+
+  /** The c Y. */
+  private double cY;
+
+  /** The dir. */
+  private int dir = 1;
+
+  /** The max X. */
+  private double maxX;
+
+  /** The max Y. */
+  private double maxY;
+
+  /** The min X. */
+  private double minX;
+
+  /** The min Y. */
+  private double minY;
+
+  /** The p. */
+  private double[][] p;
+
+  /**
+   * Instantiates a new sail.
+   */
   public Sail() {
     this.p = new double[2][5];
     this.p[0][4] = 10.0;
@@ -42,6 +112,11 @@ public class Sail implements Cloneable {
     this.useRoach = false;
   }
 
+  /**
+   * Clone.
+   *
+   * @return the object
+   */
   @Override
   public Object clone() {
 
@@ -59,6 +134,11 @@ public class Sail implements Cloneable {
 
   } // end clone
 
+  /**
+   * Gets the area.
+   *
+   * @return the area
+   */
   public double getArea() {
     if (this.changed) {
       this.setSail();
@@ -66,6 +146,11 @@ public class Sail implements Cloneable {
     return this.area;
   }
 
+  /**
+   * Gets the area X.
+   *
+   * @return the area X
+   */
   public double getAreaX() {
     if (this.changed) {
       this.setSail();
@@ -73,6 +158,11 @@ public class Sail implements Cloneable {
     return this.cX;
   }
 
+  /**
+   * Gets the area Y.
+   *
+   * @return the area Y
+   */
   public double getAreaY() {
     if (this.changed) {
       this.setSail();
@@ -80,6 +170,11 @@ public class Sail implements Cloneable {
     return this.cY;
   }
 
+  /**
+   * Gets the max X.
+   *
+   * @return the max X
+   */
   public double getMaxX() {
     if (this.changed) {
       this.setSail();
@@ -87,6 +182,11 @@ public class Sail implements Cloneable {
     return this.maxX;
   }
 
+  /**
+   * Gets the max Y.
+   *
+   * @return the max Y
+   */
   public double getMaxY() {
     if (this.changed) {
       this.setSail();
@@ -94,6 +194,11 @@ public class Sail implements Cloneable {
     return this.maxY;
   }
 
+  /**
+   * Gets the min X.
+   *
+   * @return the min X
+   */
   public double getMinX() {
     if (this.changed) {
       this.setSail();
@@ -101,6 +206,11 @@ public class Sail implements Cloneable {
     return this.minX;
   }
 
+  /**
+   * Gets the min Y.
+   *
+   * @return the min Y
+   */
   public double getMinY() {
     if (this.changed) {
       this.setSail();
@@ -108,14 +218,33 @@ public class Sail implements Cloneable {
     return this.minY;
   }
 
+  /**
+   * Gets the param X.
+   *
+   * @param i the i
+   * @return the param X
+   */
   public double getParamX(final int i) {
     return this.p[0][i];
   }
 
+  /**
+   * Gets the param Y.
+   *
+   * @param i the i
+   * @return the param Y
+   */
   public double getParamY(final int i) {
     return this.p[1][i];
   }
 
+  /**
+   * Gets the val.
+   *
+   * @param j the j
+   * @param i the i
+   * @return the val
+   */
   public double getVal(final int j, final int i) {
     if (this.changed) {
       this.setSail();
@@ -123,6 +252,12 @@ public class Sail implements Cloneable {
     return this.c[j][i];
   }
 
+  /**
+   * Gets the x.
+   *
+   * @param i the i
+   * @return the x
+   */
   public double getX(final int i) {
     if (this.changed) {
       this.setSail();
@@ -130,6 +265,12 @@ public class Sail implements Cloneable {
     return this.c[0][i];
   }
 
+  /**
+   * Gets the y.
+   *
+   * @param i the i
+   * @return the y
+   */
   public double getY(final int i) {
     if (this.changed) {
       this.setSail();
@@ -137,65 +278,132 @@ public class Sail implements Cloneable {
     return this.c[1][i];
   }
 
+  /**
+   * Sets the boom ang.
+   *
+   * @param x the new boom ang
+   */
   public void setBoomAng(final double x) {
     this.p[1][2] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the boom len.
+   *
+   * @param x the new boom len
+   */
   public void setBoomLen(final double x) {
     this.p[0][2] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the dir.
+   *
+   * @param i the new dir
+   */
   public void setDir(final int i) {
     this.dir = i;
     this.changed = true;
   }
 
+  /**
+   * Sets the gaff ang.
+   *
+   * @param x the new gaff ang
+   */
   public void setGaffAng(final double x) {
     this.p[1][3] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the gaff len.
+   *
+   * @param x the new gaff len
+   */
   public void setGaffLen(final double x) {
     this.p[0][3] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the luff ang.
+   *
+   * @param x the new luff ang
+   */
   public void setLuffAng(final double x) {
     this.p[1][1] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the luff len.
+   *
+   * @param x the new luff len
+   */
   public void setLuffLen(final double x) {
     this.p[0][1] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the param.
+   *
+   * @param i the i
+   * @param x the x
+   * @param y the y
+   */
   public void setParam(final int i, final double x, final double y) {
     this.p[0][i] = x;
     this.p[1][i] = y;
     this.changed = true;
   }
 
+  /**
+   * Sets the param X.
+   *
+   * @param i the i
+   * @param x the x
+   */
   public void setParamX(final int i, final double x) {
     this.p[0][i] = x;
   }
 
+  /**
+   * Sets the param Y.
+   *
+   * @param i the i
+   * @param y the y
+   */
   public void setParamY(final int i, final double y) {
     this.p[1][i] = y;
   }
 
+  /**
+   * Sets the roach max.
+   *
+   * @param x the new roach max
+   */
   public void setRoachMax(final double x) {
     this.p[0][4] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the roach pct.
+   *
+   * @param x the new roach pct
+   */
   public void setRoachPct(final double x) {
     this.p[1][4] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the sail.
+   */
   public void setSail() {
     double tx, ty;
     double mx, my;
@@ -326,32 +534,68 @@ public class Sail implements Cloneable {
     this.changed = false;
   }
 
+  /**
+   * Sets the use.
+   *
+   * @param b the new use
+   */
   public void setUse(final boolean b) {
     this.use = b;
     this.changed = true;
   }
 
+  /**
+   * Sets the use gaff.
+   *
+   * @param b the new use gaff
+   */
   public void setUseGaff(final boolean b) {
     this.useGaff = b;
     this.changed = true;
   }
 
+  /**
+   * Sets the use roach.
+   *
+   * @param b the new use roach
+   */
   public void setUseRoach(final boolean b) {
     this.useRoach = b;
     this.changed = true;
   }
 
 
+  /**
+   * Sets the x.
+   *
+   * @param x the new x
+   */
   public void setX(final double x) {
     this.p[0][0] = x;
     this.changed = true;
   }
 
+  /**
+   * Sets the y.
+   *
+   * @param x the new y
+   */
   public void setY(final double x) {
     this.p[1][0] = x;
     this.changed = true;
   }
 
+  /**
+   * Tri area.
+   *
+   * @param x1 the x 1
+   * @param y1 the y 1
+   * @param x2 the x 2
+   * @param y2 the y 2
+   * @param x3 the x 3
+   * @param y3 the y 3
+   * @return the double
+   */
   public final double TriArea(final double x1, final double y1, final double x2, final double y2,
       final double x3, final double y3) {
     double a;

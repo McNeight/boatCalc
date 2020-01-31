@@ -1,5 +1,25 @@
-/**
+/* @formatter:off
  *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
  */
 package gui;
 
@@ -11,21 +31,38 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class wgtPanel.
+ */
 public class wgtPanel extends JPanel {
-  /**
-   *
-   */
+
+  /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 1L;
-  /**
-   *
-   */
+
+  /** The boat calc. */
   private final boatCalc boatCalc;
+
+  /** The d. */
   Dimension d;
+
+  /** The lbl heel. */
   bcLabel lblHeel;
+
+  /** The lbl moments. */
   JLabel[] lblMoments;
+
+  /** The lbl wgt disp. */
   JLabel[][] lblWgtDisp;
 
-  public wgtPanel(boatCalc boatCalc, final int x, final int y) {
+  /**
+   * Instantiates a new wgt panel.
+   *
+   * @param boatCalc the boat calc
+   * @param x the x
+   * @param y the y
+   */
+  public wgtPanel(final boatCalc boatCalc, final int x, final int y) {
     this.boatCalc = boatCalc;
     this.d = new Dimension(x, y);
     this.lblHeel = new bcLabel("Heel:", SwingConstants.CENTER);
@@ -82,12 +119,20 @@ public class wgtPanel extends JPanel {
 
   }
 
+  /**
+   * Gets the preferred size.
+   *
+   * @return the preferred size
+   */
   @Override
   public Dimension getPreferredSize() {
     return this.d;
   }
 
 
+  /**
+   * Sets the weights.
+   */
   public void setWeights() {
     final double sinang = Math.sin(Math.toRadians(this.boatCalc.hull.angHeel));
     final double cosang = Math.cos(Math.toRadians(this.boatCalc.hull.angHeel));

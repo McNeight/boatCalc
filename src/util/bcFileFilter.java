@@ -1,3 +1,26 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package util;
 /*
  * Copyright (c) 2003 Sun Microsystems, Inc. All Rights Reserved.
@@ -49,7 +72,7 @@ import javax.swing.filechooser.FileFilter;
  * Example - create a new filter that filerts out all files but gif and jpg image files:
  *
  * JFileChooser chooser = new JFileChooser(); ExampleFileFilter filter = new ExampleFileFilter( new
- * String{"gif", "jpg"}, "JPEG & GIF Images") chooser.addChoosableFileFilter(filter);
+ * String{"gif", "jpg"}, "JPEG &amp; GIF Images") chooser.addChoosableFileFilter(filter);
  * chooser.showOpenDialog(this);
  *
  * @version 1.14 01/23/03
@@ -58,7 +81,7 @@ import javax.swing.filechooser.FileFilter;
 public class bcFileFilter extends FileFilter {
 
   private String description = null;
-  private Hashtable filters = null;
+  private Hashtable<String, bcFileFilter> filters = null;
   private String fullDescription = null;
   private boolean useExtensionsInDescription = true;
 
@@ -68,7 +91,7 @@ public class bcFileFilter extends FileFilter {
    * @see #addExtension
    */
   public bcFileFilter() {
-    this.filters = new Hashtable();
+    this.filters = new Hashtable<>();
   }
 
   /**
@@ -136,7 +159,7 @@ public class bcFileFilter extends FileFilter {
    * Files that begin with "." are ignored.
    *
    * @see #getExtension
-   * @see FileFilter#accepts
+   * @see bcFileFilter#accepts
    */
   @Override
   public boolean accept(final File f) {
@@ -165,7 +188,7 @@ public class bcFileFilter extends FileFilter {
    */
   public void addExtension(final String extension) {
     if (this.filters == null) {
-      this.filters = new Hashtable(5);
+      this.filters = new Hashtable<>(5);
     }
     this.filters.put(extension.toLowerCase(), this);
     this.fullDescription = null;
@@ -186,11 +209,11 @@ public class bcFileFilter extends FileFilter {
       if ((this.description == null) || this.isExtensionListInDescription()) {
         this.fullDescription = this.description == null ? "(" : this.description + " (";
         // build the description from the extension list
-        final Enumeration extensions = this.filters.keys();
+        final Enumeration<String> extensions = this.filters.keys();
         if (extensions != null) {
-          this.fullDescription += "." + (String) extensions.nextElement();
+          this.fullDescription += "." + extensions.nextElement();
           while (extensions.hasMoreElements()) {
-            this.fullDescription += ", ." + (String) extensions.nextElement();
+            this.fullDescription += ", ." + extensions.nextElement();
           }
         }
         this.fullDescription += ")";

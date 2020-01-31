@@ -1,5 +1,25 @@
-/**
+/* @formatter:off
  *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
  */
 package gui;
 
@@ -17,28 +37,57 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class edWgtPanel.
+ */
 class edWgtPanel extends JPanel implements DocumentListener, FocusListener {
-  /**
-   *
-   */
+
+  /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 1L;
-  boolean bChanged;
-  /**
-   *
-   */
-  private final boatCalc boatCalc;
+
+  /** The l. */
   public JTextField[] l;
-  JLabel lblTot = new JLabel("CoG:");
-  JLabel lblWgt = new JLabel("n/a");
-  JLabel lblX = new JLabel("n/a");
-  JLabel lblY = new JLabel("n/a");
-  JLabel lblZ = new JLabel("n/a");
+
+  /** The w. */
   public JTextField[] w;
+
+  /** The x. */
   public JTextField[] x;
+
+  /** The y. */
   public JTextField[] y;
+
+  /** The z. */
   public JTextField[] z;
 
-  public edWgtPanel(boatCalc boatCalc) {
+  /** The boat calc. */
+  private final boatCalc boatCalc;
+
+  /** The b changed. */
+  boolean bChanged;
+
+  /** The lbl tot. */
+  JLabel lblTot = new JLabel("CoG:");
+
+  /** The lbl wgt. */
+  JLabel lblWgt = new JLabel("n/a");
+
+  /** The lbl X. */
+  JLabel lblX = new JLabel("n/a");
+
+  /** The lbl Y. */
+  JLabel lblY = new JLabel("n/a");
+
+  /** The lbl Z. */
+  JLabel lblZ = new JLabel("n/a");
+
+  /**
+   * Instantiates a new ed wgt panel.
+   *
+   * @param boatCalc the boat calc
+   */
+  public edWgtPanel(final boatCalc boatCalc) {
 
     this.boatCalc = boatCalc;
     JLabel lbl;
@@ -124,6 +173,9 @@ class edWgtPanel extends JPanel implements DocumentListener, FocusListener {
 
   }// end constructor
 
+  /**
+   * Adds the wgts.
+   */
   public void addWgts() {
     double tw = 0;
     double tx = 0;
@@ -157,27 +209,52 @@ class edWgtPanel extends JPanel implements DocumentListener, FocusListener {
 
   }// end addWgts
 
+  /**
+   * Changed update.
+   *
+   * @param e the e
+   */
   @Override
   public void changedUpdate(final DocumentEvent e) {
     this.addWgts();
     this.bChanged = true;
   }
 
+  /**
+   * Focus gained.
+   *
+   * @param e the e
+   */
   @Override
   public void focusGained(final FocusEvent e) {
     final JTextField t = (JTextField) e.getComponent();
     t.select(0, 100);
   }
 
+  /**
+   * Focus lost.
+   *
+   * @param e the e
+   */
   @Override
   public void focusLost(final FocusEvent e) {}
 
+  /**
+   * Insert update.
+   *
+   * @param e the e
+   */
   @Override
   public void insertUpdate(final DocumentEvent e) {
     this.addWgts();
     this.bChanged = true;
   }
 
+  /**
+   * Removes the update.
+   *
+   * @param e the e
+   */
   @Override
   public void removeUpdate(final DocumentEvent e) {
     this.addWgts();

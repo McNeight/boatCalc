@@ -1,11 +1,48 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package geom;
 
 import java.util.ArrayList;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Interp.
+ */
 public class Interp {
+
+  /** The x. */
   double[] x;
+
+  /** The y. */
   double[] y;
 
+  /**
+   * Instantiates a new interp.
+   *
+   * @param ax the ax
+   * @param ay the ay
+   */
   public Interp(final ArrayList<Double> ax, final ArrayList<Double> ay) {
     this.x = new double[ax.size()];
     this.y = new double[ay.size()];
@@ -16,11 +53,23 @@ public class Interp {
     }
   }
 
+  /**
+   * Instantiates a new interp.
+   *
+   * @param n the n
+   */
   public Interp(final int n) {
     this.x = new double[n];
     this.y = new double[n];
   }
 
+  /**
+   * Instantiates a new interp.
+   *
+   * @param l the l
+   * @param X the x
+   * @param Y the y
+   */
   public Interp(final Line l, final String X, final String Y) {
     int i, n;
     // count valid points
@@ -59,14 +108,32 @@ public class Interp {
     }
   }// end constuctor from Line
 
+  /**
+   * Gets the x.
+   *
+   * @param i the i
+   * @return the x
+   */
   public double getX(final int i) {
     return this.x[i];
   }
 
+  /**
+   * Gets the y.
+   *
+   * @param i the i
+   * @return the y
+   */
   public double getY(final int i) {
     return this.y[i];
   }
 
+  /**
+   * Interp 4 P.
+   *
+   * @param v the v
+   * @return the double
+   */
   public double interp4P(final double v) {
     double t;
     double p;
@@ -101,6 +168,12 @@ public class Interp {
     return t;
   }
 
+  /**
+   * Interp LG.
+   *
+   * @param v the v
+   * @return the double
+   */
   public double interpLG(final double v) {
     double t;
     double p;
@@ -120,6 +193,12 @@ public class Interp {
     return t;
   }
 
+  /**
+   * Left linear.
+   *
+   * @param v the v
+   * @return the double
+   */
   public double leftLinear(final double v) {
     final int m = this.x.length - 2;
     for (int i = 0; i <= m; i++) {
@@ -138,6 +217,11 @@ public class Interp {
     return this.y[this.x.length - 1];
   }
 
+  /**
+   * Left zero.
+   *
+   * @return the double
+   */
   public double leftZero() {
     if (this.y[0] >= this.y[1]) {
       return this.x[0];
@@ -162,6 +246,12 @@ public class Interp {
   } // end leftZero
 
 
+  /**
+   * Right linear.
+   *
+   * @param v the v
+   * @return the double
+   */
   public double rightLinear(final double v) {
     for (int i = this.x.length - 1; i >= 1; i--) {
       if ((this.x[i - 1] == v) && (v == this.x[i])) {
@@ -179,6 +269,11 @@ public class Interp {
     return this.y[0];
   }
 
+  /**
+   * Right zero.
+   *
+   * @return the double
+   */
   public double rightZero() {
     final int n = this.x.length;
     if (this.y[n - 2] <= this.y[n - 1]) {
@@ -203,19 +298,43 @@ public class Interp {
     return x0;
   } // end rightZero
 
+  /**
+   * Sets the X.
+   *
+   * @param i the i
+   * @param v the v
+   */
   public void setX(final int i, final double v) {
     this.x[i] = v;
   }
 
+  /**
+   * Sets the XY.
+   *
+   * @param i the i
+   * @param v the v
+   * @param w the w
+   */
   public void setXY(final int i, final double v, final double w) {
     this.x[i] = v;
     this.y[i] = w;
   }
 
+  /**
+   * Sets the Y.
+   *
+   * @param i the i
+   * @param v the v
+   */
   public void setY(final int i, final double v) {
     this.y[i] = v;
   }
 
+  /**
+   * Size.
+   *
+   * @return the int
+   */
   public int size() {
     return this.x.length;
   }

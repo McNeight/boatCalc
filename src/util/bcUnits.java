@@ -1,13 +1,55 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package util;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class bcUnits.
+ */
 public class bcUnits {
-  String[] lMom = {" in.-lbs.", "ft.-lbs.", "cc-Kg", "m-Kg"};
-  String[] lVol = {" cu. in.", " cu. ft.", " cc", " cu m"};
-  String[] lWgt = {" lbs.", " lbs.", " Kg", " Kg"};
+
+  /** The units. */
   public int UNITS = 0;
-  double[][] v2w;
+
+  /** The water. */
   public int WATER = 0;
 
+  /** The l mom. */
+  String[] lMom = {" in.-lbs.", "ft.-lbs.", "cc-Kg", "m-Kg"};
+
+  /** The l vol. */
+  String[] lVol = {" cu. in.", " cu. ft.", " cc", " cu m"};
+
+  /** The l wgt. */
+  String[] lWgt = {" lbs.", " lbs.", " Kg", " Kg"};
+
+  /** The v 2 w. */
+  double[][] v2w;
+
+  /**
+   * Instantiates a new bc units.
+   */
   public bcUnits() {
 
     this.v2w = new double[2][4];
@@ -22,6 +64,11 @@ public class bcUnits {
 
   }
 
+  /**
+   * Coef area.
+   *
+   * @return the double
+   */
   public double coefArea() {
     double r;
     if (this.UNITS == 0) {
@@ -36,6 +83,11 @@ public class bcUnits {
     return r;
   }// end coefArea
 
+  /**
+   * Coef PPI.
+   *
+   * @return the double
+   */
   public double coefPPI() {
     double r;
     if (this.UNITS == 0) {
@@ -50,6 +102,11 @@ public class bcUnits {
     return r;
   }// end coefPPI
 
+  /**
+   * Lbl area.
+   *
+   * @return the string
+   */
   public String lblArea() {
     String r;
     if (this.UNITS <= 1) {
@@ -60,10 +117,20 @@ public class bcUnits {
     return r;
   }// end lblArea
 
+  /**
+   * Lbl mom.
+   *
+   * @return the string
+   */
   public String lblMom() {
     return this.lMom[this.UNITS];
   }
 
+  /**
+   * Lbl PPI.
+   *
+   * @return the string
+   */
   public String lblPPI() {
     String r;
     if (this.UNITS <= 1) {
@@ -74,14 +141,29 @@ public class bcUnits {
     return r;
   }// end lblPPI
 
+  /**
+   * Lbl vol.
+   *
+   * @return the string
+   */
   public String lblVol() {
     return this.lVol[this.UNITS];
   }
 
+  /**
+   * Lbl wgt.
+   *
+   * @return the string
+   */
   public String lblWgt() {
     return this.lWgt[this.UNITS];
   }
 
+  /**
+   * Vol 2 ton.
+   *
+   * @return the double
+   */
   public double Vol2Ton() {
     double r;
     if (this.UNITS <= 1) {
@@ -92,6 +174,11 @@ public class bcUnits {
     return r;
   }
 
+  /**
+   * Vol 2 wgt.
+   *
+   * @return the double
+   */
   public double Vol2Wgt() {
     return this.v2w[this.WATER][this.UNITS];
   }

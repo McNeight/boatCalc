@@ -1,5 +1,25 @@
-/**
+/* @formatter:off
  *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
  */
 package gui;
 
@@ -10,29 +30,61 @@ import java.util.Iterator;
 import javax.swing.JPanel;
 import geom.Point;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class stnBody.
+ */
 public class stnBody extends JPanel {
-  /**
-   *
-   */
+
+  /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 1L;
-  /**
-   *
-   */
+
+  /** The boat calc. */
   private final boatCalc boatCalc;
+
+  /** The d. */
   Dimension d;
+
+  /** The title. */
   String title = "Station Area";
 
-  public stnBody(boatCalc boatCalc, final int x, final int y) {
+  /**
+   * Instantiates a new stn body.
+   *
+   * @param boatCalc the boat calc
+   * @param x the x
+   * @param y the y
+   */
+  public stnBody(final boatCalc boatCalc, final int x, final int y) {
     this.boatCalc = boatCalc;
     this.d = new Dimension(x, y);
     this.setBackground(Color.white);
   }
 
+  /**
+   * Gets the preferred size.
+   *
+   * @return the preferred size
+   */
   @Override
   public Dimension getPreferredSize() {
     return this.d;
   }
 
+  /**
+   * Sets the title.
+   *
+   * @param s the new title
+   */
+  public void setTitle(final String s) {
+    this.title = s;
+  }
+
+  /**
+   * Paint component.
+   *
+   * @param g the g
+   */
   @Override
   protected void paintComponent(final Graphics g) {
     super.paintComponent(g);
@@ -144,8 +196,4 @@ public class stnBody extends JPanel {
     }
 
   }// end paint
-
-  public void setTitle(final String s) {
-    this.title = s;
-  }
 }// end hdBody

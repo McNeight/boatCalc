@@ -1,3 +1,26 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package boat;
 
 import java.io.BufferedReader;
@@ -30,37 +53,94 @@ import geom.rawLine;
 import util.bcFormat;
 import util.bcUnits;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Hull.
+ */
 public class Hull {
 
+  /**
+   * The Class bcHandler.
+   */
   class bcHandler extends DefaultHandler {
+
+    /** The cur foil. */
     rscFoil curFoil;
+
+    /** The cur sail. */
     Sail curSail;
+
+    /** The i foil. */
     int iFoil;
 
+    /** The i line. */
     int iLine;
+
+    /** The i sail. */
     int iSail;
+
+    /** The i stn. */
     int iStn;
+
+    /** The itag. */
     int itag;
+
+    /** The i wgt. */
     int iWgt;
+
+    /** The l. */
     Line l;
+
+    /** The linecount. */
     int linecount = 0;
+
+    /** The linename. */
     String linename;
+
+    /** The p. */
     Point[] p;
+
+    /** The sb L name. */
     StringBuffer sbBase, sbNA, sbDName, sbLName;
+
+    /** The sb foil Y. */
     StringBuffer sbFoilX, sbFoilY;
+
+    /** The sb R stem. */
     StringBuffer sbLStem, sbRStem;
+
+    /** The sb rig Y. */
     StringBuffer sbRigX, sbRigY;
+
+    /** The sb stn X. */
     StringBuffer sbStnX;
+
+    /** The sb units. */
     StringBuffer sbWater, sbUnits;
+
+    /** The sb WZ. */
     StringBuffer sbWL, sbWW, sbWX, sbWY, sbWZ;
 
+    /** The sb V. */
     StringBuffer sbX, sbY, sbZ, sbV;
+
+    /** The tags. */
     String[] tags;
 
+    /** The v. */
     boolean v = true;
+
+    /** The z. */
     double x, y, z;
 
 
+    /**
+     * Characters.
+     *
+     * @param buf the buf
+     * @param offset the offset
+     * @param len the len
+     */
     @Override
     public void characters(final char buf[], final int offset, final int len) {
       final String s = new String(buf, offset, len);
@@ -119,9 +199,22 @@ public class Hull {
 
     }
 
+    /**
+     * End document.
+     *
+     * @throws SAXException the SAX exception
+     */
     @Override
     public void endDocument() throws SAXException {}
 
+    /**
+     * End element.
+     *
+     * @param ns the ns
+     * @param n the n
+     * @param qn the qn
+     * @throws SAXException the SAX exception
+     */
     @Override
     public void endElement(final String ns, final String n, final String qn) throws SAXException {
       String ts;
@@ -210,6 +303,11 @@ public class Hull {
 
     }
 
+    /**
+     * Start document.
+     *
+     * @throws SAXException the SAX exception
+     */
     @Override
     public void startDocument() throws SAXException {
 
@@ -225,6 +323,15 @@ public class Hull {
 
     }
 
+    /**
+     * Start element.
+     *
+     * @param ns the ns
+     * @param n the n
+     * @param qn the qn
+     * @param a the a
+     * @throws SAXException the SAX exception
+     */
     @Override
     public void startElement(final String ns, final String n, final String qn, final Attributes a)
         throws SAXException {
@@ -337,70 +444,150 @@ public class Hull {
 
   }// end bcHandler
 
+  /** The ang heel. */
   public double angHeel = 0.0;
 
+  /** The base. */
   public double base;
-  bcFormat bcf;
+
+  /** The b changed. */
   public boolean bChanged;
+
+  /** The board. */
   public Centerboard board;
+
+  /** The boatname. */
   public String boatname;
+
+  /** The b stems. */
   public boolean bStems[];
+
+  /** The cx. */
   public int CX = 1;
+
+  /** The cy. */
   public int CY = 2;
+
+  /** The cz. */
   public int CZ = 3;
 
+  /** The designer. */
   public String designer;
+
+  /** The disp. */
   public int DISP = 4;
+
+  /** The Disp tri. */
   public Set<double[]> DispTri;
-  double dx;
+
+  /** The gx max. */
   public double gx_max;
 
+  /** The gx min. */
   // derived data
   public double gx_min;
 
+  /** The gy max. */
   public double gy_max;
 
+  /** The gy min. */
   public double gy_min;
+
+  /** The gz max. */
   public double gz_max;
 
+  /** The gz min. */
   public double gz_min;
+
+  /** The h lines. */
   public hLine[] hLines;
+
+  /** The h vals. */
   public double[] hVals;
+
+  /** The lwl left. */
   public double lwlLeft;
 
+  /** The lwl right. */
   public double lwlRight;
 
-  int NAREA = 8;
+  /** The ndiv. */
   // displacement curve data
   public int NDIV = 100;
+
+  /** The Offsets. */
   public java.util.List<rawLine> Offsets;
+
+  /** The rig. */
   public Rig rig;
+
+  /** The rudder. */
   public Rudder rudder;
+
+  /** The sarea. */
   // Constants
   public int SAREA = 0;
 
+  /** The s lines. */
   public hLine[] sLines;
+
+  /** The Stations. */
   public double[] Stations;
+
+  /** The units. */
   public bcUnits units;
 
-
+  /** The valid. */
   // basic data
   public boolean valid;
+
+  /** The v disp. */
   public double[][] vDisp;
+
+  /** The v wet. */
   public double[] vWet;
 
+
+  /** The v WL. */
   public double[][] vWL;
-  int WETTED = 7;
+
+  /** The wgt lbl. */
   public String wgtLbl[];
+
+  /** The wgt wgt. */
   public double wgtWgt[];
+
+  /** The wgt X. */
   public double wgtX[];
+
+  /** The wgt Y. */
   public double wgtY[];
+
+  /** The wgt Z. */
   public double wgtZ[];
+
+  /** The bcf. */
+  bcFormat bcf;
+
+  /** The dx. */
+  double dx;
+
+  /** The narea. */
+  int NAREA = 8;
+
+  /** The wetted. */
+  int WETTED = 7;
+
+  /** The wl left. */
   int WL_LEFT = 5;
 
 
+  /** The wl right. */
   int WL_RIGHT = 6;
 
+  /**
+   * Instantiates a new hull.
+   */
   // minimal constructor
   public Hull() {
     this.bcf = new bcFormat();
@@ -420,6 +607,9 @@ public class Hull {
     this.valid = false;
   } // end constructor
 
+  /**
+   * Calc disp.
+   */
   public void calcDisp() {
     this.setLWL();
     this.dx = (this.lwlRight - this.lwlLeft) / (this.NDIV);
@@ -468,20 +658,14 @@ public class Hull {
   }// end calc Disp
 
 
-  private void emit(final BufferedWriter w, final String s) {
-    try {
-      w.write(s, 0, s.length());
-    } catch (final IOException e) {
-      System.out.println(e);
-    }
-  }
-
-
-  private void emitln(final BufferedWriter w, final String s) {
-    this.emit(w, s);
-    this.emit(w, System.getProperty("line.separator"));
-  }
-
+  /**
+   * Gets the area.
+   *
+   * @param x the x
+   * @param ang the ang
+   * @param trisave the trisave
+   * @return the area
+   */
   public double[] getArea(final double x, final double ang, final boolean trisave) {
     final SortedSet<Point> ss = this.getStnSet(x, ang);
     final Iterator<Point> si = ss.iterator();
@@ -573,6 +757,13 @@ public class Hull {
     return rArea;
   } // end getArea (station=x)
 
+
+  /**
+   * Gets the data.
+   *
+   * @param hullfile the hullfile
+   * @return the data
+   */
   // read native (xml) data file
   public void getData(final File hullfile) {
     // declarations
@@ -588,7 +779,12 @@ public class Hull {
     this.valid = true;
   } // end getData
 
-
+  /**
+   * Gets the hulls.
+   *
+   * @param hullfile the hullfile
+   * @return the hulls
+   */
   // read "Hulls" data file
   public void getHulls(final File hullfile) {
     this.Offsets = new ArrayList<>();
@@ -712,17 +908,38 @@ public class Hull {
 
   }// end get hulls
 
+  /**
+   * Gets the station.
+   *
+   * @param tx the tx
+   * @param ang the ang
+   * @return the station
+   */
   public Iterator<Point> getStation(final double tx, final double ang) {
     final SortedSet<Point> ts = this.getStnSet(tx, ang);
     return ts.iterator();
   }
 
+
+  /**
+   * Gets the station.
+   *
+   * @param i the i
+   * @param ang the ang
+   * @return the station
+   */
   public Iterator<Point> getStation(final int i, final double ang) {
     final double tx = this.Stations[i];
     return this.getStation(tx, ang);
   }
 
-
+  /**
+   * Gets the stn set.
+   *
+   * @param tx the tx
+   * @param ang the ang
+   * @return the stn set
+   */
   public SortedSet<Point> getStnSet(final double tx, final double ang) {
     final double sinang = Math.sin(Math.toRadians(ang));
     final double cosang = Math.cos(Math.toRadians(ang));
@@ -805,6 +1022,9 @@ public class Hull {
 
   }// end getStation
 
+  /**
+   * New wgts.
+   */
   public void newWgts() {
     this.wgtLbl = new String[10];
     this.wgtWgt = new double[10];
@@ -825,6 +1045,11 @@ public class Hull {
   }
 
 
+  /**
+   * Save data.
+   *
+   * @param xmlFile the xml file
+   */
   public void saveData(File xmlFile) {
     String fn = xmlFile.getName();
     BufferedWriter w;
@@ -957,6 +1182,11 @@ public class Hull {
 
   }// end saveData
 
+  /**
+   * Save hulls.
+   *
+   * @param hullFile the hull file
+   */
   public void saveHulls(File hullFile) {
 
     String fn = hullFile.getName();
@@ -1090,6 +1320,10 @@ public class Hull {
 
   }// end saveHulls
 
+
+  /**
+   * Sets the lines.
+   */
   public void setLines() {
     ListIterator<rawLine> l;
     final int n = this.Offsets.size();
@@ -1163,6 +1397,9 @@ public class Hull {
 
   } // end setLines
 
+  /**
+   * Sets the LWL.
+   */
   public void setLWL() {
     double[] rVals;
     double x, y;
@@ -1235,6 +1472,17 @@ public class Hull {
     }
   }// end setLWL
 
+  /**
+   * Tri area.
+   *
+   * @param x1 the x 1
+   * @param y1 the y 1
+   * @param x2 the x 2
+   * @param y2 the y 2
+   * @param x3 the x 3
+   * @param y3 the y 3
+   * @return the double
+   */
   public final double TriArea(final double x1, final double y1, final double x2, final double y2,
       final double x3, final double y3) {
     double a;
@@ -1246,6 +1494,31 @@ public class Hull {
       a = 0.5 * Math.abs(((x1 - x3) * (y2 - y3)) - ((x2 - x3) * (y1 - y3)));
     }
     return a;
+  }
+
+  /**
+   * Emit.
+   *
+   * @param w the w
+   * @param s the s
+   */
+  private void emit(final BufferedWriter w, final String s) {
+    try {
+      w.write(s, 0, s.length());
+    } catch (final IOException e) {
+      System.out.println(e);
+    }
+  }
+
+  /**
+   * Emitln.
+   *
+   * @param w the w
+   * @param s the s
+   */
+  private void emitln(final BufferedWriter w, final String s) {
+    this.emit(w, s);
+    this.emit(w, System.getProperty("line.separator"));
   }
 
 

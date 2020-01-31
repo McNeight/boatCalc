@@ -1,13 +1,53 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package boat;
 
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Rig.
+ */
 public class Rig implements Cloneable {
+
+  /** The dir. */
   public int dir;
+
+  /** The jib. */
   public Sail jib;
+
+  /** The main. */
   public Sail main;
+
+  /** The mizzen. */
   public Sail mizzen;
+
+  /** The valid. */
   public boolean valid;
 
+  /**
+   * Instantiates a new rig.
+   */
   public Rig() {
     this.main = new Sail();
     this.jib = new Sail();
@@ -16,6 +56,11 @@ public class Rig implements Cloneable {
     this.valid = true;
   }
 
+  /**
+   * Clone.
+   *
+   * @return the object
+   */
   @Override
   public Object clone() {
 
@@ -35,6 +80,11 @@ public class Rig implements Cloneable {
 
   } // end clone
 
+  /**
+   * Gets the area.
+   *
+   * @return the area
+   */
   public double getArea() {
     double a = 0;
     if (this.main.use) {
@@ -49,6 +99,11 @@ public class Rig implements Cloneable {
     return a;
   }
 
+  /**
+   * Gets the area X.
+   *
+   * @return the area X
+   */
   public double getAreaX() {
     double x = 0;
     if (this.main.use) {
@@ -67,6 +122,11 @@ public class Rig implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the area Y.
+   *
+   * @return the area Y
+   */
   public double getAreaY() {
     double x = 0;
     if (this.main.use) {
@@ -85,6 +145,11 @@ public class Rig implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the max X.
+   *
+   * @return the max X
+   */
   public double getMaxX() {
     double x = 0;
     if (this.main.use) {
@@ -99,6 +164,11 @@ public class Rig implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the max Y.
+   *
+   * @return the max Y
+   */
   public double getMaxY() {
     double x = 0;
     if (this.main.use) {
@@ -113,6 +183,11 @@ public class Rig implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the min X.
+   *
+   * @return the min X
+   */
   public double getMinX() {
     double x = 1000000;
     if (this.main.use) {
@@ -127,6 +202,11 @@ public class Rig implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the min Y.
+   *
+   * @return the min Y
+   */
   public double getMinY() {
     double x = 1000000;
     if (this.main.use) {

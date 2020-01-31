@@ -1,7 +1,27 @@
-/**
+/* @formatter:off
  *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
  */
-package gui;
+package gui.options;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -12,25 +32,49 @@ import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import gui.boatCalc;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class unitPanel.
+ */
 public class unitPanel extends JPanel implements ActionListener {
-  /**
-   *
-   */
+
+  /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 1L;
-  ButtonGroup bGrp;
-  /**
-   *
-   */
+
+  /** The btn cm kg. */
+  public JRadioButton btnCmKg;
+
+  /** The btn ft lbs. */
+  public JRadioButton btnFtLbs;
+
+  /** The btn in lbs. */
+  public JRadioButton btnInLbs;
+
+  /** The btn M kg. */
+  public JRadioButton btnMKg;
+
+  /** The boat calc. */
   private final boatCalc boatCalc;
-  JRadioButton btnCmKg;
-  JRadioButton btnFtLbs;
-  JRadioButton btnInLbs;
-  JRadioButton btnMKg;
+
+  /** The b grp. */
+  ButtonGroup bGrp;
+
+  /** The d. */
   Dimension d;
+
+  /** The lbl unit. */
   JLabel lblUnit;
 
-  public unitPanel(boatCalc boatCalc, final int x, final int y) {
+  /**
+   * Instantiates a new unit panel.
+   *
+   * @param boatCalc the boat calc
+   * @param x the x
+   * @param y the y
+   */
+  public unitPanel(final boatCalc boatCalc, final int x, final int y) {
     this.boatCalc = boatCalc;
     this.d = new Dimension(x, y);
     this.lblUnit = new JLabel("Units:");
@@ -60,6 +104,11 @@ public class unitPanel extends JPanel implements ActionListener {
     this.add(this.btnMKg);
   }
 
+  /**
+   * Action performed.
+   *
+   * @param e the e
+   */
   @Override
   public void actionPerformed(final ActionEvent e) {
     if (this.btnInLbs.isSelected()) {
@@ -77,6 +126,11 @@ public class unitPanel extends JPanel implements ActionListener {
     this.boatCalc.setCtrls();
   }
 
+  /**
+   * Gets the preferred size.
+   *
+   * @return the preferred size
+   */
   @Override
   public Dimension getPreferredSize() {
     return this.d;

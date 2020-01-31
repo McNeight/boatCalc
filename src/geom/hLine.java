@@ -1,11 +1,52 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package geom;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class hLine.
+ */
 public class hLine {
+
+  /** The h points. */
   public Point[] hPoints;
+
+  /** The h XY. */
   public Interp hXY;
+
+  /** The h XZ. */
   public Interp hXZ;
+
+  /** The valid. */
   public boolean valid;
 
+  /**
+   * Instantiates a new h line.
+   *
+   * @param p the p
+   * @param b the b
+   */
   // constructor
   public hLine(final Point[] p, final double b) {
     int i, j = -1;
@@ -36,6 +77,12 @@ public class hLine {
 
   } // end constructor
 
+  /**
+   * Max.
+   *
+   * @param D the d
+   * @return the double
+   */
   public double max(final String D) {
     int i;
     double t_max = -1000000.0;
@@ -55,6 +102,12 @@ public class hLine {
     return t_max;
   } // end max
 
+  /**
+   * Min.
+   *
+   * @param D the d
+   * @return the double
+   */
   public double min(final String D) {
     int i;
     double t_min = +1000000.0;

@@ -1,5 +1,25 @@
-/**
+/* @formatter:off
  *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
  */
 package gui;
 
@@ -8,28 +28,50 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import javax.swing.JPanel;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class hdPanel.
+ */
 public class hdPanel extends JPanel {
-  /**
-   *
-   */
+
+  /** The Constant serialVersionUID. */
   private static final long serialVersionUID = 1L;
 
-  boolean bComp = false;
-
-  /**
-   *
-   */
+  /** The boat calc. */
   private final boatCalc boatCalc;
 
+  /** The b comp. */
+  boolean bComp = false;
+
+  /** The d. */
   Dimension d;
+
+  /** The i comp. */
   int[][] iComp;
+
+  /** The i cur. */
   int[][] iCur;
+
+  /** The x comp. */
   double xComp = 0;
+
+  /** The x cur. */
   double xCur = 0;
+
+  /** The y comp. */
   double yComp = 0;
+
+  /** The y cur. */
   double yCur = 0;
 
-  public hdPanel(boatCalc boatCalc, final int x, final int y) {
+  /**
+   * Instantiates a new hd panel.
+   *
+   * @param boatCalc the boat calc
+   * @param x the x
+   * @param y the y
+   */
+  public hdPanel(final boatCalc boatCalc, final int x, final int y) {
     this.boatCalc = boatCalc;
     this.d = new Dimension(x, y);
     // setBackground(Color.lightGray) ;
@@ -37,11 +79,21 @@ public class hdPanel extends JPanel {
     this.iCur = new int[2][this.boatCalc.hull.NDIV + 1];
   }
 
+  /**
+   * Gets the preferred size.
+   *
+   * @return the preferred size
+   */
   @Override
   public Dimension getPreferredSize() {
     return this.d;
   }
 
+  /**
+   * Paint component.
+   *
+   * @param g the g
+   */
   @Override
   protected void paintComponent(final Graphics g) {
     super.paintComponent(g);

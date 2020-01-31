@@ -1,20 +1,66 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
+
 package boat;
 
 import java.util.ArrayList;
 import geom.Point;
 import geom.XZCompare;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Centerboard.
+ */
 public class Centerboard implements Cloneable {
-  private double angle;
-  public rscFoil board;
-  private boolean changed;
-  private double hx_min, hx_max;
-  private double[] minHull;
-  private final Point pivot;
 
-  private final double[][] rCB;
+  /** The board. */
+  public rscFoil board;
+
+  /** The valid. */
   public boolean valid = false;
 
+  /** The angle. */
+  private double angle;
+
+  /** The changed. */
+  private boolean changed;
+
+  /** The hx max. */
+  private double hx_min, hx_max;
+
+  /** The min hull. */
+  private double[] minHull;
+
+  /** The pivot. */
+  private final Point pivot;
+
+  /** The r CB. */
+  private final double[][] rCB;
+
+  /**
+   * Instantiates a new centerboard.
+   */
   public Centerboard() {
     this.board = new rscFoil();
     this.board.setCB(true);
@@ -25,6 +71,11 @@ public class Centerboard implements Cloneable {
     this.valid = true;
   }
 
+  /**
+   * Clone.
+   *
+   * @return the object
+   */
   @Override
   public Object clone() {
 
@@ -38,6 +89,11 @@ public class Centerboard implements Cloneable {
 
   } // end clone
 
+  /**
+   * Gets the area.
+   *
+   * @return the area
+   */
   public double getArea() {
     double a = 0;
     if (this.board.use) {
@@ -46,6 +102,11 @@ public class Centerboard implements Cloneable {
     return a;
   }
 
+  /**
+   * Gets the area X.
+   *
+   * @return the area X
+   */
   public double getAreaX() {
     double x = 0;
     if (this.board.use) {
@@ -58,6 +119,11 @@ public class Centerboard implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the area Y.
+   *
+   * @return the area Y
+   */
   public double getAreaY() {
     double x = 0;
     if (this.board.use) {
@@ -70,6 +136,11 @@ public class Centerboard implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the max X.
+   *
+   * @return the max X
+   */
   public double getMaxX() {
     double x = 0;
     if (this.board.use) {
@@ -78,6 +149,11 @@ public class Centerboard implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the max Y.
+   *
+   * @return the max Y
+   */
   public double getMaxY() {
     double x = 0;
     if (this.board.use) {
@@ -86,6 +162,11 @@ public class Centerboard implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the min X.
+   *
+   * @return the min X
+   */
   public double getMinX() {
     double x = 1000000;
     if (this.board.use) {
@@ -94,6 +175,11 @@ public class Centerboard implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the min Y.
+   *
+   * @return the min Y
+   */
   public double getMinY() {
     double x = 1000000;
     if (this.board.use) {
@@ -102,18 +188,39 @@ public class Centerboard implements Cloneable {
     return x;
   }
 
+  /**
+   * Gets the pivot angle.
+   *
+   * @return the pivot angle
+   */
   public double getPivotAngle() {
     return this.angle;
   }
 
+  /**
+   * Gets the pivot X.
+   *
+   * @return the pivot X
+   */
   public double getPivotX() {
     return this.pivot.x;
   }
 
+  /**
+   * Gets the pivot Z.
+   *
+   * @return the pivot Z
+   */
   public double getPivotZ() {
     return this.pivot.z;
   }
 
+  /**
+   * Gets the rx.
+   *
+   * @param i the i
+   * @return the rx
+   */
   public double getRX(final int i) {
     if (this.changed) {
       this.setCB();
@@ -121,6 +228,12 @@ public class Centerboard implements Cloneable {
     return this.rCB[0][i];
   }
 
+  /**
+   * Gets the rz.
+   *
+   * @param i the i
+   * @return the rz
+   */
   public double getRZ(final int i) {
     if (this.changed) {
       this.setCB();
@@ -128,11 +241,86 @@ public class Centerboard implements Cloneable {
     return this.rCB[1][i];
   }
 
+  /**
+   * Sets the base.
+   *
+   * @param b the new base
+   */
   public void setBase(final double b) {
     this.board.setBase(b);
     this.changed = true;
   }
 
+  /**
+   * Sets the min hull.
+   *
+   * @param mH the m H
+   * @param xmin the xmin
+   * @param xmax the xmax
+   * @param incs the incs
+   */
+  public void setMinHull(final double[] mH, final double xmin, final double xmax, final int incs) {
+    this.minHull = mH;
+    this.hx_min = xmin;
+    this.hx_max = xmax;
+    this.changed = true;
+  }
+
+  /**
+   * Sets the pivot angle.
+   *
+   * @param x the new pivot angle
+   */
+  public void setPivotAngle(final double x) {
+    this.angle = x;
+    this.changed = true;
+  }
+
+  /**
+   * Sets the pivot X.
+   *
+   * @param x the new pivot X
+   */
+  public void setPivotX(final double x) {
+    this.pivot.x = x;
+    this.changed = true;
+  }
+
+  /**
+   * Sets the pivot Z.
+   *
+   * @param x the new pivot Z
+   */
+  public void setPivotZ(final double x) {
+    this.pivot.z = x;
+    this.changed = true;
+  }
+
+  /**
+   * Sets the RX.
+   *
+   * @param i the i
+   * @param x the x
+   */
+  public void setRX(final int i, final double x) {
+    this.rCB[0][i] = x;
+    this.changed = true;
+  }
+
+  /**
+   * Sets the RZ.
+   *
+   * @param i the i
+   * @param x the x
+   */
+  public void setRZ(final int i, final double x) {
+    this.rCB[1][i] = x;
+    this.changed = true;
+  }
+
+  /**
+   * Sets the CB.
+   */
   private void setCB() {
     final double sinang = Math.sin(Math.toRadians(this.angle));
     final double cosang = Math.cos(Math.toRadians(this.angle));
@@ -195,38 +383,6 @@ public class Centerboard implements Cloneable {
     }
 
     this.changed = false;
-  }
-
-  public void setMinHull(final double[] mH, final double xmin, final double xmax, final int incs) {
-    this.minHull = mH;
-    this.hx_min = xmin;
-    this.hx_max = xmax;
-    this.changed = true;
-  }
-
-  public void setPivotAngle(final double x) {
-    this.angle = x;
-    this.changed = true;
-  }
-
-  public void setPivotX(final double x) {
-    this.pivot.x = x;
-    this.changed = true;
-  }
-
-  public void setPivotZ(final double x) {
-    this.pivot.z = x;
-    this.changed = true;
-  }
-
-  public void setRX(final int i, final double x) {
-    this.rCB[0][i] = x;
-    this.changed = true;
-  }
-
-  public void setRZ(final int i, final double x) {
-    this.rCB[1][i] = x;
-    this.changed = true;
   }
 
 } // end Centerboard

@@ -1,3 +1,26 @@
+/* @formatter:off
+ *
+ * boatCalc
+ * Copyright (C) 2004 Peter H. Vanderwaart
+ * Copyright (C) 2020 Neil McNeight
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
+ *
+ * @formatter:on
+ */
 package geom;
 
 import java.util.ArrayList;
@@ -5,11 +28,26 @@ import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class xzArea.
+ */
 public class xzArea {
+
+  /** The area. */
   private double area;
+
+  /** The cz. */
   private double cx, cz;
+
+  /** The tz. */
   private double tx, tz;
 
+  /**
+   * Instantiates a new xz area.
+   *
+   * @param a the a
+   */
   public xzArea(final ArrayList<Point> a) {
     double ta;
     this.tx = 0;
@@ -57,26 +95,62 @@ public class xzArea {
 
   }// end constructor
 
+  /**
+   * Gets the area.
+   *
+   * @return the area
+   */
   public double getArea() {
     return this.area;
   }
 
+  /**
+   * Gets the area X.
+   *
+   * @return the area X
+   */
   public double getAreaX() {
     return this.cx;
   }
 
+  /**
+   * Gets the area Z.
+   *
+   * @return the area Z
+   */
   public double getAreaZ() {
     return this.cz;
   }
 
+  /**
+   * Gets the mid X.
+   *
+   * @return the mid X
+   */
   public double getMidX() {
     return this.tx;
   }
 
+  /**
+   * Gets the mid Z.
+   *
+   * @return the mid Z
+   */
   public double getMidZ() {
     return this.tz;
   }
 
+  /**
+   * Tri area.
+   *
+   * @param x1 the x 1
+   * @param y1 the y 1
+   * @param x2 the x 2
+   * @param y2 the y 2
+   * @param x3 the x 3
+   * @param y3 the y 3
+   * @return the double
+   */
   public double TriArea(final double x1, final double y1, final double x2, final double y2,
       final double x3, final double y3) {
     double a;
