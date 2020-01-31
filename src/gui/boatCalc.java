@@ -86,6 +86,7 @@ import geom.Point;
 import geom.rawLine;
 import gui.options.ctrlPanel;
 import io.SaveOutput;
+import io.FileHulls;
 import util.bcFileFilter;
 import util.bcFormat;
 import util.bcUnits;
@@ -5684,9 +5685,9 @@ public class boatCalc extends javax.swing.JFrame {
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         fn = (this.fc.getSelectedFile().getName()).toLowerCase();
         if (fn.indexOf(".hul") > 0) {
-          this.hull.getHulls(this.fc.getSelectedFile());
+          hull = new FileHulls.openHull(this.fc.getSelectedFile());
         } else {
-          this.hull.getData(this.fc.getSelectedFile());
+          this.hull.openHull(this.fc.getSelectedFile());
         }
         if (!this.bOpen) {
           this.setCtrls();
