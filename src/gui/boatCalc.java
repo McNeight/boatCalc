@@ -85,8 +85,9 @@ import geom.Line;
 import geom.Point;
 import geom.rawLine;
 import gui.options.ctrlPanel;
-import io.SaveOutput;
 import io.FileHulls;
+import io.FileXmlHull;
+import io.SaveOutput;
 import util.bcFileFilter;
 import util.bcFormat;
 import util.bcUnits;
@@ -5307,9 +5308,11 @@ public class boatCalc extends javax.swing.JFrame {
               if (returnVal == JFileChooser.APPROVE_OPTION) {
                 final String fn = (boatCalc.this.fc.getSelectedFile().getName()).toLowerCase();
                 if (fn.indexOf(".hul") > 0) {
-                  boatCalc.this.hull.saveHulls(boatCalc.this.fc.getSelectedFile());
+                  final FileHulls fh = new FileHulls();
+                  fh.saveHull(boatCalc.this.fc.getSelectedFile(), boatCalc.this.hull);
                 } else {
-                  boatCalc.this.hull.saveData(boatCalc.this.fc.getSelectedFile());
+                  final FileXmlHull fh = new FileXmlHull();
+                  fh.saveHull(boatCalc.this.fc.getSelectedFile(), boatCalc.this.hull);
                 }
               }
             } catch (final NullPointerException npe) {
@@ -5342,9 +5345,11 @@ public class boatCalc extends javax.swing.JFrame {
               if (returnVal == JFileChooser.APPROVE_OPTION) {
                 final String fn = (boatCalc.this.fc.getSelectedFile().getName()).toLowerCase();
                 if (fn.indexOf(".hul") > 0) {
-                  boatCalc.this.hull.saveHulls(boatCalc.this.fc.getSelectedFile());
+                  final FileHulls fh = new FileHulls();
+                  fh.saveHull(boatCalc.this.fc.getSelectedFile(), boatCalc.this.hull);
                 } else {
-                  boatCalc.this.hull.saveData(boatCalc.this.fc.getSelectedFile());
+                  final FileXmlHull fh = new FileXmlHull();
+                  fh.saveHull(boatCalc.this.fc.getSelectedFile(), boatCalc.this.hull);
                 }
               }
             } catch (final NullPointerException npe) {
@@ -5431,9 +5436,11 @@ public class boatCalc extends javax.swing.JFrame {
               if (returnVal == JFileChooser.APPROVE_OPTION) {
                 final String fn = (boatCalc.this.fc.getSelectedFile().getName()).toLowerCase();
                 if (fn.indexOf(".hul") > 0) {
-                  boatCalc.this.hull.saveHulls(boatCalc.this.fc.getSelectedFile());
+                  final FileHulls fh = new FileHulls();
+                  fh.saveHull(boatCalc.this.fc.getSelectedFile(), boatCalc.this.hull);
                 } else {
-                  boatCalc.this.hull.saveData(boatCalc.this.fc.getSelectedFile());
+                  final FileXmlHull fh = new FileXmlHull();
+                  fh.saveHull(boatCalc.this.fc.getSelectedFile(), boatCalc.this.hull);
                 }
               }
             } catch (final NullPointerException npe) {
@@ -5685,9 +5692,13 @@ public class boatCalc extends javax.swing.JFrame {
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         fn = (this.fc.getSelectedFile().getName()).toLowerCase();
         if (fn.indexOf(".hul") > 0) {
-          hull = new FileHulls.openHull(this.fc.getSelectedFile());
+          final FileHulls fh = new FileHulls();
+          this.hull = fh.openHull(this.fc.getSelectedFile());
+          // new SerializeToXML(this.fc.getSelectedFile() + "serial", hull);
         } else {
-          this.hull.openHull(this.fc.getSelectedFile());
+          final FileXmlHull fh = new FileXmlHull();
+          this.hull = fh.openHull(this.fc.getSelectedFile());
+          // new SerializeToXML(this.fc.getSelectedFile() + "serial", hull);
         }
         if (!this.bOpen) {
           this.setCtrls();
@@ -5796,9 +5807,11 @@ public class boatCalc extends javax.swing.JFrame {
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         fn = (this.fc.getSelectedFile().getName()).toLowerCase();
         if (fn.indexOf(".hul") > 0) {
-          this.hull.saveHulls(this.fc.getSelectedFile());
+          final FileHulls fh = new FileHulls();
+          fh.saveHull(this.fc.getSelectedFile(), this.hull);
         } else {
-          this.hull.saveData(this.fc.getSelectedFile());
+          final FileXmlHull fh = new FileXmlHull();
+          fh.saveHull(this.fc.getSelectedFile(), this.hull);
         }
       }
     } catch (final NullPointerException npe) {

@@ -177,9 +177,9 @@ public class FileHulls {
    *
    * @param hullFile the hull file
    */
-  public void saveHull(File hullFile, Hull h) {
+  public void saveHull(File hullFile, final Hull h) {
 
-    Emitter er = new Emitter();
+    final Emitter er = new Emitter();
     String fn = hullFile.getName();
     BufferedWriter w;
     new DecimalFormat("#########.0000");

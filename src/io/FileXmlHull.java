@@ -31,13 +31,11 @@ import java.text.DecimalFormat;
 import java.util.ListIterator;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import org.xml.sax.helpers.DefaultHandler;
 import boat.Hull;
 import boat.Sail;
 import boat.rscFoil;
 import geom.Line;
-import geom.rawLine;
-import io.XmlHullReader;;
+import geom.rawLine;;
 
 public class FileXmlHull {
   /** Define a Hull. */
@@ -52,17 +50,19 @@ public class FileXmlHull {
   // read native (xml) data file
   public Hull openHull(final File hullfile) {
     // declarations
-    final DefaultHandler hd = new XmlHullReader();
-    final SAXParserFactory f = SAXParserFactory.newInstance();
+    final XmlHullReader handler = new XmlHullReader();
+    final SAXParserFactory factory = SAXParserFactory.newInstance();
+    factory.setValidating(true);
     try {
-      final SAXParser saxParser = f.newSAXParser();
-      saxParser.parse(hullfile, hd);
+      final SAXParser saxParser = factory.newSAXParser();
+      saxParser.parse(hullfile, handler);
     } catch (final Throwable t) {
       t.printStackTrace();
     }
+    this.h = handler.h;
     this.h.setLines();
     this.h.valid = true;
-    return h;
+    return this.h;
   } // end getData
 
   /**
@@ -70,8 +70,8 @@ public class FileXmlHull {
    *
    * @param xmlFile the xml file
    */
-  public void saveHull(File xmlFile, Hull h) {
-    Emitter er = new Emitter();
+  public void saveHull(File xmlFile, final Hull h) {
+    final Emitter er = new Emitter();
     String fn = xmlFile.getName();
     BufferedWriter w;
     new DecimalFormat("#########");
@@ -88,8 +88,7 @@ public class FileXmlHull {
 
       w = new BufferedWriter(new FileWriter(xmlFile));
       er.emitln(w, "<?xml version='1.0' encoding='UTF-8'?>");
-      er.emitln(w,
-          "<hull stations='" + h.Stations.length + "' lines='" + h.Offsets.size() + "'>");
+      er.emitln(w, "<hull stations='" + h.Stations.length + "' lines='" + h.Offsets.size() + "'>");
 
       er.emitln(w, "   <water>" + h.bcf.DF0d.format(h.units.WATER) + "</water>");
       er.emitln(w, "   <units>" + h.bcf.DF0d.format(h.units.UNITS) + "</units>");
